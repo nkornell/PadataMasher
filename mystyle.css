@@ -1,0 +1,305 @@
+:root {
+/* I think you can pretty much just put whatever value into whatever variable name you want. */
+  --greywolf: #ccc;
+  --ptpColor: #00aa22;
+  --cacColor: #b020e0; 
+}
+
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+body {
+	font-family: sans-serif; 
+    background-color: orange;		
+}
+
+table {
+	border-collapse: collapse;
+}
+
+th, td {
+	padding-left: 8px;
+	padding-right: 8px;
+	padding-top: 6;
+	padding-bottom: 6;
+	text-align: left;
+/* 	white-space: nowrap; */
+}
+
+th {
+	font-weight: normal;
+    vertical-align: bottom;
+    cursor: pointer;
+}
+
+.bigBox {
+    vertical-align: top;
+	min-width: 300px;
+	padding: 0px;
+	margin: 0px;
+}
+
+.dataTable {
+    overflow: auto;
+    overflow-x: scroll;
+    overflow-y: scroll;
+    border: 1px solid var(--greywolf);
+    background-color: white;
+    margin: 10px;
+}
+
+.boxAroundTable {
+	padding: 12px;
+	margin: 10px;
+    box-shadow: 0 0 1px 1px var(--greywolf);
+    vertical-align: top;
+	border-radius: 5px;
+    overflow: visible;
+    background-color: white;
+}
+
+.dataTable td {
+    border: 1px solid var(--greywolf);
+	font-family: monospace;
+
+}
+
+.dataTable th {
+    border: 1px solid var(--greywolf);
+	font-family: monospace;
+}
+
+.cfTableCell_Row_good {
+/*     background-color: white; */
+}
+
+.cfTableCell_Row_warning {
+    background-color: #ff8;
+}
+
+.cfTableCell_Row_bad {
+    background-color: #f77;
+}
+
+.roundedBox {
+	background-color: white; 
+	border-radius: 10px; 
+	margin: 50px; 
+	padding: 20px; 
+	max-width: 600px;
+	text-align: left;
+}
+
+.dragDropBox {
+	border: 6px solid var(--greywolf);
+	text-align: center;
+	position: relative;
+/* 	color: var(--ptpColor); */
+    background-color: white;
+}
+
+.middleCenter {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+
+.alert {
+    background-color: white;
+    border: 1px solid red;
+    color: red;
+    display: none;
+	border-radius: 5px;
+	padding: 5px;
+}
+
+.coolButton {
+    background-color: #fff;
+    border: 1px solid #789;
+    padding: 5px 5px;
+    text-align: center;
+    display: inline-block;
+	border-radius: 5px;
+    cursor: pointer;
+    -webkit-transition-duration: 0.2s; /* Safari */
+    transition-duration: 0.2s;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.coolButton:hover {
+    background-color: #789;
+    color: white;
+/*     border: 1px solid #ddd; */
+}
+
+.coolButton:active {
+	background-color: #000;
+}
+
+.coolButton:focus {
+	outline: 0;
+}
+
+.heading {
+	font-weight: bold; 
+	float: left;
+}
+
+label {
+    cursor: pointer;
+    text-align: center;
+}
+
+
+#processingBox {
+    display: none;
+}
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+/*     width: 120px; */
+    background-color: #fff;
+    color: #024;
+    text-align: left;
+    border-radius: 5px;
+/*     padding: 25px 0; */
+    position: absolute;
+    z-index: 1;
+    top: -10px;
+    right: 120%;
+    padding: 10px;
+/*     border-color: #024; */
+	box-shadow: 0 0 1px 1px #024;
+
+}
+
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 20px;
+    left: 100%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent transparent #024;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+}
+
+
+/* start navigation menu */
+.navMenuItem {
+  display: block;
+  border-radius: 10px;
+  color: 000;
+  text-align: center;
+  padding: 10px;
+  font-size: 16;
+  margin: 5;
+  float: left;
+}
+
+.navMenuItem:hover:not(.selected) {
+	background-color: eee;
+}
+
+.selected {
+  background-color: eee;
+}
+
+.navMenuItem img {
+	height: 25px;
+	vertical-align: middle;
+}
+
+.navMenuItem a {
+  text-decoration: none;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* end navigation menu */
+
+
+/* 
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: #789;
+    color: #fff;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    top: -5px;
+    left: 110%;
+	font-family: monospace;
+	white-space: nowrap;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+}
+ */
+
+/* 
+.dataTable tr td:first-child {
+	border-left: 0px solid #ddd;
+}
+
+.dataTable tr td:last-child {
+	border-right: 0px solid #ddd;
+}
+
+.dataTable tr:last-child td {
+	border-bottom: 0px solid #ddd;
+}
+ */
+
+/* 
+.dropbtn {
+}
+
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    padding: 8px;
+    position: absolute;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    overflow: auto;
+    box-shadow: 0 0 1px 1px var(--greywolf);
+}
+
+
+.dropdown a:hover {background-color: #ddd}
+
+.show {display:block;}
+ */

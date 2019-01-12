@@ -1,0 +1,15 @@
+UserID	Experiment	SessionNum	Trial	Date	Question	Answer	Response	RT	LenScore	LenAcc	StrictAcc	Info	TrialType	Feedback	DurationControl	Group	Phase	ContextCond	Pic
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	Demographics	2017-04-18 03:41:36	28.413	Female	33	Some college, no degree	Fluent	USA
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	1	2017-04-18 03:41:58	array	blame		8.505	0	0	0	ab	readoverpic	NoFeedback	UserTiming	A	InitialStudy	Variable	lightning.jpg	
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	2	2017-04-18 03:42:06	knowledge	parrot		8.183	0	0	0	ab	readoverpic	NoFeedback	UserTiming	A	InitialStudy	Variable	wall.jpg	
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	3	2017-04-18 03:42:14	evidence	poison		7.644	0	0	0	ab	readoverpic	NoFeedback	UserTiming	A	InitialStudy	Variable	tornado.jpg	
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	4	2017-04-18 03:42:22	emancipation	leech		7.9	0	0	0	ab	readoverpic	NoFeedback	UserTiming	A	InitialStudy	Variable	construction.jpg	
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	5	2017-04-18 03:42:30	exactitude	divorce		7.548	0	0	0	ab	readoverpic	NoFeedback	UserTiming	A	InitialStudy	Variable	Satellite.jpg	
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	6	2017-04-18 03:42:38	mercy	flavor		7.707	0	0	0	ab	readoverpic	NoFeedback	UserTiming	A	InitialStudy	Variable	books.jpg	
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	7	2017-04-18 03:42:47	hope	yeast		9.158	0	0	0	ab	readoverpic	NoFeedback	UserTiming	A	InitialStudy	Variable	marathon.jpg	
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	8	2017-04-18 03:42:56	situation	manure		7.983	0	0	0	ab	readoverpic	NoFeedback	UserTiming	A	InitialStudy	Variable	BounceHouse.jpg	
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	9	2017-04-18 03:43:03	effort	garden		7.633	0	0	0	ab	readoverpic	NoFeedback	UserTiming	A	InitialStudy	Variable	Poker.jpg	
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	10	2017-04-18 03:43:12	ingratitude	sleep		8.685	0	0	0	ab	readoverpic	NoFeedback	UserTiming	A	InitialStudy	Variable	RollerSkating.jpg	
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	FQ1	2017-04-18 04:22:43	14.191	Smooth	Words1.txt	Order2.txt
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	FQ2	2017-04-18 04:22:49	5.502	Naive	Words1.txt	Order2.txt
+A1BIYJTAS8MQCS	FlashcardsContextPics_2	1	AllExtraInfo	2017-04-18 04:22:49	NA	Female	33	Some college, no degree	Fluent	USA	Smooth	Naive	Words1.txt	Order2.txt	http://pincub.com/327MB/login.php?username=A1BIYJTAS8MQCSsessionnum=2

@@ -1,0 +1,47 @@
+UserID	Experiment	SessionNum	Trial	Date	Question	Answer	Response	RT	LenScore	LenAcc	StrictAcc	actor	TrialType	Feedback	DurationControl	Group	Phase	Condition
+A2IQ0QCTQ3KWLT	fajci1	1	ExtraInfo_Demographics	2018-04-16 03:02:34	14.385	Female	47	-select level-	Fluent	usa
+A2IQ0QCTQ3KWLT	fajci1	1	1	2018-04-16 03:05:07	<iframe width="560" height="315" src="https://www.youtube.com/embed/ERsGUjht038?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na		122.546	0	0	0	rachel	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	2	2018-04-16 03:05:50	Where is Alicia from?	Massachusetts	mass	42.123	47.058823529412	0	0	rachel	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	3	2018-04-16 03:05:56	Where does Alicia go to college?	Duke	duke	5.105	100	1	1	rachel	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	4	2018-04-16 03:06:55	Name two activities Alicia participates in at college	debate team and mock trial	trial and debate	58.117	28.571428571429	0	0	rachel	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	5	2018-04-16 03:09:42	<iframe width="560" height="315" src="https://www.youtube.com/embed/6uVaYM2KCuk?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na		166.715	0	0	0	ashish	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	6	2018-04-16 03:09:52	Where is Rohan from?	Oakland	california	9.295	35.294117647059	0	0	rohan	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	7	2018-04-16 03:10:31	Where did Rohan attend college?	Carnegie Mellon	carnigy	38.872	45.454545454545	0	0	rohan	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	8	2018-04-16 03:10:43	What were Rohan’s majors in college?	Political Science and Communications	political science, communications	11.647	92.753623188406	1	0	rohan	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	9	2018-04-16 03:13:32	<iframe width="560" height="315" src="https://www.youtube.com/embed/XCVQ7-Vde8c?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na		168.324	0	0	0	isabella	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	10	2018-04-16 03:16:47	Where does Alice attend college?	University of Pennsylvania	upen	194.146	26.666666666667	0	0	isabella	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	11	2018-04-16 03:16:58	What is Alice’s major?	Science, Technology, and Society	science technology and society	10.712	96.774193548387	1	0	isabella	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	12	2018-04-16 03:17:04	Where is Alice from?	Maine	maine	4.662	100	1	1	isabella	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	13	2018-04-16 03:21:26	<iframe width="560" height="315" src="https://www.youtube.com/embed/tV2O8tek-nU?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na		261.724	0	0	0	shaun	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	14	2018-04-16 03:21:36	Where was Lanre born?	Wisconsin	wisconsin	10.104	100	1	1	shaun	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	15	2018-04-16 03:21:50	What college does Lanre attend?	Princeton	san prince	12.612	63.157894736842	0	0	shaun	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	0	2018-04-16 03:22:54			i don't recall	64.331	0	0	0							
+A2IQ0QCTQ3KWLT	fajci1	1	1	2018-04-16 03:23:06	<iframe width="560" height="315" src="https://www.youtube.com/embed/ERsGUjht038?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na		11.418	0	0	0	rachel	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	2	2018-04-16 03:24:41	Where is Alicia from?	Massachusetts	mass	93.822	47.058823529412	0	0	rachel	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	3	2018-04-16 03:24:45	Where does Alicia go to college?	Duke	duke	3.284	100	1	1	rachel	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	4	2018-04-16 03:24:59	Name two activities Alicia participates in at college	debate team and mock trial	debate and communications	13.836	54.901960784314	0	0	rachel	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	5	2018-04-16 03:25:03	<iframe width="560" height="315" src="https://www.youtube.com/embed/6uVaYM2KCuk?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na		3.982	0	0	0	ashish	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	6	2018-04-16 03:25:15	Where is Rohan from?	Oakland	california	11.452	35.294117647059	0	0	rohan	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	7	2018-04-16 03:26:31	Where did Rohan attend college?	Carnegie Mellon	carniky	74.969	45.454545454545	0	0	rohan	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	8	2018-04-16 03:26:44	What were Rohan’s majors in college?	Political Science and Communications	political science, communications	12.566	92.753623188406	1	0	rohan	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	9	2018-04-16 03:26:48	<iframe width="560" height="315" src="https://www.youtube.com/embed/XCVQ7-Vde8c?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na		4.409	0	0	0	isabella	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	10	2018-04-16 03:27:09	Where does Alice attend college?	University of Pennsylvania	upen	19.776	26.666666666667	0	0	isabella	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	11	2018-04-16 03:27:22	What is Alice’s major?	Science, Technology, and Society	science technology and society	12.52	96.774193548387	1	0	isabella	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	12	2018-04-16 03:27:28	Where is Alice from?	Maine	maine	6.006	100	1	1	isabella	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	13	2018-04-16 03:28:15	<iframe width="560" height="315" src="https://www.youtube.com/embed/tV2O8tek-nU?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na		46.493	0	0	0	shaun	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	14	2018-04-16 03:28:22	Where was Lanre born?	Wisconsin	wisconsin	5.953	100	1	1	shaun	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	15	2018-04-16 03:28:47	What college does Lanre attend?	Princeton	san prince	24.672	63.157894736842	0	0	shaun	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	16	2018-04-16 03:29:26	Where did Lanre intern last summer?	ACLU	aclu	38.945	100	1	1	shaun	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	17	2018-04-16 03:29:30				3.705	0	0	1		StepOut	NA	NA	soStudy.html	NA	
+A2IQ0QCTQ3KWLT	fajci1	1	18	2018-04-16 03:29:39	Alicia	na	4	8.539	0	0	0	rachel	JOL	NoFeedback	UserTiming	C	Ranking	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	19	2018-04-16 03:29:47	Rohan	na	3	7.316	0	0	0	ashish	JOL	NoFeedback	UserTiming	C	Ranking	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	20	2018-04-16 03:29:50	Alice	na	1	2.942	0	0	0	isabella	JOL	NoFeedback	UserTiming	C	Ranking	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	21	2018-04-16 03:29:54	Lanre	na	2	3	0	0	0	shaun	JOL	NoFeedback	UserTiming	C	Ranking	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	22	2018-04-16 03:29:57				2.974	0	0	1		StepOut	NA	NA	soTest.html	NA	
+A2IQ0QCTQ3KWLT	fajci1	1	23	2018-04-16 03:30:01	Alicia	na	4	3.327	0	0	0	rachel	pleasantness	NoFeedback	UserTiming	C	likeRanking	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	24	2018-04-16 03:30:04	Rohan	na	2	3.038	0	0	0	ashish	pleasantness	NoFeedback	UserTiming	C	likeRanking	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	25	2018-04-16 03:30:07	Alice	na	1	2.8	0	0	0	isabella	pleasantness	NoFeedback	UserTiming	C	likeRanking	fluent	
+A2IQ0QCTQ3KWLT	fajci1	1	26	2018-04-16 03:30:11	Lanre	na	3	3.012	0	0	0	shaun	pleasantness	NoFeedback	UserTiming	C	likeRanking	disfluent	
+A2IQ0QCTQ3KWLT	fajci1	1	ExtraInfo_FQ1	2018-04-16 03:30:25	4.236	MinorBumps	Stimuli1.txt	Order2.txt
+A2IQ0QCTQ3KWLT	fajci1	1	ExtraInfo_FQ2	2018-04-16 03:30:30	5.643	Naive	Stimuli1.txt	Order2.txt
+A2IQ0QCTQ3KWLT	fajci1	1	ExtraInfo_All	2018-04-16 03:30:30	NA	Female	47	-select level-	Fluent	usa	MinorBumps	Naive	Stimuli1.txt	Order2.txt	http://pincub.com/fajci/login.php?username=A2IQ0QCTQ3KWLT&sessionnum=2

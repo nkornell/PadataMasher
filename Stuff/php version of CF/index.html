@@ -1,0 +1,28 @@
+<?php
+if (!isset ($_SESSION)) session_start();
+?>
+<html>
+<head>
+	<link rel="stylesheet" href="mystyle.css">
+</head>
+
+<body>
+<form action="Combine.php" method="post" enctype="multipart/form-data">
+    <p align="right">
+    Select one or more files to upload. Must be .txt, .csv, or .tsv <br>
+    <!-- <input type="file" name="fileToUpload" id="fileToUpload"> -->
+	<p align="right">
+	<input type="file" id="filesToUpload" name="filesToUpload[]" multiple="multiple">
+	
+    <p align="right">
+    Upload files:<br>
+    <p align="right">
+    <input type="submit" value="Upload" name="submit">
+    </p>
+</form>
+
+
+</body>
+</html>
+    
+    

@@ -1,0 +1,1 @@
+UserID	Experiment	SessionNum	Trial	Date	Question	Answer	Response	RT	LenScore	LenAcc	StrictAcc	actor	TrialType	Feedback	DurationControl	Group	Phase	Condition

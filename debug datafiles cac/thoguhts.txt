@@ -1,0 +1,6 @@
+mostFrequentCharacter Rename whichStringIsMostFrequent
+
+Churn rename turnStringToArray
+
+mostCommonValue rename mostCommonValueInArray
+

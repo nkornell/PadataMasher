@@ -1,0 +1,26 @@
+<iframe width="560" height="315" src="https://www.youtube.com/embed/ERsGUjht038?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na	rachel	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo,disfluent
+Where is Alicia from?	Massachusetts	rachel	test	NoFeedback	UserTiming	B	Restudy,disfluent
+Where does Alicia go to college?	Duke	rachel	test	NoFeedback	UserTiming	B	Restudy,disfluent
+Name two activities Alicia participates in at college	debate team and mock trial	rachel	test	NoFeedback	UserTiming	B	Restudy,disfluent
+<iframe width="560" height="315" src="https://www.youtube.com/embed/6uVaYM2KCuk?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na	ashish	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo,fluent
+Where is Rohan from?	Oakland	rohan	test	NoFeedback	UserTiming	B	Restudy,fluent
+Where did Rohan attend college?	Carnegie Mellon	rohan	test	NoFeedback	UserTiming	B	Restudy,fluent
+What were Rohan’s majors in college?	Political Science and Communications	rohan	test	NoFeedback	UserTiming	B	Restudy,fluent
+<iframe width="560" height="315" src="https://www.youtube.com/embed/XCVQ7-Vde8c?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na	isabella	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo,fluent
+Where does Alice attend college?	University of Pennsylvania	isabella	test	NoFeedback	UserTiming	B	Restudy,fluent
+What is Alice’s major?	Science, Technology, and Society	isabella	test	NoFeedback	UserTiming	B	Restudy,fluent
+Where is Alice from?	Maine	isabella	test	NoFeedback	UserTiming	B	Restudy,fluent
+<iframe width="560" height="315" src="https://www.youtube.com/embed/tV2O8tek-nU?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na	shaun	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo,disfluent
+Where was Lanre born?	Wisconsin	shaun	test	NoFeedback	UserTiming	B	Restudy,disfluent
+What college does Lanre attend?	Princeton	shaun	test	NoFeedback	UserTiming	B	Restudy,disfluent
+Where did Lanre intern last summer?	ACLU	shaun	test	NoFeedback	UserTiming	B	Restudy,disfluent
+			StepOut	NA	NA	soStudy.html	NA
+Alicia	na	rachel	JOL	NoFeedback	UserTiming	C	Ranking,disfluent
+Rohan	na	ashish	JOL	NoFeedback	UserTiming	C	Ranking,fluent
+Alice	na	isabella	JOL	NoFeedback	UserTiming	C	Ranking,fluent
+Lanre	na	shaun	JOL	NoFeedback	UserTiming	C	Ranking,disfluent
+			StepOut	NA	NA	soTest.html	NA
+Alicia	na	rachel	pleasantness	NoFeedback	UserTiming	C	likeRanking,disfluent
+Rohan	na	ashish	pleasantness	NoFeedback	UserTiming	C	likeRanking,fluent
+Alice	na	isabella	pleasantness	NoFeedback	UserTiming	C	likeRanking,fluent
+Lanre	na	shaun	pleasantness	NoFeedback	UserTiming	C	likeRanking,disfluent

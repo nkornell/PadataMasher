@@ -1,0 +1,6 @@
+UserID	Experiment	SessionNum	Trial	Date	Question	Answer	Response	RT	LenScore	LenAcc	StrictAcc	actor	TrialType	Feedback	DurationControl	Group	Phase	Condition
+A1IM6TFN3AAMBY	fajci1	1	ExtraInfo_Demographics	2018-04-16 03:18:14	18.761	Male	22	Some college, no degree	Fluent	united states
+A1IM6TFN3AAMBY	fajci1	1	1	2018-04-16 03:20:33	<iframe width="560" height="315" src="https://www.youtube.com/embed/ERsGUjht038?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na		129.028	0	0	0	rachel	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo	disfluent	
+A1IM6TFN3AAMBY	fajci1	1	2	2018-04-16 03:20:41	Where is Alicia from?	Massachusetts	no clue	7.751	30	0	0	rachel	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A1IM6TFN3AAMBY	fajci1	1	3	2018-04-16 03:20:46	Where does Alicia go to college?	Duke	i forget	5.221	16.666666666667	0	0	rachel	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A1IM6TFN3AAMBY	fajci1	1	4	2018-04-16 03:20:56	Name two activities Alicia participates in at college	debate team and mock trial	no clue, i'm sorry....	9.271	25	0	0	rachel	test	NoFeedback	UserTiming	B	Restudy	disfluent	

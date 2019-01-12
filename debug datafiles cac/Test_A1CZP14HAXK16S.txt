@@ -1,0 +1,2 @@
+UserID	Experiment	SessionNum	Trial	Date	Question	Answer	Response	RT	LenScore	LenAcc	StrictAcc	actor	TrialType	Feedback	DurationControl	Group	Phase	Condition
+A1CZP14HAXK16S	fajci1	1	ExtraInfo_Demographics	2018-04-16 03:04:40	45.039	Male	72	Bachelors degree	Fluent	Texas

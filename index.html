@@ -1,0 +1,76 @@
+<!-- 
+-- programs to add --
+LineRowsUp, but rename it RowCondenser or RowOrganizer?
+Lenient Scorer
+Grapher
+
+-- for combine files --
+In addition to checking trial nums, make it look for columns where things never repeat. And flag when they do. 
+
+-- copy and paste --
+Make it possible to copy the output for pasting. (Or at least make the copy button work as long as the table is showing every row.)
+Make it possible to paste the input instead of selecting a file. 
+
+-- importing --
+Make it import excel files and convert to text? see: http://oss.sheetjs.com/
+
+
+-- Display/interface --
+Show hint hovery thingies for the export button and others. 
+-->
+
+<html>
+
+<head>
+	<title>Padata Masher</title>
+	<meta charset="UTF-8">
+	<meta name="description" content="Clean and organize your data with these analysis tools. Quick, easy, private, and free">
+	<meta name="keywords" content="data, analysis, easy, free, clean, analyze, organize, application, program">
+	<meta name="author" content="Nate Kornell">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="shortcut icon" href="favicon.ico">
+	<link rel="stylesheet" type="text/css" href="mystyle.css">
+</head>
+
+<body> 
+	<!--  navigation menu -->
+	<nav>
+		<ul>
+			<li><div class="navMenuItem selected"><img src="image_pm.png" > Masher Home</div></li>
+			<li><a href="index_CombineAndClean.html"><div class="navMenuItem"><img src="image_cac.png"> Combine & Clean</div></a></li>
+			<li><a href="index_PivotTablePlus.html"><div class="navMenuItem"><img src="image_ptp.png"> Pivot Table Plus</div></a></li>
+			<li style="float:right"><a href="index_About.html"><div class="navMenuItem">About</div></a></li>
+		</ul>
+	</nav>
+	
+	<!-- about box -->
+	<center>
+
+	<div class="roundedBox">
+		<h1><img src="image_pm.png" height="50px" style="float: left; padding-right: 15px"> Padata Masher</h1>
+		<p>Welcome to Padata Masher! We offer free tools to help you clean and organize your data. 
+		We never upload, store, or modify your files.  
+		
+		<p>
+		<div style="padding: 25px;">
+			<img src="image_cac.png" height="100px" style="float: left; padding-right: 15px">
+			<strong>Combine & Clean. </strong> Have a batch of data files to analyze? Run this program. 
+			It will give you a report about each file and let you decide which ones to include in your analysis. 
+			When you press Export Data it will combine them into a new file with an added column that flags wonky rows for your inspection. 
+
+			
+		</div>
+		<p>
+		<div style="padding: 25px;">
+			<img src="image_ptp.png" height="100px" style="float: left; padding-right: 15px">
+			<Strong>Pivot Table Plus. </strong> 
+			Want to compute a mean for each of your participants? You could use a pivot table, but this program does more: 
+			Compute each participant's median, or standard deviation, Pearson or a gamma correlation, or other stuff. 
+			Give it a data file, identify the variables and analysis you want to run, and press Export Results, it's that easy!			
+		</div>
+	</div>
+	</center>
+
+
+</body>
+</html>

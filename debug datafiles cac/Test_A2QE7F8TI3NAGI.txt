@@ -1,0 +1,32 @@
+UserID	Experiment	SessionNum	Trial	Date	Question	Answer	Response	RT	LenScore	LenAcc	StrictAcc	actor	TrialType	Feedback	DurationControl	Group	Phase	Condition
+A2QE7F8TI3NAGI	fajci1	1	ExtraInfo_Demographics	2018-04-16 05:55:04	19.446	Female	27	Associates degree	Fluent	NOTHIN
+A2QE7F8TI3NAGI	fajci1	1	ExtraInfo_Demographics	2018-04-16 05:55:21	12.241	Female	27	Bachelors degree	Fluent	NOTHIN
+A2QE7F8TI3NAGI	fajci1	1	1	2018-04-16 05:55:32	<iframe width="560" height="315" src="https://www.youtube.com/embed/ERsGUjht038?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na		7.901	0	0	0	rachel	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo	disfluent	
+A2QE7F8TI3NAGI	fajci1	1	2	2018-04-16 05:55:40	Where is Alicia from?	Massachusetts	usa	7.567	25	0	0	rachel	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2QE7F8TI3NAGI	fajci1	1	3	2018-04-16 05:55:49	Where does Alicia go to college?	Duke	new york	8.755	16.666666666667	0	0	rachel	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2QE7F8TI3NAGI	fajci1	1	4	2018-04-16 05:55:56	Name two activities Alicia participates in at college	debate team and mock trial	usa	6.582	6.8965517241379	0	0	rachel	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2QE7F8TI3NAGI	fajci1	1	5	2018-04-16 05:56:09	<iframe width="560" height="315" src="https://www.youtube.com/embed/6uVaYM2KCuk?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na		12.067	0	0	0	ashish	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo	fluent	
+A2QE7F8TI3NAGI	fajci1	1	6	2018-04-16 05:56:15	Where is Rohan from?	Oakland	usa	5.159	20	0	0	rohan	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2QE7F8TI3NAGI	fajci1	1	7	2018-04-16 05:56:28	Where did Rohan attend college?	Carnegie Mellon	nothing	12.459	27.272727272727	0	0	rohan	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2QE7F8TI3NAGI	fajci1	1	8	2018-04-16 05:56:32	What were Rohan’s majors in college?	Political Science and Communications	nothing	3.966	23.255813953488	0	0	rohan	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2QE7F8TI3NAGI	fajci1	1	9	2018-04-16 05:56:43	<iframe width="560" height="315" src="https://www.youtube.com/embed/XCVQ7-Vde8c?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na		10.072	0	0	0	isabella	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo	fluent	
+A2QE7F8TI3NAGI	fajci1	1	10	2018-04-16 05:56:47	Where does Alice attend college?	University of Pennsylvania	nothing	3.899	18.181818181818	0	0	isabella	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2QE7F8TI3NAGI	fajci1	1	11	2018-04-16 05:56:52	What is Alice’s major?	Science, Technology, and Society	nothing	3.6	15.384615384615	0	0	isabella	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2QE7F8TI3NAGI	fajci1	1	12	2018-04-16 05:56:56	Where is Alice from?	Maine	nothing	3.693	33.333333333333	0	0	isabella	test	NoFeedback	UserTiming	B	Restudy	fluent	
+A2QE7F8TI3NAGI	fajci1	1	13	2018-04-16 05:57:02	<iframe width="560" height="315" src="https://www.youtube.com/embed/tV2O8tek-nU?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>	na		5.345	0	0	0	shaun	EmbededVideo	NoFeedback	UserTiming	A	watchingVideo	disfluent	
+A2QE7F8TI3NAGI	fajci1	1	14	2018-04-16 05:57:06	Where was Lanre born?	Wisconsin	nothing	3.902	37.5	0	0	shaun	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2QE7F8TI3NAGI	fajci1	1	15	2018-04-16 05:57:11	What college does Lanre attend?	Princeton	nothing	3.569	25	0	0	shaun	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2QE7F8TI3NAGI	fajci1	1	16	2018-04-16 05:57:15	Where did Lanre intern last summer?	ACLU	nothing	3.754	0	0	0	shaun	test	NoFeedback	UserTiming	B	Restudy	disfluent	
+A2QE7F8TI3NAGI	fajci1	1	17	2018-04-16 05:57:21				5.718	0	0	1		StepOut	NA	NA	soStudy.html	NA	
+A2QE7F8TI3NAGI	fajci1	1	18	2018-04-16 05:57:28	Alicia	na	2	6.397	0	0	0	rachel	JOL	NoFeedback	UserTiming	C	Ranking	disfluent	
+A2QE7F8TI3NAGI	fajci1	1	19	2018-04-16 05:57:32	Rohan	na	1	3.776	0	0	0	ashish	JOL	NoFeedback	UserTiming	C	Ranking	fluent	
+A2QE7F8TI3NAGI	fajci1	1	20	2018-04-16 05:57:38	Alice	na	3	5.006	0	0	0	isabella	JOL	NoFeedback	UserTiming	C	Ranking	fluent	
+A2QE7F8TI3NAGI	fajci1	1	21	2018-04-16 05:57:45	Lanre	na	r	6.314	0	0	0	shaun	JOL	NoFeedback	UserTiming	C	Ranking	disfluent	
+A2QE7F8TI3NAGI	fajci1	1	22	2018-04-16 05:57:47				2.209	0	0	1		StepOut	NA	NA	soTest.html	NA	
+A2QE7F8TI3NAGI	fajci1	1	23	2018-04-16 05:57:52	Alicia	na	1	3.56	0	0	0	rachel	pleasantness	NoFeedback	UserTiming	C	likeRanking	disfluent	
+A2QE7F8TI3NAGI	fajci1	1	24	2018-04-16 05:57:57	Rohan	na	3	4.586	0	0	0	ashish	pleasantness	NoFeedback	UserTiming	C	likeRanking	fluent	
+A2QE7F8TI3NAGI	fajci1	1	25	2018-04-16 05:58:01	Alice	na	4	3.192	0	0	0	isabella	pleasantness	NoFeedback	UserTiming	C	likeRanking	fluent	
+A2QE7F8TI3NAGI	fajci1	1	26	2018-04-16 05:58:05	Lanre	na	2	3.595	0	0	0	shaun	pleasantness	NoFeedback	UserTiming	C	likeRanking	disfluent	
+A2QE7F8TI3NAGI	fajci1	1	ExtraInfo_FQ1	2018-04-16 05:58:10	3.72	MinorBumps	Stimuli1.txt	Order2.txt
+A2QE7F8TI3NAGI	fajci1	1	ExtraInfo_FQ2	2018-04-16 05:58:13	3.029	DoneItBefore	Stimuli1.txt	Order2.txt
+A2QE7F8TI3NAGI	fajci1	1	ExtraInfo_All	2018-04-16 05:58:13	NA	Female	27	Bachelors degree	Fluent	NOTHIN	MinorBumps	DoneItBefore	Stimuli1.txt	Order2.txt	http://pincub.com/fajci/login.php?username=A2QE7F8TI3NAGI&sessionnum=2
