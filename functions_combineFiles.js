@@ -648,7 +648,6 @@ function buildLogStringCAC() {
 	
 	var temp = "";
 	var fileNotesLog = "";
-// 	console.log( fileNotesLogRaw);
 
 	// Replace some of the html stuff that needs to be replaced. 
 	fileNotesLog = fileNotesLogRaw.replace(/<\/td>/gi, "\t");
@@ -662,14 +661,10 @@ function buildLogStringCAC() {
 		temp = '<input type="checkbox" id="cfTableCell_Row'+f+'_Col0" checked onclick="cfCheckBoxPress('+f+', event)">';
 		if (document.getElementById('cfTableCell_Row'+f+'_Col0').checked == true) { // if its checkbox is checked...
 			fileNotesLog = fileNotesLog.replace(temp, "Included in analysis");
-// 			fileNotesLog = "Included in analysis" + fileNotesLog;
-// 			console.log( "inc");
 		} else  {
 			fileNotesLog = fileNotesLog.replace(temp, "Excluded from analysis");
-// 			console.log( "excluded");
 		}
 	}
-// 	console.log( "end");
 
 	// Strip out the rest of the html. 
 	var tmp = document.createElement("DIV");
