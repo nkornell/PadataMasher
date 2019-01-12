@@ -1,2 +1,2 @@
 # Padata Masher
-This baby does some stuff. 
+If you read index.html you'll find out what this program does pretty much. 
