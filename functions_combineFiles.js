@@ -654,18 +654,18 @@ function buildLogStringCAC() {
 	fileNotesLog = fileNotesLog.replace(/<\/th>/gi, "\t");
 	fileNotesLog = fileNotesLog.replace(/<\/tr>/gi, "\r\n");
 	fileNotesLog = fileNotesLog.replace(/<br>/gi, "; ");
-	fileNotesLog = fileNotesLog.replace(/ checked /gi, "");
+// 	fileNotesLog = fileNotesLog.replace(/ checked /gi, "");
 
 	// Figure out whether the checkbox is checked, for each checkbox. 
 	for (f = 0; f < inputArray.length; f++) { // for every file...
-		temp = '<input type="checkbox" id="cfTableCell_Row'+f+'_Col0">';
+		temp = '<input type="checkbox" id="cfTableCell_Row'+f+'_Col0" checked onclick="cfCheckBoxPress('+f+', event)">';
 		if (document.getElementById('cfTableCell_Row'+f+'_Col0').checked == true) { // if its checkbox is checked...
 			fileNotesLog = fileNotesLog.replace(temp, "Included in analysis");
 		} else  {
 			fileNotesLog = fileNotesLog.replace(temp, "Excluded from analysis");
 		}
 	}
-	
+
 	// Strip out the rest of the html. 
 	var tmp = document.createElement("DIV");
 	tmp.innerHTML = fileNotesLog;
