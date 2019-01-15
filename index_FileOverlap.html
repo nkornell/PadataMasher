@@ -1,9 +1,9 @@
 <html>
 
 <head>
-	<title>Pivot Table Plus</title>
+	<title>File Overlap</title>
 	<meta charset="UTF-8">
-	<meta name="description" content="Pivot table plus: quick, easy, private, and free data analysis tool">
+	<meta name="description" content="combine and clean: Smart data cleaning and organization, quick, easy, private, and free">
 	<meta name="keywords" content="data, analysis, easy, free, clean, analyze, organize, application, program">
 	<meta name="author" content="Nate Kornell">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,126 +11,69 @@
 	<link rel="stylesheet" type="text/css" href="mystyle.css">
 </head>
 
-<body> 
+<body>
 	<!--  navigation menu -->
 	<nav>
 		<ul>
 			<li><a href="index.html"><div class="navMenuItem"><img src="images/pm.png" > Masher Home</div></a></li>
-			<li><a href="index_CombineAndClean.html"><div class="navMenuItem"><img src="images/cac.png"> Combine & Clean</div></a></li>
-			<li><div class="navMenuItem selected"><img src="images/ptp.png"> Pivot Table Plus</div></li>
+			<li><div class="navMenuItem selected"><img src="images/cac.png"> Combine & Clean</div></li>
+			<li><a href="index_PivotTablePlus.html"><div class="navMenuItem"><img src="images/ptp.png"> Pivot Table Plus</div></a></li>
 			<li style="float:right"><a href="index_About.html"><div class="navMenuItem">About</div></a></li>
 		</ul>
 	</nav>
 
 	<!-- ~~- processing files ~~- -->
 	<div id="processingBox">
-		<div class="dragDropBox" id="processing" style='text-align: left; vertical-align: bottom; padding: 5px'></div>
+		<div class="dragDropBox" id="processing" style='text-align: left; vertical-align: bottom; padding: 5px'> </div>
 	</div>
-
+	
 	<!-- ~~- choosing a file ~~- -->
 	<center>
 	<div id="fileSelectorBox">
 		<div class="roundedBox dragDropBox" id="drop_zone">
-			<img src="images/ptp.png" style="position: relative; width: 300px; opacity: 0.2; ">
 			<div class="middleCenter">
-				<h1>pivot table plus</h1>
-				<h2>drag a text file here</h2>
+				<h1>count file overlap</h1>
+				<h2>drag text files here</h2>
 			</div>
 		</div>
 		
-		<p align="center" style="font-size: 11px;">Or if you prefer <input type="file" id="files" name="files[]" single />
-		<output id="list"></output> <!-- I don't know what this is -->
+		<p style="font-size: 11px;">Or if you prefer <input type="file" id="files" name="files[]" multiple />
+		<output id="list"></output> <!~~ I don't know what this is ~~>
 	</div>
 	</center>
 
+<!-- ~~- combine files ~~- -->
 
-<!-- ~~- Means and Correlations ~~- -->
+<div class='bigBox' id='foBigBox' style="display: none;">
+	<!-- Box for excluded files -->
+	<!-- <div class='boxAroundTable' id='cfExcludedFilesBox' style="display: none;">
+		<div class='heading'>File(s) that could not be imported</div> <br>
+		<p>
+		<div id="cfExcludedFilesText"></div>
+	</div> -->
 
-<div class='bigBox' id='mcBigBox' style="display: none">
-	<div class='bigBox'> <!-- this is for the left half of the screen -->
+	Select files (below) that you want to include in your data output, then press the Export Data button.
 
-		Select variables (right) and analyses (below), then press the Export Results button.
-		<!-- Results label and export button -->
-		<div class='boxAroundTable'>
-			<div class="clearfix"> <!-- This makes it so that the floating buttons don't overflow downwards -->
-				<div class='heading' id='mcHeading'>
-					Results
-					<div class="alert" id="resultAlerts">
-					</div>
-				</div>
-				<div style='float: right;'>
-					<!-- <input class="coolButton" type="button" id="settingsButton" value="Settings" onclick="showHide('settings')"> -->
-					<input class="coolButton" type="button" id="exportButtonMC" value="Export Results" onclick="exportOutput('Pivoted Output', buildOutputStringMC())">
-				</div>
-				<div id="settings" style='display: none;' class="boxAroundTable">
-					<p><label><input type="checkbox" style='float:left' id="checkboxVerboseColumnNames" onclick="computeResults()" checked> Verbose column names </label>
-					<p>Other settings
-					<p>More stuff.
-				</div>
+	<!-- Box for file info and export button -->
+	<div class='boxAroundTable'>
+		<div class="clearfix"> <!-- This makes it so that the floating buttons don't overflow downwards -->
+			<div class='heading' id=foHeading' ></div>  <!-- dfd -->
+			<div style='float: right;'>
+				<!-- <input class="coolButton" type="button" id="exportButtonLog" value="Export Cleanup Notes" onclick="exportOutput('File Cleanup Notes', buildLogStringCAC())"> -->
+				<input class="coolButton" type="button" id="exportButtonFO" value="Export Data" onclick="exportOutput('Overlap Data', buildOutputStringCAC())">
 			</div>
 		</div>
-		
-		<!-- 	Analysis choices -->
-		<p>
-		<div class='boxAroundTable'>
-			<table style="width: 100%;">
-				<tr>
-					<th style="width: 50%;">
-						<div class='heading'>Analyses</div>
-					</th>
-					<th style="width: 50%;">
-						<div class='heading'>Pairwise Analyses</div>
-					</th>
-				</tr>
-				<tr>
-					<td style="vertical-align:top;">
-						<ul>
-							<li><label><input type="checkbox" id="checkboxCount" onclick="computeResults()" checked> Count</label>
-							<li><label><input type="checkbox" id="checkboxSum" onclick="computeResults()"> Sum</label>
-							<li><label><input type="checkbox" id="checkboxMean" onclick="computeResults()"> Mean</label>
-							<li><label><input type="checkbox" id="checkboxMedian" onclick="computeResults()"> Median</label>	
-							<li><label><input type="checkbox" id="checkboxStdDev" onclick="computeResults()"> Standard Deviation</label>
-						</ul>
-					</td>
-					<td style="vertical-align:top;">
-						<ul>
-							<li><label><input type="checkbox" id="checkboxPairwiseCount" onclick="computeResults()"> Pairwise Count</label>
-							<li><label><input type="checkbox" id="checkboxPearson" onclick="computeResults()"> Pearson Correlation</label>
-							<li><label><input type="checkbox" id="checkboxGamma" onclick="computeResults()"> Gamma Correlation</label>
-						</ul>
-					</td>
-				</tr>
-			</table>
-		</div>
-		
-		<!-- 	Results table -->
-		<div id='outputTable' class='dataTable'>
-		</div>
-	
-
 	</div>
 
-	<!-- 	Input data -->
+	<!-- Box for big cac table -->
+	<div class='boxAroundTable'>
+		<div id='foTable' class='dataTable' style="height: 500px;"></div>
+	</div>
+	
 	<p>
-	<div class='boxAroundTable' id='resultsTable' style='display: none'>
-		The data being analyzed <div class="alert" id="inputAlerts"></div> <input type="button" id="inputShowHide" value="Hide" onclick="inputShowHide()">
-		<p>
-		<div class='dataTable' id='inputTable'></div>
-	</div>
-	
-
-<!-- 	Variable selector -->
-	<div class='bigBox' style='flex: 0 0 auto; '>  <!-- the flex thing makes it get the space it needs. 'margin-left: auto;' would make it float right -->
-		<div class='boxAroundTable'>
-<!-- 			<div class="clearfix"> <!~~ This makes it so that the floating buttons don't overflow downwards ~~> -->
-			<div class='heading'>Variables</div><br>
-			<p>
-			<div id="tableVariableSelector"></div>
-<!-- 		</div> -->
-		</div>
-	</div>
-
 </div>
+<p>
+	
 
 </body>
 </html>
@@ -140,6 +83,6 @@
 
 <script src="file_select.js"></script>
 <script src="file_importExportContent.js"></script>
-<script src="functions_computeValues.js"></script>
+<script src="functions_combineFiles.js"></script>
 <script src="functions_stats.js"></script>
 <script src="functions_indexpage.js"></script>
