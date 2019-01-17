@@ -39,7 +39,7 @@
 		</div>
 		
 		<p style="font-size: 11px;">Or if you prefer <input type="file" id="files" name="files[]" multiple />
-		<output id="list"></output> <!~~ I don't know what this is ~~>
+		<output id="list"></output> <!--~~ I don't know what this is ~~>-->
 	</div>
 	</center>
 
@@ -60,8 +60,10 @@
 		<div class="clearfix"> <!-- This makes it so that the floating buttons don't overflow downwards -->
 			<div class='heading' id='cfHeading' ></div> 
 			<div style='float: right;'>
-				<input class="coolButton" type="button" id="exportButtonLog" value="Export Cleanup Notes" onclick="exportOutput('File Cleanup Notes', buildLogStringCAC())">
-				<input class="coolButton" type="button" id="exportButtonCF" value="Export Data" onclick="exportOutput('Cleaned Data', buildOutputStringCAC())">
+				<!-- <input class="coolButton" type="button" id="exportButtonLog" value="Export Cleanup Notes" onclick="exportOutput('File Cleanup Notes', buildOutputStringCACnotes())"> -->
+				<a id="exportNotes" href="#" class='coolButton'>Export Cleanup Notes</a>
+					<!-- <input class="coolButton" type="button" id="exportButton" value="Export Data" onclick="exportOutput('Cleaned Data', buildOutputStringCAC())"> -->
+				<a id="exportButton" href="#" class='coolButton'>Export Data</a>
 			</div>
 		</div>
 	</div>
@@ -75,12 +77,29 @@
 </div>
 <p>
 	
-
 </body>
 </html>
 
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~- -->
 
+
+<!-- I had to put this here because it only shows up in this page, so other pages can't be trying to load it. 
+But it sucks because it's very similar to the code that happens in file_importExportContent and I don't like them separated.  -->
+<script>
+document.getElementById('exportNotes').onclick = function(event){
+	console.log( this);
+	var abc = buildOutputStringCACnotes();
+	var fileName = 'Cleaning Notes.txt';
+	
+    // var json = JSON.stringify(data),
+    // blob = new Blob([abc], {type: "octet/stream"}),
+   	var blob = new Blob([abc], {type: "text/plain;charset=utf-8"});
+	url = window.URL.createObjectURL(blob);
+
+  	this.href = url;
+    this.target = '_blank';
+	this.download = fileName;
+}
+</script>
 
 <script src="file_select.js"></script>
 <script src="file_importExportContent.js"></script>

@@ -83,16 +83,20 @@ function sortTable(n,tableName) {
   var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
   table = document.getElementById(tableName);
   switching = true;
-  
-  // This is hard-coded (i.e., it assumes column 1 is checkboxes, etc.)
-  var sortType = "";
-  if (n == 0) {
-  	sortType = 'checkboxes';
-  } else if (n == 2 || n == 3) {
-  	sortType = "numbers";
-  } else {
-  	sortType = "letters";
-  }
+	
+	if (tableName == "foTable") {
+		sortType = "letters";
+	} else {
+		// This is hard-coded (i.e., it assumes column 1 is checkboxes, etc.)
+		var sortType = "";
+		if (n == 0) {
+			sortType = 'checkboxes';
+		} else if (n == 2 || n == 3) {
+			sortType = "numbers";
+		} else {
+			sortType = "letters";
+		}
+	}
 	
   // Set the sorting direction to ascending:
   dir = "asc"; 

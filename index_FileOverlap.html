@@ -3,20 +3,21 @@
 <head>
 	<title>File Overlap</title>
 	<meta charset="UTF-8">
-	<meta name="description" content="combine and clean: Smart data cleaning and organization, quick, easy, private, and free">
-	<meta name="keywords" content="data, analysis, easy, free, clean, analyze, organize, application, program">
+	<meta name="description" content="find overlap isn't a good name">
+	<meta name="keywords" content="program">
 	<meta name="author" content="Nate Kornell">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="shortcut icon" href="favicon.ico">
 	<link rel="stylesheet" type="text/css" href="mystyle.css">
 </head>
 
+
 <body>
 	<!--  navigation menu -->
 	<nav>
 		<ul>
 			<li><a href="index.html"><div class="navMenuItem"><img src="images/pm.png" > Masher Home</div></a></li>
-			<li><div class="navMenuItem selected"><img src="images/cac.png"> Combine & Clean</div></li>
+			<li><a href="index_CombineAndClean.html"><div class="navMenuItem"><img src="images/cac.png"> Combine & Clean</div></a></li>
 			<li><a href="index_PivotTablePlus.html"><div class="navMenuItem"><img src="images/ptp.png"> Pivot Table Plus</div></a></li>
 			<li style="float:right"><a href="index_About.html"><div class="navMenuItem">About</div></a></li>
 		</ul>
@@ -38,34 +39,31 @@
 		</div>
 		
 		<p style="font-size: 11px;">Or if you prefer <input type="file" id="files" name="files[]" multiple />
-		<output id="list"></output> <!~~ I don't know what this is ~~>
+		<output id="list"></output> <!---- I don't know what this is -->
 	</div>
 	</center>
 
-<!-- ~~- combine files ~~- -->
+<!-- ~~- fo ~~- -->
 
 <div class='bigBox' id='foBigBox' style="display: none;">
 	<!-- Box for excluded files -->
-	<!-- <div class='boxAroundTable' id='cfExcludedFilesBox' style="display: none;">
+	<div class='boxAroundTable' id='foProblemBox' style="display: none;">
 		<div class='heading'>File(s) that could not be imported</div> <br>
 		<p>
-		<div id="cfExcludedFilesText"></div>
-	</div> -->
-
-	Select files (below) that you want to include in your data output, then press the Export Data button.
+		<div id="foProblems"></div>
+	</div>
 
 	<!-- Box for file info and export button -->
 	<div class='boxAroundTable'>
 		<div class="clearfix"> <!-- This makes it so that the floating buttons don't overflow downwards -->
-			<div class='heading' id=foHeading' ></div>  <!-- dfd -->
+			<div class='heading' id='foHeading' ></div>  <!-- dfd -->
 			<div style='float: right;'>
-				<!-- <input class="coolButton" type="button" id="exportButtonLog" value="Export Cleanup Notes" onclick="exportOutput('File Cleanup Notes', buildLogStringCAC())"> -->
-				<input class="coolButton" type="button" id="exportButtonFO" value="Export Data" onclick="exportOutput('Overlap Data', buildOutputStringCAC())">
+				<input class="coolButton" type="button" id="exportButtonFO" value="Export Data" onclick="exportOutput('Overlap Data', buildOutputStringFO())">
 			</div>
 		</div>
 	</div>
 
-	<!-- Box for big cac table -->
+	<!-- Box for big FO table -->
 	<div class='boxAroundTable'>
 		<div id='foTable' class='dataTable' style="height: 500px;"></div>
 	</div>
@@ -83,6 +81,6 @@
 
 <script src="file_select.js"></script>
 <script src="file_importExportContent.js"></script>
-<script src="functions_combineFiles.js"></script>
+<script src="functions_fileOverlap.js"></script>
 <script src="functions_stats.js"></script>
 <script src="functions_indexpage.js"></script>
