@@ -640,7 +640,7 @@ function buildOutputStringCAC() {
 	return outString;
 }
 
-function buildLogStringCAC() {
+function buildOutputStringCACnotes() {
 	// Build the file cleanup notes string. Which is basically what's showing on the screen
 	// when this is run. This takes the string that was created when the data were imported,
 	// strips out the html and puts in tabs and stuff instead. Then it figures out whether
@@ -673,7 +673,7 @@ function buildLogStringCAC() {
 	
 	// Figure out the current date and time.
 	var d = new Date();
-	fileNotesLog += "Analyzed on " + d + "\r\n\r\n";
+	fileNotesLog += "Analyzed on " + d + "\r\n";
 	
 // 	console.log(fileNotesLog);
 	return fileNotesLog;

@@ -17,10 +17,27 @@ function createInputCell() {
 		var delimiter = "\t";
 	}
 	fileDelimiterArray.push(delimiter); // add this file's delimiter to fileDelimiterArray
+	
+	var countCommasQuotes = (first1000characters.match(/","/g) || []).length
+
+	
 
 	// Split the string into rows
 	var inputRow = rawFileInputString.split(/\r\n|\r|\n/g);
-	
+
+	// If it's comma-delimited with quotations marks, get rid of the quotation marks. 
+	if (countCommasQuotes > countCommas/3) {
+		delimiter = "\t";
+		for (i = 0; i < inputRow.length; i++) { 
+			// console.log( inputRow[i].slice(0,1));
+			if (inputRow[i].slice(0,1) == '"' && inputRow[i].slice(-1) == '"') { // if the row starts and ends with quotation marks
+				inputRow[i] = inputRow[i].replace(/","/gi, "\t"); // replace the following three characters "," with a tab
+				inputRow[i] = inputRow[i].slice(1, inputRow[i].length-1) // get rid of first and last character (" marks)
+			}
+		}
+	}
+
+
 	// Figure out inputCell[]
 	var temp = []; 
 	for (i = 0; i < inputRow.length; i++) { 
@@ -28,12 +45,14 @@ function createInputCell() {
 		if (inputRow[i].trim().length > 0) { // if it's not a blank line
 			temp = inputRow[i].split(delimiter); // Set temp[] = the row of data, split by delimiter
 			for (k = 0; k < temp.length; k++) {
-				temp[k] = temp[k].trim(); // Trim each item in temp
+				temp[k] = String(temp[k]).trim(); // Trim each item in temp
 			}
 			inputCell.push(temp); // Add temp to inputCell[]
 		}
 	}
 }
+
+
 
 function afterAllFilesAreProcessed() {
 	if (analysisType == "compute") {
@@ -41,7 +60,7 @@ function afterAllFilesAreProcessed() {
 		buildTablePTP("input");
 		computeResults();
 		buildVariableSelectorTable();
-	} else {
+	} else if (analysisType == "combine" ) {
 		// if it's combine files
 		analyzeCFexpectedvalues();
 		computeNumProblemsComparedToOtherFiles();
@@ -49,19 +68,52 @@ function afterAllFilesAreProcessed() {
 		adjustCheckboxes();
 		hideFileSelectorStuff();
 		showCFstuff();
+	} else if (analysisType == "importFOdatabase") {
+		import_FOdatabase();
+	} else {
+		add_file_to_FOdatabase();
+		showFOstuff();
+		hideFileSelectorStuff();
 	}
 }
 
-function exportOutput(fName, outString) {
-	var element = document.createElement('a');
 
-	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(outString));
-	element.setAttribute('download', fName);
+// if the exportbutton is pressed this happens. It puts the data in a blob and then makes it download. 
+document.getElementById('exportButton').onclick = function(event){
+	if (analysisType == 'combine') {
+		var abc = buildOutputStringCAC();
+		var fileName = 'Cleaned Data.txt';
+	} else {
+		var abc = buildOutputStringPTP();
+		var fileName = 'Pivoted Data.txt';
+	}
+    // var json = JSON.stringify(data),
+    // blob = new Blob([abc], {type: "octet/stream"}),
+   	var blob = new Blob([abc], {type: "text/plain;charset=utf-8"});
+	url = window.URL.createObjectURL(blob);
 
-	element.style.display = 'none';
-	document.body.appendChild(element);
-
-	element.click();
-
-	document.body.removeChild(element);
+  	this.href = url;
+    this.target = '_blank';
+	this.download = fileName;
 }
+
+
+
+
+
+// ----- The function below works but only with files under like 1.6 mb, so I decided to use blobs and create a URL and stuff. 
+// function exportOutput(fName, outString) {
+// 	var element = document.createElement('a');
+
+// 	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(outString));
+// 	element.setAttribute('download', fName);
+
+// 	element.style.display = 'none';
+// 	document.body.appendChild(element);
+
+// 	element.click();
+
+// 	document.body.removeChild(element);
+// }
+
+	

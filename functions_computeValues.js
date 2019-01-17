@@ -438,7 +438,7 @@ function concatenateLevelsFromThisRow(rowNum,colsSelected) {
 	return temp.trim();
 }
 
-function buildOutputStringMC() {
+function buildOutputStringPTP() {
 	var outString = "";
 	if (outputCell[0] === undefined) {
 		outString += "No Output Data Available";

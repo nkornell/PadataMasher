@@ -24,9 +24,12 @@ function handleFileSelect(evt) {
 function filesSelectedStepOne (listOfFiles) {
 	if (document.URL.includes("Combine")) {
 		analysisType = "combine";
-	} else {
+	} else if (document.URL.includes("Pivot")) {
 		analysisType = "compute";
+	} else {
+		analysisType = "references_import"
 	}
+	
 	// hide and show some stuff
 	var x = document.getElementById("fileSelectorBox");
 	x.style.display = "none";
@@ -74,9 +77,13 @@ function importDataFromOneFile(f) {
 
 		if (analysisType == "compute") {
 			afterAllFilesAreProcessed();
-		} else {
+		} else if (analysisType == "combine") {
 			compute_cfDataForAFile(f.name);
-			chooseAFileToImport(); // this ends up being recursive, because chooseAFileToImport calls importDataFromOneFile.
+			chooseAFileToImport(); // this ends up being recursive, because chooseAFileToImport calls importDataFromOneFile.		}
+		} else if (analysisType == "importFOdatabase") {
+			afterAllFilesAreProcessed();
+		} else {
+			afterAllFilesAreProcessed();		
 		}
 	}
 }
