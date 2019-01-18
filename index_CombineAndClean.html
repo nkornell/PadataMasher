@@ -28,20 +28,18 @@
 	</div>
 	
 	<!-- ~~- choosing a file ~~- -->
-	<center>
 	<div id="fileSelectorBox">
 		<div class="roundedBox dragDropBox" id="drop_zone">
-			<img src="images/cac.png" style="position: relative; width: 300px; opacity: 0.2; ">
+			<img src="images/cac.png" style="position: relative; width: 300px; opacity: 0.4; ">
 			<div class="middleCenter">
 				<h1>combine and clean</h1>
 				<h2>drag text files here</h2>
 			</div>
 		</div>
 		
-		<p style="font-size: 11px;">Or if you prefer <input type="file" id="files" name="files[]" multiple />
+		<p style="font-size: 11px; text-align: center">Or if you prefer <input type="file" id="files" name="files[]" multiple />
 		<output id="list"></output> <!--~~ I don't know what this is ~~>-->
 	</div>
-	</center>
 
 <!-- ~~- combine files ~~- -->
 
@@ -86,13 +84,10 @@
 But it sucks because it's very similar to the code that happens in file_importExportContent and I don't like them separated.  -->
 <script>
 document.getElementById('exportNotes').onclick = function(event){
-	console.log( this);
 	var abc = buildOutputStringCACnotes();
 	var fileName = 'Cleaning Notes.txt';
 	
-    // var json = JSON.stringify(data),
-    // blob = new Blob([abc], {type: "octet/stream"}),
-   	var blob = new Blob([abc], {type: "text/plain;charset=utf-8"});
+ 	var blob = new Blob([abc], {type: "text/plain;charset=utf-8"});
 	url = window.URL.createObjectURL(blob);
 
   	this.href = url;

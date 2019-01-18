@@ -3,7 +3,7 @@ function createInputCell() {
 	// inputCell[row][column] is used when there's a single input file. 
 	// (inputCell also used to make inputArray[file][row][column], when there are multiple input files, but that happens elsewhere, sometimes. 
 	
-
+	
 	// Reset inputCell
 	inputCell = [];
 
@@ -71,7 +71,7 @@ function afterAllFilesAreProcessed() {
 	} else if (analysisType == "importFOdatabase") {
 		import_FOdatabase();
 	} else {
-		add_file_to_FOdatabase();
+		compute_citation_overlap(); // dfd I'd want to make this happen when they press a button or select two files or whatever later on
 		showFOstuff();
 		hideFileSelectorStuff();
 	}
@@ -83,12 +83,14 @@ document.getElementById('exportButton').onclick = function(event){
 	if (analysisType == 'combine') {
 		var abc = buildOutputStringCAC();
 		var fileName = 'Cleaned Data.txt';
-	} else {
+	} else if (analysisType == 'compute') {
 		var abc = buildOutputStringPTP();
 		var fileName = 'Pivoted Data.txt';
+	} else {
+		var abc = buildOutputStringFO();
+		var fileName = "Citation Overlap.txt";
 	}
-    // var json = JSON.stringify(data),
-    // blob = new Blob([abc], {type: "octet/stream"}),
+
    	var blob = new Blob([abc], {type: "text/plain;charset=utf-8"});
 	url = window.URL.createObjectURL(blob);
 
