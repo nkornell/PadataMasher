@@ -86,7 +86,8 @@ th {
 	margin: 50px; 
 	padding: 20px; 
 	max-width: 600px;
-	text-align: left;
+    text-align: left;
+    min-height: 200px;
 }
 
 .dragDropBox {

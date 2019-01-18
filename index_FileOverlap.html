@@ -29,8 +29,7 @@
 	</div>
 	
 	<!-- ~~- choosing a file ~~- -->
-	<center>
-	<div id="fileSelectorBox">
+	<div id="fileSelectorBox" style='text-align: center'>
 		<div class="roundedBox dragDropBox" id="drop_zone">
 			<div class="middleCenter">
 				<h1>count file overlap</h1>
@@ -41,16 +40,15 @@
 		<p style="font-size: 11px;">Or if you prefer <input type="file" id="files" name="files[]" multiple />
 		<output id="list"></output> <!---- I don't know what this is -->
 	</div>
-	</center>
 
 <!-- ~~- fo ~~- -->
 
 <div class='bigBox' id='foBigBox' style="display: none;">
 	<!-- Box for excluded files -->
 	<div class='boxAroundTable' id='foProblemBox' style="display: none;">
-		<div class='heading'>File(s) that could not be imported</div> <br>
+		<div class='heading'>Problems</div> <br>
 		<p>
-		<div id="foProblems"></div>
+		<div id="foProblemText" style="font-family: monospace;"></div>
 	</div>
 
 	<!-- Box for file info and export button -->
@@ -58,7 +56,8 @@
 		<div class="clearfix"> <!-- This makes it so that the floating buttons don't overflow downwards -->
 			<div class='heading' id='foHeading' ></div>  <!-- dfd -->
 			<div style='float: right;'>
-				<input class="coolButton" type="button" id="exportButtonFO" value="Export Data" onclick="exportOutput('Overlap Data', buildOutputStringFO())">
+				<!-- <input class="coolButton" type="button" id="exportButtonFO" value="Export Data" onclick="exportOutput('Citation Overlap', buildOutputStringFO())"> -->
+				<a id="exportButton" href="#" class='coolButton'>Export Data</a>
 			</div>
 		</div>
 	</div>
