@@ -48,7 +48,7 @@ $output = $_SESSION['columnNames'] . $_SESSION['lineEnding']; // start by adding
 // }
 
 // Output some summary info. 
-// dfd: Maybe report total rows, columnNames, files included, files not included, whether there were mixed delimiters, etc? 
+// : Maybe report total rows, columnNames, files included, files not included, whether there were mixed delimiters, etc? 
 
 
 // --Choose a filename-- //

@@ -27,7 +27,7 @@ function showLinks(str) {
 			document.getElementById("downloadLinks").innerHTML = this.responseText;
 		}
 	};
-	xmlhttp.open("GET", "CombineSaver.php?q=" + str +"&sNames=" + figureOutBoxes(), true); // dfd figureOutBoxes returns an array that ends up being delimited by commas later. either change that or make it work when a filename contains a comma. 
+	xmlhttp.open("GET", "CombineSaver.php?q=" + str +"&sNames=" + figureOutBoxes(), true); //  figureOutBoxes returns an array that ends up being delimited by commas later. either change that or make it work when a filename contains a comma. 
 	xmlhttp.send();
 }
 
@@ -100,7 +100,7 @@ if (isset($_POST['submit'])){
 }
 
 
-// dfd to do
+//  to do
 
 // Change last column to num col name rows, add notes column after
 // Maybe make it identify commonalities among rows that are the wrong number of columns? 

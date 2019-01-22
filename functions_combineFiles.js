@@ -20,7 +20,7 @@
 // ---- Make the outline dashed without having to wiggle the mouse? 
 // ---- Or make it so it doesn't matter where a file is dropped, it's treated like a drag and drop? 
 
-// Deviant Rows handling dfd
+// Deviant Rows handling
 // - Maybe make it identify commonalities among deviant rows.
 // ---- this could be done only on 'perfect' files. 
 // ---- it could look for rows that have the same trial number and error message and then 

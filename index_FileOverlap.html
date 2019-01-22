@@ -3,7 +3,7 @@
 <head>
 	<title>File Overlap</title>
 	<meta charset="UTF-8">
-	<meta name="description" content="find overlap isn't a good name">
+	<meta name="description" content="file overlap isn't a good name">
 	<meta name="keywords" content="program">
 	<meta name="author" content="Nate Kornell">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,7 +32,7 @@
 	<div id="fileSelectorBox" style='text-align: center'>
 		<div class="roundedBox dragDropBox" id="drop_zone">
 			<div class="middleCenter">
-				<h1>count file overlap</h1>
+				<h1>citation overlap</h1>
 				<h2>drag text files here</h2>
 			</div>
 		</div>
@@ -53,20 +53,38 @@
 
 	<!-- Box for file info and export button -->
 	<div class='boxAroundTable'>
-		<div class="clearfix"> <!-- This makes it so that the floating buttons don't overflow downwards -->
-			<div class='heading' id='foHeading' ></div>  <!-- dfd -->
-			<div style='float: right;'>
-				<!-- <input class="coolButton" type="button" id="exportButtonFO" value="Export Data" onclick="exportOutput('Citation Overlap', buildOutputStringFO())"> -->
-				<a id="exportButton" href="#" class='coolButton'>Export Data</a>
-			</div>
-		</div>
+		<div class='heading' id="foTable_heading"></div>  
+		. 
+		<!-- This period is here because there has to be a character here because heading is a float left. 
+		I should change that and make it work on all pages, probably. 
+		I'll make it so the export button goes with the data, not above it, and 
+		then this won't have to float left.  -->
 	</div>
 
-	<!-- Box for big FO table -->
+
+	<!-- Box for FO table that shows how many times each article was cited by year -->
 	<div class='boxAroundTable'>
-		<div id='foTable' class='dataTable' style="height: 500px;"></div>
+		<div class="clearfix"> <!-- Clearfix makes it so that the floating buttons don't overflow downwards -->
+			<div style='float: right;'>
+				<a id="exportButton" class='coolButton'>Export Data</a>
+			</div>
+		</div>
+		<div id='foTable_numberOfOverlapsEtc' class='dataTable' style="max-height: 500px;"></div>
 	</div>
-	
+
+	<!-- Box for FO table that lists all citers -->
+	<!-- Note: Clearfix makes it so that the floating buttons don't overflow downwards -->
+	<!-- <div class='boxAroundTable'>
+		<div class="clearfix"> 
+			<div style='float: right;'>
+				<a id="exportButton_listallciters" class='coolButton'>Export Data</a>
+			</div>
+		</div>
+		<div id='foTable_listAllCiters' class='dataTable' style="max-height: 500px;"></div>
+	</div> -->
+	<!-- </div> -->
+
+
 	<p>
 </div>
 <p>

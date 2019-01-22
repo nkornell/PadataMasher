@@ -2,7 +2,8 @@
 /* I think you can pretty much just put whatever value into whatever variable name you want. */
   --greywolf: #ccc;
   --ptpColor: #00aa22;
-  --cacColor: #b020e0; 
+  --cacColor: #b020e0;
+  --backyground: rgb(149, 218, 235);
 }
 
 .clearfix::after {
@@ -13,7 +14,7 @@
 
 body {
 	font-family: sans-serif; 
-    background-color: orange;		
+    background-color: var(--backyground);		
 }
 
 table {
@@ -53,7 +54,8 @@ th {
 
 .boxAroundTable {
 	padding: 12px;
-	margin: 10px;
+    margin: 10px;
+    margin-bottom: 30px;
     box-shadow: 0 0 1px 1px var(--greywolf);
     vertical-align: top;
 	border-radius: 5px;
@@ -116,7 +118,9 @@ th {
 }
 
 .coolButton {
-    background-color: #fff;
+    background-color: var(--backyground);
+    color: initial;
+    text-decoration: none;
     border: 1px solid #789;
     padding: 5px 5px;
     text-align: center;
@@ -131,20 +135,17 @@ th {
     /* -webkit-appearance: button;
     -moz-appearance: button;
     appearance: button; */
-
-    text-decoration: none;
-    color: initial;
-    background-color: initial;
 }
 
 .coolButton:hover {
-    background-color: #789;
-    color: white;
+    background-color: white;
+    color: black;
 /*     border: 1px solid #ddd; */
 }
 
 .coolButton:active {
-	background-color: #000;
+    background-color: black;
+    color: white;
 }
 
 .coolButton:focus {
