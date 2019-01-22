@@ -31,7 +31,7 @@ function createInputCell() {
 		for (i = 0; i < inputRow.length; i++) { 
 			// console.log( inputRow[i].slice(0,1));
 			if (inputRow[i].slice(0,1) == '"' && inputRow[i].slice(-1) == '"') { // if the row starts and ends with quotation marks
-				inputRow[i] = inputRow[i].replace(/","/gi, "\t"); // replace the following three characters "," with a tab
+				inputRow[i] = inputRow[i].replace(/","/gi, "\t"); // replace quotation mark comma quotation mark (i.e., ",") with a tab
 				inputRow[i] = inputRow[i].slice(1, inputRow[i].length-1) // get rid of first and last character (" marks)
 			}
 		}
@@ -81,22 +81,23 @@ function afterAllFilesAreProcessed() {
 // if the exportbutton is pressed this happens. It puts the data in a blob and then makes it download. 
 document.getElementById('exportButton').onclick = function(event){
 	if (analysisType == 'combine') {
-		var abc = buildOutputStringCAC();
-		var fileName = 'Cleaned Data.txt';
+		writeToFile(buildOutputStringCAC(), 'Cleaned Data.txt');
 	} else if (analysisType == 'compute') {
-		var abc = buildOutputStringPTP();
-		var fileName = 'Pivoted Data.txt';
+		writeToFile(buildOutputStringPTP(), 'Pivoted Data.txt');
 	} else {
-		var abc = buildOutputStringFO();
-		var fileName = "Citation Overlap.txt";
+		writeToFile(buildOutputStringFO(), "Citation Overlap Tally.txt");
 	}
+}
 
-   	var blob = new Blob([abc], {type: "text/plain;charset=utf-8"});
+function writeToFile(str, fileName) {
+	var a = document.getElementById('exportButton'); // this could be any object, I'm pretty sure. I chose export button cause whatever. 
+
+   	var blob = new Blob([str], {type: "text/plain;charset=utf-8"});
 	url = window.URL.createObjectURL(blob);
 
-  	this.href = url;
-    this.target = '_blank';
-	this.download = fileName;
+  	a.href = url;
+    a.target = '_blank';
+	a.download = fileName;
 }
 
 

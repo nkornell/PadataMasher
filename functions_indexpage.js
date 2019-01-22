@@ -84,7 +84,7 @@ function sortTable(n,tableName) {
   table = document.getElementById(tableName);
   switching = true;
 	
-	if (tableName == "foTable") {
+	if (tableName != "cfTable") {
 		sortType = "letters";
 	} else {
 		// This is hard-coded (i.e., it assumes column 1 is checkboxes, etc.)
