@@ -87,9 +87,10 @@ th {
 	border-radius: 10px; 
 	margin: 50px; 
 	padding: 20px; 
-	max-width: 600px;
+	/* max-width: 600px; */
     text-align: left;
     min-height: 200px;
+    overflow: auto;
 }
 
 .dragDropBox {
@@ -132,6 +133,7 @@ th {
     margin-left: 5px;
     margin-right: 5px;
     text-decoration: none;
+    font-size: 16;
     /* -webkit-appearance: button;
     -moz-appearance: button;
     appearance: button; */
