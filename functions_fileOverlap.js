@@ -248,7 +248,7 @@ function compute_citation_overlap() {
 		foOutput_numerical += totalInputArticles +"\t";
 		foOutput_numerical += uniqueId_of_oldest +"\t";
 		foOutput_numerical += minYearAll +"\t";
-		foOutput_numerical += maxYearAll +"\t"; // dfd this isn't right
+		foOutput_numerical += year_zero +"\t";
 		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].sumAfterYearZero +"\t";
 		foOutput_numerical += outputRow[i].trim() + "\r\n";
 	}
@@ -288,55 +288,55 @@ function buildOutputStringFO() {
 }
 
 
-function buildTableFO_listAllCiters() {
-	// This isn't called anymore. I think it might be for debugging. 
-	var out = "";
-	var tableName = "foTable_listAllCiters";
-
-	// Build Header
-	out = "<tr>";
-	var columnNames = ['Cited By', 'Year', 'Number Cited', 'Article Cited', 'Date Added', 'Notes'];
-	for (i = 0; i < columnNames.length; i++) {
-		out += "<th onclick='sortTable("+i+", "+'"'+tableName+'"'+")' title='Click to Sort'>"+columnNames[i]+"</th>";
-	}
-	out += "</tr>";
-
-	// Build all the other cells.
-	var tempCombo = "";
-	var tempNumCited = "";
-	for (i = 0; i < article.length; i++) {
-		tempNumCited = article[i].citee_combined.split(stringBetweenArticles).length;
-		tempCombo = article[i].citee_combined;
-		if (tempCombo.includes(stringBetweenArticles)) {
-			tempCombo = tempCombo.replace(reggie,"<br><div style='color:red'>"+stringBetweenArticles+"</div>")
-			// tempCombo = '<td style="text-align: center;" class=cfTableCell_Row_warning>'+tempCombo+'</td>';
-			out += "<tr class=cfTableCell_Row_warning>";
-		} else {
-			// tempCombo= '<td style="text-align: center;">'+tempCombo+'</td>';
-			out += "<tr>";
-		}
-
-		// out = out + "<tr>";
-		out = out + "<td>" + article[i].uniqueID + "</td>";
-		out = out + "<td>" + article[i]["Publication Year"] + "</td>";
-		out = out + "<td>" + tempNumCited + "</td>";
-		out = out + "<td>" + tempCombo + "</td>";
-		out = out + "<td>" + article[i].dateAdded + "</td>";
-		out = out + "<td style='color:red'>" + article[i].notes + "</td>";
-		out = out + "</tr>";
-	}
-	
-	// Put everything in the HTML on the page.
-	var thisTable = document.getElementById(tableName);
-	thisTable.innerHTML = "<table>" + out + "</table>";
-
-	// If necessary, add an alert for excluded files. 
-	if (excludedReferences.length > 0) {
-		var x = document.getElementById("foProblemBox");
-		x.style.display = "block";
-		document.getElementById("foProblemText").innerHTML = excludedReferences;
-	}
-}
+// function buildTableFO_listAllCiters() {
+// 	// This isn't called anymore. I think it might be for debugging. 
+// 	var out = "";
+// 	var tableName = "foTable_listAllCiters";
+// 
+// 	// Build Header
+// 	out = "<tr>";
+// 	var columnNames = ['Cited By', 'Year', 'Number Cited', 'Article Cited', 'Date Added', 'Notes'];
+// 	for (i = 0; i < columnNames.length; i++) {
+// 		out += "<th onclick='sortTable("+i+", "+'"'+tableName+'"'+")' title='Click to Sort'>"+columnNames[i]+"</th>";
+// 	}
+// 	out += "</tr>";
+// 
+// 	// Build all the other cells.
+// 	var tempCombo = "";
+// 	var tempNumCited = "";
+// 	for (i = 0; i < article.length; i++) {
+// 		tempNumCited = article[i].citee_combined.split(stringBetweenArticles).length;
+// 		tempCombo = article[i].citee_combined;
+// 		if (tempCombo.includes(stringBetweenArticles)) {
+// 			tempCombo = tempCombo.replace(reggie,"<br><div style='color:red'>"+stringBetweenArticles+"</div>")
+// 			// tempCombo = '<td style="text-align: center;" class=cfTableCell_Row_warning>'+tempCombo+'</td>';
+// 			out += "<tr class=cfTableCell_Row_warning>";
+// 		} else {
+// 			// tempCombo= '<td style="text-align: center;">'+tempCombo+'</td>';
+// 			out += "<tr>";
+// 		}
+// 
+// 		// out = out + "<tr>";
+// 		out = out + "<td>" + article[i].uniqueID + "</td>";
+// 		out = out + "<td>" + article[i]["Publication Year"] + "</td>";
+// 		out = out + "<td>" + tempNumCited + "</td>";
+// 		out = out + "<td>" + tempCombo + "</td>";
+// 		out = out + "<td>" + article[i].dateAdded + "</td>";
+// 		out = out + "<td style='color:red'>" + article[i].notes + "</td>";
+// 		out = out + "</tr>";
+// 	}
+// 	
+// 	// Put everything in the HTML on the page.
+// 	var thisTable = document.getElementById(tableName);
+// 	thisTable.innerHTML = "<table>" + out + "</table>";
+// 
+// 	// If necessary, add an alert for excluded files. 
+// 	if (excludedReferences.length > 0) {
+// 		var x = document.getElementById("foProblemBox");
+// 		x.style.display = "block";
+// 		document.getElementById("foProblemText").innerHTML = excludedReferences;
+// 	}
+// }
 
 
 
