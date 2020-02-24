@@ -184,6 +184,7 @@ function compute_citation_overlap() {
 
 	// Figure out which citee was sorted first, second, etc. 
 	var foof = [];
+	totalInputArticles = 0;
 	for (i = 0; i < listOfCitees_combined.length; i++) {
 		if (listOfCitees_combined[i].includes("-&-") == false) {
 			foof.push(citee_year_count[listOfCitees_combined[i]].firstYear);
@@ -202,6 +203,7 @@ function compute_citation_overlap() {
 			} else {
 				citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation = "middle";
 			}
+			totalInputArticles++;
 		}
 	}
 	// console.log( citee_year_count.firstYear.sort());
@@ -230,7 +232,7 @@ function compute_citation_overlap() {
 	}
 
 	// Create header row for the output in a tab-delimited string.
-	foOutput_numerical = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tOldest article cited\tOldest article's year\tTotal since newest released ("+year_zero+")\t";
+	foOutput_numerical = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article cited\tOldest article's year\tTotal since newest released ("+year_zero+")\t";
 	for (y = maxYearAll; y >= minYearAll; y--) {
 		foOutput_numerical += y + "\t";
 	}
@@ -243,6 +245,7 @@ function compute_citation_overlap() {
 		foOutput_numerical += listOfCitees_combined[i]+ "\t";
 		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].firstYear +"\t";
 		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation +"\t";
+		foOutput_numerical += totalInputArticles +"\t";
 		foOutput_numerical += uniqueId_of_oldest +"\t";
 		foOutput_numerical += minYearAll +"\t";
 		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].sumAfterYearZero +"\t";
