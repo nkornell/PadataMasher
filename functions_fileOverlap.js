@@ -232,7 +232,7 @@ function compute_citation_overlap() {
 	}
 
 	// Create header row for the output in a tab-delimited string.
-	foOutput_numerical = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article cited\tOldest article's year\tTotal since newest released ("+year_zero+")\t";
+	foOutput_numerical = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article\tOldest article's year\tNewest article's year\tTotal since newest released ("+year_zero+")\t";
 	for (y = maxYearAll; y >= minYearAll; y--) {
 		foOutput_numerical += y + "\t";
 	}
@@ -248,6 +248,7 @@ function compute_citation_overlap() {
 		foOutput_numerical += totalInputArticles +"\t";
 		foOutput_numerical += uniqueId_of_oldest +"\t";
 		foOutput_numerical += minYearAll +"\t";
+		foOutput_numerical += maxYearAll +"\t"; // dfd this isn't right
 		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].sumAfterYearZero +"\t";
 		foOutput_numerical += outputRow[i].trim() + "\r\n";
 	}
