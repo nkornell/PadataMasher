@@ -198,6 +198,7 @@ function compute_citation_overlap() {
 				year_zero = citee_year_count[listOfCitees_combined[i]].firstYear; // set year zero, the year that the most recent one came out. 
 			} else if (citee_year_count[listOfCitees_combined[i]].firstYear == Math.min.apply(null, foof)) {
 				citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation = "oldest";
+				uniqueId_of_oldest = listOfCitees_combined[i];
 			} else {
 				citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation = "middle";
 			}
@@ -211,13 +212,14 @@ function compute_citation_overlap() {
 	// console.log( "over");
 	// list.sort((a, b) => (a.color > b.color) ? 1 : -1)
 
+	// dfd i think i can dedlete const list, but i forget what it is and why it's here so not 100% sure
 	const list = [
 		{ color: 'white', size: 'XXL' },
 		{ color: 'red', size: 'XL' },
 		{ color: 'black', size: 'M' }
 	  ]
 
-	  console.log(  list.sort((a, b) => (a.color > b.color) ? 1 : -1))
+	// console.log(  list.sort((a, b) => (a.color > b.color) ? 1 : -1))
 
 	// Figure out total citations since year zero for every citee combination. 
 	for (i = 0; i < listOfCitees_combined.length; i++) {
@@ -228,24 +230,29 @@ function compute_citation_overlap() {
 	}
 
 	// Create header row for the output in a tab-delimited string.
-	foOutput_numerical = "Article(s) Being Cited\tEarliest Citation\tTotal since newest released ("+year_zero+")\tOrder of publication\t";
+	foOutput_numerical = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tOldest article cited\tOldest article's year\tTotal since newest released ("+year_zero+")\t";
 	for (y = maxYearAll; y >= minYearAll; y--) {
 		foOutput_numerical += y + "\t";
 	}
 	foOutput_numerical = foOutput_numerical.trim() + "\r\n";
+				
+
 	
 	// Add the rest of the data to the output string
 	for (i = 0; i < listOfCitees_combined.length; i++) {
 		foOutput_numerical += listOfCitees_combined[i]+ "\t";
 		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].firstYear +"\t";
-		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].sumAfterYearZero +"\t";
 		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation +"\t";
+		foOutput_numerical += uniqueId_of_oldest +"\t";
+		foOutput_numerical += minYearAll +"\t";
+		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].sumAfterYearZero +"\t";
 		foOutput_numerical += outputRow[i].trim() + "\r\n";
 	}
 	foOutput_numerical = foOutput_numerical.trim();
 
 	buildTableFO_numberOfOverlapsEtc(foOutput_numerical);
-	// buildTableFO_listAllCiters();
+// 	buildTableFO_listAllCiters();
+
 }
 
 function buildTableFO_numberOfOverlapsEtc(inString) {
@@ -278,6 +285,7 @@ function buildOutputStringFO() {
 
 
 function buildTableFO_listAllCiters() {
+	// This isn't called anymore. I think it might be for debugging. 
 	var out = "";
 	var tableName = "foTable_listAllCiters";
 
