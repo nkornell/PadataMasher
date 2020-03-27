@@ -33,17 +33,12 @@ var foOutput_numerical = "";
 var stringBetweenArticles = "-&-";
 var reggie = new RegExp(stringBetweenArticles,"g"); // this is a regular expression that can be used to do a replace all
 var year_zero = 0;
+// var first_year_of_all_files = 0;
 
 function showFOstuff() {
 	var x = document.getElementById("foBigBox");
 	x.style.display = "block";
 }
-
-// function import_FOdatabase() {
-// 	// this was supposed to work with the WOS api calls I was going to write. but that didnt' happen, so this (and whtever it's related to) should be deleted.
-// 	console.log( "import_FOdatabase needs to be written");
-// 	document.getElementById("foTable__heading").innerHTML = fileCounter + ' files imported.';
-// }
 
 function Article(din, cin, nin, inputArray) {
 	this.dateAdded = din;
@@ -92,6 +87,7 @@ function add_file_to_FOdatabase() {
 			article[article.length-1].uniqueID = tempID;
 			tempIDlist.push(tempID);
 		} else {
+			// this seems to happen a lot and i'm not sure why... like it should happen once if there's one repeated line, but it shows up more than once in the output.
 			excludedReferences += "<p>In <strong>"+fileNameString+":</strong> <i> Excluded this line because it appeared more than once: </i><br>" + tempID + "\r\n";
 		}
 	}
@@ -220,6 +216,7 @@ function compute_citation_overlap() {
 			} else if (citee_year_count[listOfCitees_combined[i]].firstYear == Math.min.apply(null, foof)) {
 				citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation = "oldest";
 				uniqueId_of_oldest = listOfCitees_combined[i];
+// 				first_year_of_all_files = = citee_year_count[listOfCitees_combined[i]].firstYear; 
 			} else {
 				citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation = "middle";
 			}
@@ -243,10 +240,16 @@ function compute_citation_overlap() {
 		for (y = year_zero; y <= maxYearAll; y++) {
 			citee_year_count[listOfCitees_combined[i]].sumAfterYearZero += citee_year_count[listOfCitees_combined[i]][y];
 		}
+
+		citee_year_count[listOfCitees_combined[i]].sumAll = 0; 
+		for (y = minYearAll; y <= maxYearAll; y++) {
+			citee_year_count[listOfCitees_combined[i]].sumAll += citee_year_count[listOfCitees_combined[i]][y];
+		}
+// 		console.log(citee_year_count[listOfCitees_combined[i]].sumAll);
 	}
 
 	// Create header row for the output in a tab-delimited string.
-	foOutput_numerical = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article\tOldest article's year\tNewest article's year\tTotal since newest released\t";
+	foOutput_numerical = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article\tOldest article's year\tNewest article's year\tTotal\tTotal since newest released\t";
 	for (y = maxYearAll; y >= minYearAll; y--) {
 		foOutput_numerical += y + "\t";
 	}
@@ -263,6 +266,7 @@ function compute_citation_overlap() {
 		foOutput_numerical += uniqueId_of_oldest +"\t";
 		foOutput_numerical += minYearAll +"\t";
 		foOutput_numerical += year_zero +"\t";
+		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].sumAll+"\t";
 		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].sumAfterYearZero +"\t";
 		foOutput_numerical += outputRow[i].trim() + "\r\n";
 	}
