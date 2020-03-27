@@ -68,6 +68,7 @@ function add_file_to_FOdatabase(fileNameString) {
 	var tempID = "";
 	var tempIDlist = [];
 
+	console.log( "i got called");
 	fileCounter++; 
 
 	articleParamNames = inputCell[2]; // dfd for later, check this against expected value
@@ -79,11 +80,12 @@ function add_file_to_FOdatabase(fileNameString) {
 		// article_being_cited.push({title: inputCell[0][0].substring(6)}); 
 	}
 	
+	console.log( 'numRows = ' + numRows);
 	for (i = 3; i < numRows; i++) { //  starting with 3 because that's the first citation
 		notesForGoodReferences = '';
-		if (inputCell[i][16].trim().length == 0) {
-			// notesForGoodReferences += "No DOI found.\r\n" // decided not to include this cause it's OK. 
-		}
+// 		if (inputCell[i][16].trim().length == 0) {
+// 			notesForGoodReferences += "No DOI found.\r\n" // decided not to include this cause it's OK. 
+// 		}
 		if (inputCell[i].length != expectedInputArrayLength) {
 			notesForGoodReferences += "Input has " + inputCell[i].length + " columns. "+expectedInputArrayLength+" expected.\r\n";
 		}
@@ -110,6 +112,9 @@ function add_file_to_FOdatabase(fileNameString) {
 	// 		add it to the database
 	// 		display it on screen with a "new" label
 	// end if
+	console.log( "file probs: " + foFileProblems);
+	console.log( "notes: " + notesForGoodReferences);
+	console.log( "excluded: " + excludedReferences);
 }
 
 
@@ -154,6 +159,7 @@ function compute_citation_overlap() {
 
 	// Figure out how often each one is cited per year.
 	for (i = 0; i < article.length; i++) {
+		console.log( "year = " + article[i]["Publication Year"]);
 		// Figure out the combinations of citee articles that are used. (e.g., a, b, ab).
 		if (listOfCitees_combined.includes(article[i].citee_combined) == false) {
 			listOfCitees_combined.push(article[i].citee_combined); // This only does the ones that are actually used. Should I do possible instead?
@@ -182,6 +188,7 @@ function compute_citation_overlap() {
 		}
 	} 
 
+	console.log( 'listOfCitees_combined.length = ' + listOfCitees_combined.length);
 	// Figure out which citee was sorted first, second, etc. 
 	var foof = [];
 	totalInputArticles = 0;
@@ -194,6 +201,7 @@ function compute_citation_overlap() {
 		if (listOfCitees_combined[i].includes("-&-")) {
 			citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation = "-";
 		} else {
+			console.log( 'citee_year_count[listOfCitees_combined[i]].firstYear = ' + citee_year_count[listOfCitees_combined[i]].firstYear);
 			if (citee_year_count[listOfCitees_combined[i]].firstYear == Math.max.apply(null, foof)) {
 				citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation = "newest";
 				year_zero = citee_year_count[listOfCitees_combined[i]].firstYear; // set year zero, the year that the most recent one came out. 

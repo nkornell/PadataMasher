@@ -94,8 +94,12 @@ window.ondrop = function(ev) {
 	var files = [];
 	
 	ev.preventDefault();
-	// If dropped items aren't files, reject them
+	ev.stopPropagation(); // dfd added, good?
+	
 	var dt = ev.dataTransfer;
+	
+
+	// If dropped items aren't files, reject them
 	if (dt.items) {
 	// Use DataTransferItemList interface to access the file(s)
 		for (var i=0; i < dt.items.length; i++) {
@@ -105,7 +109,7 @@ window.ondrop = function(ev) {
 		}
 		filesSelectedStepOne(files); 
   	} else {
-		// I've never been able to make this happen and I don't know what it is. 
+		// I've never been able to make this happen and I don't know what it is. maybe if htey drop a non-file?
 		console.log("how do you get this to happen??");
 		// Use DataTransfer interface to access the file(s)
 		for (var i=0; i < dt.files.length; i++) {
