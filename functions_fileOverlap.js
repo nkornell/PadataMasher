@@ -26,10 +26,8 @@
 var notesForGoodReferences = "";
 var excludedReferences = "";
 var fileCounter = 0;
-var dbFileName = "Citation_Overlap_Database";
 var article = [];
 var articleParamNames = [];
-// var article_being_cited = [];
 var listOfCitees_combined = [];
 var foOutput_numerical = "";
 var stringBetweenArticles = "-&-";
@@ -41,10 +39,11 @@ function showFOstuff() {
 	x.style.display = "block";
 }
 
-function import_FOdatabase() {
-	console.log( "import_FOdatabase needs to be written");
-	document.getElementById("foTable__heading").innerHTML = fileCounter + ' files imported.';
-}
+// function import_FOdatabase() {
+// 	// this was supposed to work with the WOS api calls I was going to write. but that didnt' happen, so this (and whtever it's related to) should be deleted.
+// 	console.log( "import_FOdatabase needs to be written");
+// 	document.getElementById("foTable__heading").innerHTML = fileCounter + ' files imported.';
+// }
 
 function Article(din, cin, nin, inputArray) {
 	this.dateAdded = din;
@@ -58,7 +57,7 @@ function Article(din, cin, nin, inputArray) {
 	}
 }
 
-function add_file_to_FOdatabase(fileNameString) {
+function add_file_to_FOdatabase() {
 	// This works with a single file's data. 
 	// It assumes that appropriate values are already assigned to inputCell.
 	var numRows = inputCell.length;	
@@ -67,27 +66,22 @@ function add_file_to_FOdatabase(fileNameString) {
 	var expectedInputArrayLength = 141;
 	var tempID = "";
 	var tempIDlist = [];
+	var fileNameString = inputCell[0][0].substring(6);
 
-	console.log( "i got called");
+	// console.log( "i got called");
 	fileCounter++; 
 
 	articleParamNames = inputCell[2]; // dfd for later, check this against expected value
 
 	// Give a warning if the file formatting looks bad. 
 	if (inputCell[0][0].substring(0, 6) != "For:  ") {
-		foFileProblems = "Did not find the expected first row. In "+fileNameString+" found "+inputCell[0][0]+ ".\r\n";
-	} else {
-		// article_being_cited.push({title: inputCell[0][0].substring(6)}); 
+		foFileProblems = "<p>In <strong>"+fileNameString+":</strong> <i> Expected first row not found. Instead found </i>. <br>"+inputCell[0][0]+ ".\r\n";
 	}
 	
-	console.log( 'numRows = ' + numRows);
 	for (i = 3; i < numRows; i++) { //  starting with 3 because that's the first citation
 		notesForGoodReferences = '';
-// 		if (inputCell[i][16].trim().length == 0) {
-// 			notesForGoodReferences += "No DOI found.\r\n" // decided not to include this cause it's OK. 
-// 		}
-		if (inputCell[i].length != expectedInputArrayLength) {
-			notesForGoodReferences += "Input has " + inputCell[i].length + " columns. "+expectedInputArrayLength+" expected.\r\n";
+		if (Math.abs.apply(inputCell[i].length - expectedInputArrayLength) > 1) {
+			notesForGoodReferences += "<p><strong>"+fileNameString+"</strong> <i>has " + inputCell[i].length + " columns. "+expectedInputArrayLength+" expected.\r\n";
 		}
 		
 		var temp = new Article(d, inputCell[0][0].substring(6), notesForGoodReferences, inputCell[i]);
@@ -98,7 +92,7 @@ function add_file_to_FOdatabase(fileNameString) {
 			article[article.length-1].uniqueID = tempID;
 			tempIDlist.push(tempID);
 		} else {
-			excludedReferences += "<p><strong>Excluded </strong>Appeared more than once in the same file<br>" + tempID + "\r\n";
+			excludedReferences += "<p>In <strong>"+fileNameString+":</strong> <i> Excluded this line because it appeared more than once: </i><br>" + tempID + "\r\n";
 		}
 	}
 
@@ -112,9 +106,14 @@ function add_file_to_FOdatabase(fileNameString) {
 	// 		add it to the database
 	// 		display it on screen with a "new" label
 	// end if
-	console.log( "file probs: " + foFileProblems);
-	console.log( "notes: " + notesForGoodReferences);
-	console.log( "excluded: " + excludedReferences);
+	
+
+	// if any problems, etc., were found, show them in a box at the bottom. 
+	if ((foFileProblems + notesForGoodReferences + excludedReferences).length > 0) {
+		document.getElementById("notes_for_user").innerHTML += foFileProblems + notesForGoodReferences + excludedReferences;
+		var x = document.getElementById("notes_for_user");
+		x.style.display = "block";
+	}
 }
 
 
@@ -159,7 +158,7 @@ function compute_citation_overlap() {
 
 	// Figure out how often each one is cited per year.
 	for (i = 0; i < article.length; i++) {
-		console.log( "year = " + article[i]["Publication Year"]);
+		// console.log( "year = " + article[i]["Publication Year"]);
 		// Figure out the combinations of citee articles that are used. (e.g., a, b, ab).
 		if (listOfCitees_combined.includes(article[i].citee_combined) == false) {
 			listOfCitees_combined.push(article[i].citee_combined); // This only does the ones that are actually used. Should I do possible instead?
@@ -173,22 +172,34 @@ function compute_citation_overlap() {
 		citee_year_count[article[i].citee_combined][article[i]["Publication Year"]]++; // add 1 to how often each one is cited per year. 
 	}
 
-	// Figure out outputRow (i.e., the number of citation for each row/year). 
+	// Create outputRow (i.e., the number of citation for each row/year). 
 	var outputRow = [];
 	for (i = 0; i < listOfCitees_combined.length; i++) {
-		console.log(listOfCitees_combined[i]);
 		outputRow.push("");
 		for (y = maxYearAll; y >= minYearAll; y--) {
 			if (citee_year_count[listOfCitees_combined[i]][y] == undefined) {
 				citee_year_count[listOfCitees_combined[i]][y] = 0;
 			} else {
-				citee_year_count[listOfCitees_combined[i]].firstYear = y;
+				citee_year_count[listOfCitees_combined[i]].firstYear = y; // note this gets modified in the loop that follows
 			}
 			outputRow[i] += citee_year_count[listOfCitees_combined[i]][y] + "\t";
 		}
-	} 
+	}
 
-	console.log( 'listOfCitees_combined.length = ' + listOfCitees_combined.length);
+	// The loop above figures out firstyear. However, it isn't perfect. 
+	// For example, if we have A, B, and A&B, and their firstyears are 1977, 2008, and 1979, newest (B) should be 1979, because that's when it was first cited. 
+	// The loop above says it's 2008 (the year it was first cited without A). To fix this problem, this loop goes through the whole list
+	// and for each item (i), it checks whether any of the other items in the list (all j) include this item (i) in their string. 
+	// If they do, it sets firstyear equal to the minimum of the years of the two items. 
+	for (i = 0; i < listOfCitees_combined.length; i++) {
+		for (j = 0; j < listOfCitees_combined.length; j++) {
+			if (listOfCitees_combined[j].includes(listOfCitees_combined[i]) && j != i) {
+				citee_year_count[listOfCitees_combined[i]].firstYear = Math.min(citee_year_count[listOfCitees_combined[i]].firstYear, citee_year_count[listOfCitees_combined[j]].firstYear);
+			}
+		}
+	}
+	
+	
 	// Figure out which citee was sorted first, second, etc. 
 	var foof = [];
 	totalInputArticles = 0;
@@ -199,9 +210,10 @@ function compute_citation_overlap() {
 	}
 	for (i = 0; i < listOfCitees_combined.length; i++) {
 		if (listOfCitees_combined[i].includes("-&-")) {
-			citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation = "-";
+			citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation = "combo of " + ((listOfCitees_combined[i].match(/-&-/g)||[]).length + 1);
 		} else {
-			console.log( 'citee_year_count[listOfCitees_combined[i]].firstYear = ' + citee_year_count[listOfCitees_combined[i]].firstYear);
+			// this happens only for "primary" articles (i.e., without -&-)
+			// for each, if its first year is the biggest first year, mark it as newest, same for oldest and the rest are middle
 			if (citee_year_count[listOfCitees_combined[i]].firstYear == Math.max.apply(null, foof)) {
 				citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation = "newest";
 				year_zero = citee_year_count[listOfCitees_combined[i]].firstYear; // set year zero, the year that the most recent one came out. 
@@ -222,12 +234,6 @@ function compute_citation_overlap() {
 	// console.log( "over");
 	// list.sort((a, b) => (a.color > b.color) ? 1 : -1)
 
-	// dfd i think i can dedlete const list, but i forget what it is and why it's here so not 100% sure
-	const list = [
-		{ color: 'white', size: 'XXL' },
-		{ color: 'red', size: 'XL' },
-		{ color: 'black', size: 'M' }
-	  ]
 
 	// console.log(  list.sort((a, b) => (a.color > b.color) ? 1 : -1))
 
@@ -240,7 +246,7 @@ function compute_citation_overlap() {
 	}
 
 	// Create header row for the output in a tab-delimited string.
-	foOutput_numerical = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article\tOldest article's year\tNewest article's year\tTotal since newest released ("+year_zero+")\t";
+	foOutput_numerical = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article\tOldest article's year\tNewest article's year\tTotal since newest released\t";
 	for (y = maxYearAll; y >= minYearAll; y--) {
 		foOutput_numerical += y + "\t";
 	}
@@ -285,10 +291,12 @@ function buildTableFO_numberOfOverlapsEtc(inString) {
 	thisTable.innerHTML = "<table>" + out + "</table>";
 }
 
+
 function tabsToHtmlTableRow(inString) {
 	// take a string delimited by tabs and turn it into html table material. 
 	return "<tr><td>" + inString.replace(/\t/gi, "</td><td>") + "</td></tr>";
 }
+
 
 function buildOutputStringFO() {
 	// this is real simple because foOutput_numerical is built to be output from square 1. 
