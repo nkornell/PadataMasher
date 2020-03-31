@@ -68,7 +68,7 @@ function afterAllFilesAreProcessed() {
 		adjustCheckboxes();
 		hideFileSelectorStuff();
 		showCFstuff();
-	} else if (analysisType == "importFOdatabase") {
+	} else if (analysisType == "importFOdatabase") { // dfd get rid of this
 		import_FOdatabase();
 	} else {
 		compute_citation_overlap(); // dfd I'd want to make this happen when they press a button or select two files or whatever later on

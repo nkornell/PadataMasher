@@ -114,8 +114,7 @@ function add_file_to_FOdatabase() {
 
 
 function compute_citation_overlap() {
-	// right now i'm a assume that whatever's been imported is my stuff. 
-	// later I'll have to pull articles in from the database
+	// This function is called by file_importExportContent.js
 	
 	// it sorts the article array based on year and uniqueID
 	// I'm pretty sure it's not necessary, but it makes things look nice.
