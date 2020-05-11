@@ -63,7 +63,7 @@ function add_file_to_FOdatabase() {
 	var tempIDlist = [];
 	var fileNameString = inputCell[0][0].substring(6);
 
-	// console.log( "i got called");
+// 	console.log( "i got called");
 	fileCounter++; 
 
 	articleParamNames = inputCell[2]; // dfd for later, check this against expected value
@@ -81,14 +81,19 @@ function add_file_to_FOdatabase() {
 		
 		var temp = new Article(d, inputCell[0][0].substring(6), notesForGoodReferences, inputCell[i]);
 		tempID = temp.Title+". ("+temp["Publication Year"]+"). "+temp.Authors+" "+temp["Source Title"]+". DOI:"+temp.DOI;
-		if (tempIDlist.indexOf(tempID) == -1) {
-			// if it's not a repetition
-			article.push(temp);
-			article[article.length-1].uniqueID = tempID;
-			tempIDlist.push(tempID);
-		} else {
+		if (tempIDlist.indexOf(tempID) > -1) {
+			// if it's a repetition
 			// this seems to happen a lot and i'm not sure why... like it should happen once if there's one repeated line, but it shows up more than once in the output.
 			excludedReferences += "<p>In <strong>"+fileNameString+":</strong> <i> Excluded this line because it appeared more than once: </i><br>" + tempID + "\r\n";
+		} else {
+			// if it's not a repetition
+			tempIDlist.push(tempID);
+			if (temp["Publication Year"] > 2019) { // dfd this excludes all 2020 citaitons	
+				excludedReferences += "<p>In <i>"+fileNameString+"</i>, excluded the line <i>" + tempID + "</i> because <strong>year = " + temp["Publication Year"] +" </strong><br>\r\n";
+			} else {
+				article.push(temp);
+				article[article.length-1].uniqueID = tempID;
+			}
 		}
 	}
 
@@ -106,7 +111,7 @@ function add_file_to_FOdatabase() {
 
 	// if any problems, etc., were found, show them in a box at the bottom. 
 	if ((foFileProblems + notesForGoodReferences + excludedReferences).length > 0) {
-		document.getElementById("notes_for_user").innerHTML += foFileProblems + notesForGoodReferences + excludedReferences;
+		document.getElementById("notes_for_user").innerHTML = foFileProblems + notesForGoodReferences + excludedReferences;
 		var x = document.getElementById("notes_for_user");
 		x.style.display = "block";
 	}
