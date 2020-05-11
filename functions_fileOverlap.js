@@ -84,12 +84,12 @@ function add_file_to_FOdatabase() {
 		if (tempIDlist.indexOf(tempID) > -1) {
 			// if it's a repetition
 			// this seems to happen a lot and i'm not sure why... like it should happen once if there's one repeated line, but it shows up more than once in the output.
-			excludedReferences += "<p>In <strong>"+fileNameString+":</strong> <i> Excluded this line because it appeared more than once: </i><br>" + tempID + "\r\n";
+			excludedReferences += "<p><strong>Repeated line</strong> in <i>"+fileNameString+"</i> excluded the line <i>" + tempID + "</i><br>\r\n";
 		} else {
 			// if it's not a repetition
 			tempIDlist.push(tempID);
 			if (temp["Publication Year"] > 2019) { // dfd this excludes all 2020 citaitons	
-				excludedReferences += "<p>In <i>"+fileNameString+"</i>, excluded the line <i>" + tempID + "</i> because <strong>year = " + temp["Publication Year"] +" </strong><br>\r\n";
+				excludedReferences += "<p><strong>Year = " + temp["Publication Year"] +"</strong> so in file <i>"+fileNameString+"</i>, excluded the line <i>" + tempID + "</i><br>\r\n";
 			} else {
 				article.push(temp);
 				article[article.length-1].uniqueID = tempID;
