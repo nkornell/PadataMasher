@@ -29,7 +29,7 @@ var fileCounter = 0;
 var article = [];
 var articleParamNames = [];
 var listOfCitees_combined = [];
-var foOutput_numerical = "";
+var foOutput = "";
 var stringBetweenArticles = "-&-";
 var reggie = new RegExp(stringBetweenArticles,"g"); // this is a regular expression that can be used to do a replace all
 var year_zero = 0;
@@ -253,30 +253,30 @@ function compute_citation_overlap() {
 	}
 
 	// Create header row for the output in a tab-delimited string.
-	foOutput_numerical = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article\tOldest article's year\tNewest article's year\tTotal\tTotal since newest released\t";
+	foOutput = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article\tOldest article's year\tNewest article's year\tTotal\tTotal since newest released\t";
 	for (y = maxYearAll; y >= minYearAll; y--) {
-		foOutput_numerical += y + "\t";
+		foOutput += y + "\t";
 	}
-	foOutput_numerical = foOutput_numerical.trim() + "\r\n";
+	foOutput = foOutput.trim() + "\r\n";
 				
 
 	
 	// Add the rest of the data to the output string
 	for (i = 0; i < listOfCitees_combined.length; i++) {
-		foOutput_numerical += listOfCitees_combined[i]+ "\t";
-		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].firstYear +"\t";
-		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation +"\t";
-		foOutput_numerical += totalInputArticles +"\t";
-		foOutput_numerical += uniqueId_of_oldest +"\t";
-		foOutput_numerical += minYearAll +"\t";
-		foOutput_numerical += year_zero +"\t";
-		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].sumAll+"\t";
-		foOutput_numerical += citee_year_count[listOfCitees_combined[i]].sumAfterYearZero +"\t";
-		foOutput_numerical += outputRow[i].trim() + "\r\n";
+		foOutput += listOfCitees_combined[i]+ "\t";
+		foOutput += citee_year_count[listOfCitees_combined[i]].firstYear +"\t";
+		foOutput += citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation +"\t";
+		foOutput += totalInputArticles +"\t";
+		foOutput += uniqueId_of_oldest +"\t";
+		foOutput += minYearAll +"\t";
+		foOutput += year_zero +"\t";
+		foOutput += citee_year_count[listOfCitees_combined[i]].sumAll+"\t";
+		foOutput += citee_year_count[listOfCitees_combined[i]].sumAfterYearZero +"\t";
+		foOutput += outputRow[i].trim() + "\r\n";
 	}
-	foOutput_numerical = foOutput_numerical.trim();
+	foOutput = foOutput.trim();
 
-	buildTableFO_numberOfOverlapsEtc(foOutput_numerical);
+	buildTableFO_numberOfOverlapsEtc(foOutput);
 // 	buildTableFO_listAllCiters();
 
 }
@@ -307,8 +307,8 @@ function tabsToHtmlTableRow(inString) {
 
 
 function buildOutputStringFO() {
-	// this is real simple because foOutput_numerical is built to be output from square 1. 
-	return foOutput_numerical;
+	// this is real simple because foOutput is built to be output from square 1. 
+	return foOutput;
 }
 
 
