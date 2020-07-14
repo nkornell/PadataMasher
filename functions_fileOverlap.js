@@ -89,7 +89,7 @@ function add_file_to_FOdatabase() {
 			// if it's not a repetition
 			tempIDlist.push(tempID);
 			if (temp["Publication Year"] > 2019) { // dfd this excludes all 2020 citaitons	
-				excludedReferences += "<p><strong>Year = " + temp["Publication Year"] +"</strong> so in file <i>"+fileNameString+"</i>, excluded the line <i>" + tempID + "</i><br>\r\n";
+				excludedReferences += "<p><strong>Excluded because year = " + temp["Publication Year"] +"</strong>. In file <i>"+fileNameString+"</i>, excluded the line <i>" + tempID + "</i><br>\r\n";
 			} else {
 				article.push(temp);
 				article[article.length-1].uniqueID = tempID;
@@ -183,11 +183,13 @@ function compute_citation_overlap() {
 				citee_year_count[listOfCitees_combined[i]].firstYear = y; // note this gets modified in the loop that follows
 			}
 			outputRow[i] += citee_year_count[listOfCitees_combined[i]][y] + "\t";
+// 			console.log( outputRow[i]);
 		}
 	}
 
 	// The loop above figures out firstyear. However, it isn't perfect. 
-	// For example, if we have A, B, and A&B, and their firstyears are 1977, 2008, and 1979, newest (B) should be 1979, because that's when it was first cited. 
+	// For example, if we have A, B, and A&B, and their firstyears are 1977, 2008, and 1979, newest (B) should 
+	//be 1979, because that's when it was first cited. 
 	// The loop above says it's 2008 (the year it was first cited without A). To fix this problem, this loop goes through the whole list
 	// and for each item (i), it checks whether any of the other items in the list (all j) include this item (i) in their string. 
 	// If they do, it sets firstyear equal to the minimum of the years of the two items. 
@@ -249,32 +251,63 @@ function compute_citation_overlap() {
 		for (y = minYearAll; y <= maxYearAll; y++) {
 			citee_year_count[listOfCitees_combined[i]].sumAll += citee_year_count[listOfCitees_combined[i]][y];
 		}
-// 		console.log(citee_year_count[listOfCitees_combined[i]].sumAll);
 	}
 
+
+//---------
+// note: this is from back when I had each year in a column. I got rid of this and replaced it with the stuff below
+// when I decided to put each year in its own row. So this stuff can be deleted.
+
+// 	Create header row for the output in a tab-delimited string.
+// 	foOutput = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article\tOldest article's year\tNewest article's year\tTotal\tTotal since newest released\t";
+// 	for (y = maxYearAll; y >= minYearAll; y--) {
+// 		foOutput += y + "\t";
+// 	}
+// 	foOutput = foOutput.trim() + "\r\n";
+// 	
+// 	Add the rest of the data to the output string
+// 	for (i = 0; i < listOfCitees_combined.length; i++) {
+// 		foOutput += listOfCitees_combined[i]+ "\t";
+// 		foOutput += citee_year_count[listOfCitees_combined[i]].firstYear +"\t";
+// 		foOutput += citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation +"\t";
+// 		foOutput += totalInputArticles +"\t";
+// 		foOutput += uniqueId_of_oldest +"\t";
+// 		foOutput += minYearAll +"\t";
+// 		foOutput += year_zero +"\t";
+// 		foOutput += citee_year_count[listOfCitees_combined[i]].sumAll+"\t";
+// 		foOutput += citee_year_count[listOfCitees_combined[i]].sumAfterYearZero +"\t";
+// 		foOutput += outputRow[i].trim() + "\r\n";
+// 	}
+// 	foOutput = foOutput.trim();
+//---------
+
+//---------
 	// Create header row for the output in a tab-delimited string.
-	foOutput = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article\tOldest article's year\tNewest article's year\tTotal\tTotal since newest released\t";
-	for (y = maxYearAll; y >= minYearAll; y--) {
-		foOutput += y + "\t";
-	}
-	foOutput = foOutput.trim() + "\r\n";
-				
-
+	foOutput = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article\tOldest article's year\tNewest article's year\tBefore or after\tYear\t\Year from zero\tCitations\r\n";
 	
 	// Add the rest of the data to the output string
 	for (i = 0; i < listOfCitees_combined.length; i++) {
-		foOutput += listOfCitees_combined[i]+ "\t";
-		foOutput += citee_year_count[listOfCitees_combined[i]].firstYear +"\t";
-		foOutput += citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation +"\t";
-		foOutput += totalInputArticles +"\t";
-		foOutput += uniqueId_of_oldest +"\t";
-		foOutput += minYearAll +"\t";
-		foOutput += year_zero +"\t";
-		foOutput += citee_year_count[listOfCitees_combined[i]].sumAll+"\t";
-		foOutput += citee_year_count[listOfCitees_combined[i]].sumAfterYearZero +"\t";
-		foOutput += outputRow[i].trim() + "\r\n";
+		for (y = maxYearAll; y >= minYearAll; y--) {
+			foOutput += listOfCitees_combined[i]+ "\t";
+			foOutput += citee_year_count[listOfCitees_combined[i]].firstYear +"\t";
+			foOutput += citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation +"\t";
+			foOutput += totalInputArticles +"\t";
+			foOutput += uniqueId_of_oldest +"\t";
+			foOutput += minYearAll +"\t";
+			foOutput += year_zero +"\t";
+			if (y - year_zero < 0) {
+				foOutput += "Before\t";
+			} else {
+				foOutput += "After\t";			
+			}
+			foOutput += y + "\t";
+			foOutput += y - year_zero + "\t";
+			foOutput += citee_year_count[listOfCitees_combined[i]][y];
+			foOutput += "\r\n";
+		}
 	}
 	foOutput = foOutput.trim();
+//---------
 
 	buildTableFO_numberOfOverlapsEtc(foOutput);
 // 	buildTableFO_listAllCiters();
