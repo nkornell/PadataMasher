@@ -32,8 +32,9 @@ var listOfCitees_combined = [];
 var foOutput = "";
 var stringBetweenArticles = "-&-";
 var reggie = new RegExp(stringBetweenArticles,"g"); // this is a regular expression that can be used to do a replace all
-var year_zero = 0;
-// var first_year_of_all_files = 0;
+var year_zero = 3000; // a number greater than the current year
+var	total_citations_all_articles = 0;
+
 
 function showFOstuff() {
 	var x = document.getElementById("foBigBox");
@@ -218,27 +219,18 @@ function compute_citation_overlap() {
 			// for each, if its first year is the biggest first year, mark it as newest, same for oldest and the rest are middle
 			if (citee_year_count[listOfCitees_combined[i]].firstYear == Math.max.apply(null, foof)) {
 				citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation = "newest";
-				year_zero = citee_year_count[listOfCitees_combined[i]].firstYear; // set year zero, the year that the most recent one came out. 
+				year_zero = Math.min(year_zero, citee_year_count[listOfCitees_combined[i]].firstYear); // set year zero, the year that the first one other than the og came out. 
 			} else if (citee_year_count[listOfCitees_combined[i]].firstYear == Math.min.apply(null, foof)) {
 				citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation = "oldest";
 				uniqueId_of_oldest = listOfCitees_combined[i];
-// 				first_year_of_all_files = = citee_year_count[listOfCitees_combined[i]].firstYear; 
 			} else {
 				citee_year_count[listOfCitees_combined[i]].orderOfFirstCitation = "middle";
+				year_zero = Math.min(year_zero, citee_year_count[listOfCitees_combined[i]].firstYear); // set year zero, the year that the first one other than the og came out. 
 			}
 			totalInputArticles++;
 		}
 	}
-	// console.log( citee_year_count.firstYear.sort());
-	// don't know why these dont' work
-	// console.log( "thing");
-	// console.log(citee_year_count.sort((a, b) => (a.firstYear > b.firstYear) ? 1 : -1));
-	// console.log( citee_year_count.sort(function(a, b){return a.firstYear-b.firstYear}));
-	// console.log( "over");
-	// list.sort((a, b) => (a.color > b.color) ? 1 : -1)
-
-
-	// console.log(  list.sort((a, b) => (a.color > b.color) ? 1 : -1))
+	console.log( year_zero);
 
 	// Figure out total citations since year zero for every citee combination. 
 	for (i = 0; i < listOfCitees_combined.length; i++) {
@@ -251,6 +243,7 @@ function compute_citation_overlap() {
 		for (y = minYearAll; y <= maxYearAll; y++) {
 			citee_year_count[listOfCitees_combined[i]].sumAll += citee_year_count[listOfCitees_combined[i]][y];
 		}
+		total_citations_all_articles += citee_year_count[listOfCitees_combined[i]].sumAll;
 	}
 
 
@@ -283,7 +276,7 @@ function compute_citation_overlap() {
 
 //---------
 	// Create header row for the output in a tab-delimited string.
-	foOutput = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article\tOldest article's year\tNewest article's year\tBefore or after\tYear\t\Year from zero\tCitations\r\n";
+	foOutput = "Article(s) Being Cited\tEarliest Citation\tOrder of publication\tNum articles in group\tOldest article\tOldest article's year\tNewest article's year\tTotal years before\tTotal years after\tBefore or after\tYear\t\Year from zero\tCitations\tCitation %\r\n";
 	
 	// Add the rest of the data to the output string
 	for (i = 0; i < listOfCitees_combined.length; i++) {
@@ -295,6 +288,8 @@ function compute_citation_overlap() {
 			foOutput += uniqueId_of_oldest +"\t";
 			foOutput += minYearAll +"\t";
 			foOutput += year_zero +"\t";
+			foOutput += year_zero - minYearAll +"\t";
+			foOutput += maxYearAll - year_zero + 1 +"\t";
 			if (y - year_zero < 0) {
 				foOutput += "Before\t";
 			} else {
@@ -302,7 +297,8 @@ function compute_citation_overlap() {
 			}
 			foOutput += y + "\t";
 			foOutput += y - year_zero + "\t";
-			foOutput += citee_year_count[listOfCitees_combined[i]][y];
+			foOutput += citee_year_count[listOfCitees_combined[i]][y] + "\t";
+			foOutput += 100*citee_year_count[listOfCitees_combined[i]][y]/total_citations_all_articles;
 			foOutput += "\r\n";
 		}
 	}
