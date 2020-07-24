@@ -86,6 +86,7 @@ document.getElementById('exportButton').onclick = function(event){
 		writeToFile(buildOutputStringPTP(), 'Pivoted Data.txt');
 	} else {
 		writeToFile(buildOutputStringFO(), "Citation Overlap Tally.txt");
+		location.reload(); // reload the page after they press export
 	}
 }
 

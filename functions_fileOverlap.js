@@ -230,7 +230,6 @@ function compute_citation_overlap() {
 			totalInputArticles++;
 		}
 	}
-	console.log( year_zero);
 
 	// Figure out total citations since year zero for every citee combination. 
 	for (i = 0; i < listOfCitees_combined.length; i++) {
