@@ -85,7 +85,7 @@ document.getElementById('exportButton').onclick = function(event){
 	} else if (analysisType == 'compute') {
 		writeToFile(buildOutputStringPTP(), 'Pivoted Data.txt');
 	} else {
-		writeToFile(buildOutputStringFO(), "Citation Overlap Tally.txt");
+		writeToFile(buildOutputStringFO(), "Citation Overlap "+uniqueId_of_oldest+".txt");
 		location.reload(); // reload the page after they press export
 	}
 }
