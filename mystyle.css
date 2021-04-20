@@ -164,6 +164,10 @@ label {
     text-align: center;
 }
 
+a:link {
+  text-decoration: none;
+}
+
 
 #processingBox {
     display: none;

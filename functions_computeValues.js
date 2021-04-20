@@ -34,6 +34,8 @@
 function showMCstuff() {
 	var x = document.getElementById("mcBigBox");
 	x.style.display = "flex";
+	var x = document.getElementById("mcBigBox2");
+	x.style.display = "inline";
 }
 
 function changeOfVariableSelections(varNum,useAs) {
@@ -150,8 +152,8 @@ function buildVariableSelectorTable() {
 		out = out + "<td><select id='"+i+"' name='"+i+"' onchange='changeOfVariableSelections(this.name,this.value)'>";
 		out = out + "<option value='Not Using'>---</option>";
 		out = out + "<option value='Dependent'>Dependent</option>";
-		out = out + "<option value='Between'>Rows</option>";
-		out = out + "<option value='Within'>Columns</option></select> ";
+		out = out + "<option value='Between'>Between</option>";
+		out = out + "<option value='Within'>Within</option></select> ";
 // 			out = out + "<div class='tooltip'>ℹ️<span class='tooltiptext'>"+ toolTipContent[i] + "</span></div> ";
 		out = out + "<div class='tooltip'>info<span class='tooltiptext'>"+ toolTipContent[i] + "</span></div>";
 
@@ -472,7 +474,7 @@ function buildTablePTP(typ) {
 		out = "nothing here";
 		console.log("nothing here");
 	} else if (tempCell[0].join() == "") { // no columns have been selected
-		out = "<div style='height: 200px; display: flex; align-items: center; justify-content: center; text-align:center; font-size: 150%; font-weight: bold; color: #aaa '>Start adding variables<br>and analyses</div>";
+		out = "<div style='height: 200px; display: flex; align-items: center; justify-content: center; text-align:center; font-size: 150%; font-weight: bold; color: #aaa '>select variables and analyses</div>";
 	} else {
 		// Build Header
 		out = "<tr>";
