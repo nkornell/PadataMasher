@@ -513,7 +513,7 @@ function computeNumProblemsComparedToOtherFiles() {
 function buildTableCF() {
 	var out = "";
 	
-	document.getElementById('cfHeading').innerHTML = 'Notes about the ' + cfData.length + ' imported files.';
+	document.getElementById('cfHeading').innerHTML = 'Notes about the imported files ';
 
 	// Build Header
 	out = "<tr><th onclick='sortTable(0, "+'"cfTable"'+")' title='Click to Sort'>Use in output</th>";
@@ -566,7 +566,7 @@ function adjustCheckboxes() {
 			document.getElementById('cfTableCell_Row'+i+'_Col0').checked = false; // if you comment this out no row gets unchecked
 		}
 	}
-	console.log( "dody"); //dfd
+	document.getElementById('cfHeading2').innerHTML = countCheckboxesSelected() + ' of ' + cfData.length + ' files selected.';
 }
 
 function cfCheckBoxPress(whichOne, event) {
@@ -587,8 +587,7 @@ function cfCheckBoxPress(whichOne, event) {
 		}
 	}
 	mostRecentPressedCheckBoxRow = currentRow;
-	console.log( "yody" + countCheckboxesSelected()); // dfd
-		document.getElementById('cfHeading2').innerHTML = countCheckboxesSelected() + ' files selected.';
+	document.getElementById('cfHeading2').innerHTML = countCheckboxesSelected() + ' of ' + cfData.length + ' files selected.';
 
 }
 

@@ -94,7 +94,7 @@ window.ondrop = function(ev) {
 	var files = [];
 	
 	ev.preventDefault();
-	ev.stopPropagation(); // dfd added, good?
+	ev.stopPropagation();
 	
 	var dt = ev.dataTransfer;
 	
