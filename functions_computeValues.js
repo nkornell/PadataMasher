@@ -34,8 +34,6 @@
 function showMCstuff() {
 	var x = document.getElementById("mcBigBox");
 	x.style.display = "flex";
-	var x = document.getElementById("mcBigBox2");
-	x.style.display = "inline";
 }
 
 function changeOfVariableSelections(varNum,useAs) {
@@ -139,23 +137,16 @@ function buildVariableSelectorTable() {
 	// Build Header
 	var out = "";
 	out = out + "<div><table><form>";
-// 		out = out + "<tr><th>Variable</th><th>Use</th></tr>"; // <th>Rows</th><th>Columns</th><th>Value</th><th>Unused</th></tr>";
 	
 	// Build row labels and popup menus.
 	for (i = 0; i < inputCell[0].length; i++) {
-// //			out = out + "<tr><td><div class='tooltip'>" + inputCell[0][i] + " (" + numLevels[i] + ")" + " <span class='tooltiptext'>"+ toolTipContent[i] + "</span></div></td>";
 		out = out + "<tr><td>" + inputCell[0][i] + " </td>";
-// id='Between " + i + "' name='" + i + "' onclick='changeOfVariableSelections(this.name,this.value)' value='Between'></td>";
-// 			out = out + "<td style='text-align: center;'><input type='radio' id='Within " + i + "' name='" + i + "' onclick='changeOfVariableSelections(this.name,this.value)' value='Within'></td>";
-// 			out = out + "<td style='text-align: center;'><input type='radio' id='Dependent " + i + "' name='" + i + "' onclick='changeOfVariableSelections(this.name,this.value)' value='Dependent'></td>";
-// 			out = out + "<td style='text-align: center;'><input type='radio' id='Not Using " + i + "' name='" + i + "' onclick='changeOfVariableSelections(this.name,this.value)' value='Not Using' checked></td>";
 		out = out + "<td><select id='"+i+"' name='"+i+"' onchange='changeOfVariableSelections(this.name,this.value)'>";
 		out = out + "<option value='Not Using'>---</option>";
 		out = out + "<option value='Dependent'>Dependent</option>";
 		out = out + "<option value='Between'>Between</option>";
 		out = out + "<option value='Within'>Within</option></select> ";
-// 			out = out + "<div class='tooltip'>ℹ️<span class='tooltiptext'>"+ toolTipContent[i] + "</span></div> ";
-		out = out + "<div class='tooltip'>info<span class='tooltiptext'>"+ toolTipContent[i] + "</span></div>";
+// 		out = out + "<div class='tooltip'>info<span class='tooltiptext'>"+ toolTipContent[i] + "</span></div>"; dfd: the tooltip thing is really cool, and it works, but I just decided it was too complicated and I wanted this product to be simple. 
 
 
 		out = out + "</td></tr>";
@@ -474,8 +465,19 @@ function buildTablePTP(typ) {
 		out = "nothing here";
 		console.log("nothing here");
 	} else if (tempCell[0].join() == "") { // no columns have been selected
-		out = "<div style='height: 200px; display: flex; align-items: center; justify-content: center; text-align:center; font-size: 150%; font-weight: bold; color: #aaa '>select variables and analyses</div>";
+		// Hide results preview
+		var x = document.getElementById("mcBigBox2");
+		if (x.style.display != "none") {
+			x.style.display = "none";
+		}
+		out = "<div style='height: 200px; display: flex; align-items: center; justify-content: center; text-align:center; font-size: 150%; font-weight: bold; color: #aaa '>select variables and analyses</div>"; // note, this works, but it's not being used because i made this thing disappear instead
 	} else {
+		// Show results preview
+		var x = document.getElementById("mcBigBox2");
+		if (x.style.display != "inline") {
+			x.style.display = "inline";
+		}
+
 		// Build Header
 		out = "<tr>";
 		for (i = 0; i < tempCell[0].length; i++) {
@@ -498,6 +500,8 @@ function buildTablePTP(typ) {
 			var x = document.getElementById(alertElementName);
 			x.style.display = "none";
 		}
+		
+
 
 		// Build Data
 		for (i = 1; i < rowsToShow; i++) {

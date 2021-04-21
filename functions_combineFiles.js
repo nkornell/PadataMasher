@@ -513,7 +513,7 @@ function computeNumProblemsComparedToOtherFiles() {
 function buildTableCF() {
 	var out = "";
 	
-	document.getElementById('cfHeading').innerHTML = cfData.length + ' files imported.';
+	document.getElementById('cfHeading').innerHTML = 'Notes about the ' + cfData.length + ' imported files.';
 
 	// Build Header
 	out = "<tr><th onclick='sortTable(0, "+'"cfTable"'+")' title='Click to Sort'>Use in output</th>";
@@ -566,12 +566,12 @@ function adjustCheckboxes() {
 			document.getElementById('cfTableCell_Row'+i+'_Col0').checked = false; // if you comment this out no row gets unchecked
 		}
 	}
+	console.log( "dody"); //dfd
 }
 
 function cfCheckBoxPress(whichOne, event) {
 	// This happens whenever they press a checkbox. 
-	// If the shift key is also pressed at the time, 
-	// it makes the checkboxes between the two most recently pressed checkboxes change. 
+	// If the shift key is also pressed at the time, it makes the checkboxes between the two most recently pressed checkboxes change. 
 	var currentRow = rowOfThisCheckbox(whichOne);
 	var min = 0;
 	var max = 0;
@@ -587,11 +587,25 @@ function cfCheckBoxPress(whichOne, event) {
 		}
 	}
 	mostRecentPressedCheckBoxRow = currentRow;
+	console.log( "yody" + countCheckboxesSelected()); // dfd
+		document.getElementById('cfHeading2').innerHTML = countCheckboxesSelected() + ' files selected.';
+
+}
+
+function countCheckboxesSelected() {
+	var totalChecked = 0;
+	var f = 0;
+	for (f = 0; f < inputArray.length; f++) { // for every file...
+		if (document.getElementById('cfTableCell_Row'+f+'_Col0').checked == true) { // if its checkbox is checked...
+			totalChecked++;
+		}
+	}
+	return totalChecked;
 }
 
 function rowOfThisCheckbox(whichIndex) {
 	// Pass this the index of the checkbox that was pressed. 
-	// It return the current row number of that checkbox (i.e., what row it's at in its table).
+	// It returns the current row number of that checkbox (i.e., what row it's at in its table).
 	return document.getElementById('cfTableCell_Row'+whichIndex+'_Col0').parentNode.parentNode.rowIndex;
 }
 

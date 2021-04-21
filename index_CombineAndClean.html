@@ -3,7 +3,7 @@
 <head>
 	<title>Combine Datafiles</title>
 	<meta charset="UTF-8">
-	<meta name="description" content="combine and clean: Smart data cleaning and organization, quick, easy, private, and free">
+	<meta name="description" content="combine datafiles: Smart data cleaning and organization, quick, easy, private, and free">
 	<meta name="keywords" content="data, analysis, easy, free, clean, analyze, organize, application, program">
 	<meta name="author" content="Nate Kornell">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,7 +32,7 @@
 		<div class="roundedBox dragDropBox" id="drop_zone">
 			<img src="images/cac.png" style="position: relative; width: 300px; opacity: 0.4; ">
 			<div class="middleCenter">
-				<h1>combine and clean</h1>
+				<h1>Combine Datafiles</h1>
 				<h2>drag text files here</h2>
 			</div>
 		</div>
@@ -51,24 +51,28 @@
 		<div id="cfExcludedFilesText"></div>
 	</div>
 
-	Select files (below) that you want to include in your data output, then press the Export Data button.
+<!-- 	<p>Select files (below) that you want to include in your data output. -->
 
-	<!-- Box for file info and export button -->
+
+	<!-- Box for big cac table -->
 	<div class='boxAroundTable'>
 		<div class="clearfix"> <!-- This makes it so that the floating buttons don't overflow downwards -->
 			<div class='heading' id='cfHeading' ></div> 
 			<div style='float: right;'>
-				<!-- <input class="coolButton" type="button" id="exportButtonLog" value="Export Cleanup Notes" onclick="exportOutput('File Cleanup Notes', buildOutputStringCACnotes())"> -->
-				<a id="exportNotes" href="#" class='coolButton'>Export Cleanup Notes</a>
-					<!-- <input class="coolButton" type="button" id="exportButton" value="Export Data" onclick="exportOutput('Cleaned Data', buildOutputStringCAC())"> -->
-				<a id="exportButton" href="#" class='coolButton'>Export Data</a>
-			</div>
+				<a id="exportNotes" href="#" class='coolButton'>Export These Notes</a>
+			</div>	
 		</div>
+		<div id='cfTable' class='dataTable' style="height: 500px;"></div>
 	</div>
 
-	<!-- Box for big cac table -->
+	<!-- Box for file info and export button -->
 	<div class='boxAroundTable'>
-		<div id='cfTable' class='dataTable' style="height: 500px;"></div>
+		<div class="clearfix"> <!-- This makes it so that the floating buttons don't overflow downwards -->
+			<div class='heading' id='cfHeading2' ></div> 
+			<div style='float: right;'>
+				<a id="exportButton" href="#" class='coolButton'>Combine and export selected datafiles</a>
+			</div>
+		</div>
 	</div>
 	
 	<p>
