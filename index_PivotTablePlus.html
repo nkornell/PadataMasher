@@ -1,9 +1,9 @@
 <html>
 
 <head>
-	<title>Pivot Table Plus</title>
+	<title>StatBuddy</title>
 	<meta charset="UTF-8">
-	<meta name="description" content="Pivot table plus: quick, easy, private, and free data analysis tool">
+	<meta name="description" content="StatBuddy: quick, easy, private, and free data analysis tool">
 	<meta name="keywords" content="data, analysis, easy, free, clean, analyze, organize, application, program">
 	<meta name="author" content="Nate Kornell">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,8 +16,8 @@
 	<nav>
 		<ul>
 			<li><a href="index.html"><div class="navMenuItem"><img src="images/pm.png" > Masher Home</div></a></li>
-			<li><a href="index_CombineAndClean.html"><div class="navMenuItem"><img src="images/cac.png"> Combine & Clean</div></a></li>
-			<li><div class="navMenuItem selected"><img src="images/ptp.png"> Pivot Table Plus</div></li>
+			<li><a href="index_CombineAndClean.html"><div class="navMenuItem"><img src="images/cac.png"> Combine Datafiles</div></a></li>
+			<li><div class="navMenuItem selected"><img src="images/ptp.png"> StatBuddy</div></li>
 			<li style="float:right"><a href="index_About.html"><div class="navMenuItem">About</div></a></li>
 		</ul>
 	</nav>
@@ -33,7 +33,7 @@
 		<div class="roundedBox dragDropBox" id="drop_zone">
 			<img src="images/ptp.png" style="position: relative; width: 300px; opacity: 0.2; ">
 			<div class="middleCenter">
-				<h1>pivot table plus</h1>
+				<h1>StatBuddy</h1>
 				<h2>drag a text file here</h2>
 			</div>
 		</div>
@@ -108,8 +108,7 @@
 				</div>
 				<div style='float: right;'>
 					<!-- <input class="coolButton" type="button" id="settingsButton" value="Settings" onclick="showHide('settings')"> -->
-					<!-- <input class="coolButton" type="button" id="exportButtonMC" value="Export Results" onclick="exportOutput('Pivoted Output', buildOutputStringPTP())"> -->
-					<a id="exportButton" href="#">Export Results to file</a>
+					<a id="exportButton" href="#">Export Results to File</a>
 					</div>
 				<div id="settings" style='display: none;' class="boxAroundTable">
 					<p><label><input type="checkbox" style='float:left' id="checkboxVerboseColumnNames" onclick="computeResults()" checked> Verbose column names </label>

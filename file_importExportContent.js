@@ -81,9 +81,9 @@ function afterAllFilesAreProcessed() {
 // if the exportbutton is pressed this happens. It puts the data in a blob and then makes it download. 
 document.getElementById('exportButton').onclick = function(event){
 	if (analysisType == 'combine') {
-		writeToFile(buildOutputStringCAC(), 'Cleaned Data.txt');
+		writeToFile(buildOutputStringCAC(), 'CombineDatafiles_Output.txt');
 	} else if (analysisType == 'compute') {
-		writeToFile(buildOutputStringPTP(), 'Pivoted Data.txt');
+		writeToFile(buildOutputStringPTP(), 'StatBuddy_Output.txt');
 	} else {
 		writeToFile(buildOutputStringFO(), "Citation Overlap "+uniqueId_of_oldest+".txt");
 		location.reload(); // reload the page after they press export
