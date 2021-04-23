@@ -15,10 +15,39 @@ var reggie = new RegExp(stringBetweenArticles,"g"); // this is a regular express
 var year_zero = 3000; // a number greater than the current year
 var	total_citations_all = 0;
 
+function json_practice() {
+var url1 = 'https://api.crossref.org/works/10.1037/a0028468?mailto=nkornell@gmail.com';
+var url2 = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&select=score,DOI,title,is-referenced-by-count&rows=1&query.bibliographic=Kornell+Cantlon+Ferrigno';
+
+$.when(
+    $.getJSON(url1),
+    $.getJSON(url2)
+).done(function(result1, result2) {
+	console.log( result1[0].message.title);
+	console.log( result2);
+});
+
+// 	console.log( "yowza");
+// 	$.getJSON('', function(data) {
+// 		   // JSON result in `data` variable
+// 		   console.log(data);
+// 		   console.log("tihng: " + data.message.title);
+// 	});
+// 	
+// 	$.getJSON(, function(data) {
+// 		   // JSON result in `data` variable
+// 		   console.log( data);
+// 		   console.log("tihng: " + data.message.items[0].title);
+// 	});
+
+	 
+
+}
 
 function showFOstuff() {
 	var x = document.getElementById("foBigBox");
 	x.style.display = "block";
+	json_practice();
 }
 
 function Reference(din, cin, nin, inputArray) {
