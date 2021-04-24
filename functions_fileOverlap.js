@@ -16,34 +16,6 @@ var year_zero = 3000; // a number greater than the current year
 var	total_citations_all = 0;
 
 
-
-
-// new stuff about parsing and looking up a reference //
-function json_practice() {
-	var urls = [];
-	var output = "";
-	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Son+Terrace');
-	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Cantlon+Ferrigno');
-	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Klein+Rawson');
-
-	//map each url to a getJSON call
-	var proms = urls.map(url=>$.getJSON(url));
-
-	Promise.all(proms).then(function(data){
-		for (i = 0; i < data.length; i++) {
-			console.log('next one');
-			console.log(data[i]);
-			console.log(data[i].message.items[0].title);
-			output += data[i].message.items[0].title + '\n\n';
-		}
-console.log("output:\n" + output);
-	});
-}
-// end of new stuff about parsing and looking up a reference //
-
-
-
-
 function showFOstuff() {
 	var x = document.getElementById("foBigBox");
 	x.style.display = "block";

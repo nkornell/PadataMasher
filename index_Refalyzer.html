@@ -1,16 +1,44 @@
 <html>
 
 <head>
-	<title>File Overlap</title>
+	<title>Reference Analyzer</title>
 	<meta charset="UTF-8">
-	<meta name="description" content="file overlap isn't a good name">
+	<meta name="description" content="looking at academic references">
 	<meta name="keywords" content="program">
 	<meta name="author" content="Nate Kornell">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="shortcut icon" href="favicon.ico">
 	<link rel="stylesheet" type="text/css" href="mystyle.css">
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> <!-- dfd -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> <!-- dfd -->
+
+
+<script>
+// new stuff about parsing and looking up a reference //
+function json_practice() {
+	var urls = [];
+	var output = "";
+	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Son+Terrace');
+	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Cantlon+Ferrigno');
+	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Klein+Rawson');
+
+	//map each url to a getJSON call
+	var proms = urls.map(url=>$.getJSON(url));
+
+	Promise.all(proms).then(function(data){
+		for (i = 0; i < data.length; i++) {
+			console.log('next one');
+			console.log(data[i]);
+			console.log(data[i].message.items[0].title);
+			output += data[i].message.items[0].title + '\n\n';
+		}
+console.log("output:\n" + output);
+	});
+}
+// end of new stuff about parsing and looking up a reference //
+</script>
+
+
 
 </head>
 
@@ -22,7 +50,7 @@
 		<ul>
 			<li><a href="index.html"><div class="navMenuItem"><img src="images/pm.png" > Masher Home</div></a></li>
 			<li><a href="index_CombineAndClean.html"><div class="navMenuItem"><img src="images/cac.png"> Combine Datafiles</div></a></li>
-			<li><a href="index_PivotTablePlus.html"><div class="navMenuItem"><img src="images/ptp.png"> StatBuddy</div></a></li>
+			<li><a href="index_StatBuddy.html"><div class="navMenuItem"><img src="images/ptp.png"> StatBuddy</div></a></li>
 			<li style="float:right"><a href="index_About.html"><div class="navMenuItem">About</div></a></li>
 		</ul>
 	</nav>

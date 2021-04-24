@@ -24,7 +24,7 @@ function handleFileSelect(evt) {
 function filesSelectedStepOne (listOfFiles) {
 	if (document.URL.includes("Combine")) {
 		analysisType = "combine";
-	} else if (document.URL.includes("Pivot")) {
+	} else if (document.URL.includes("StatBuddy")) {
 		analysisType = "compute";
 	} else {
 		analysisType = "references_import"
