@@ -15,34 +15,44 @@ var reggie = new RegExp(stringBetweenArticles,"g"); // this is a regular express
 var year_zero = 3000; // a number greater than the current year
 var	total_citations_all = 0;
 
-function json_practice() {
-var url1 = 'https://api.crossref.org/works/10.1037/a0028468?mailto=nkornell@gmail.com';
-var url2 = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&select=score,DOI,title,is-referenced-by-count&rows=1&query.bibliographic=Kornell+Cantlon+Ferrigno';
 
-$.when(
-    $.getJSON(url1),
-    $.getJSON(url2)
-).done(function(result1, result2) {
-	console.log( result1[0].message.title);
-	console.log( result2);
+
+
+// new stuff about parsing and looking up a reference //
+function json_practice() {
+	var urls = [];
+	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Son.Terrace');
+	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Cantlon+Ferrigno');
+
+//map each url to a getJSON call
+// var urls = ["url","url","url"];
+var proms = urls.map(url=>$.getJSON(url));
+
+Promise.all(proms).then(function(data){
+for (i = 0; i < data.length; i++) {
+	console.log('next one');
+//     var myObj = JSON.parse(data[i]);
+	console.log(data[i]);
+	console.log(data[i].message.items[0].title);
+}
 });
 
-// 	console.log( "yowza");
-// 	$.getJSON('', function(data) {
-// 		   // JSON result in `data` variable
-// 		   console.log(data);
-// 		   console.log("tihng: " + data.message.title);
-// 	});
-// 	
-// 	$.getJSON(, function(data) {
-// 		   // JSON result in `data` variable
-// 		   console.log( data);
-// 		   console.log("tihng: " + data.message.items[0].title);
-// 	});
 
-	 
 
+
+
+// 	$.when(
+// 		$.getJSON(url[0]),
+// 		$.getJSON(url[1])
+// 	).done(function(rr[0],rr[1]) {
+// 		console.log(rr[0][0].message.title);
+// 		console.log(rr[1]);
+// 	});
 }
+// end of new stuff about parsing and looking up a reference //
+
+
+
 
 function showFOstuff() {
 	var x = document.getElementById("foBigBox");
