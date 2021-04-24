@@ -21,33 +21,23 @@ var	total_citations_all = 0;
 // new stuff about parsing and looking up a reference //
 function json_practice() {
 	var urls = [];
-	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Son.Terrace');
+	var output = "";
+	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Son+Terrace');
 	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Cantlon+Ferrigno');
+	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Klein+Rawson');
 
-//map each url to a getJSON call
-// var urls = ["url","url","url"];
-var proms = urls.map(url=>$.getJSON(url));
+	//map each url to a getJSON call
+	var proms = urls.map(url=>$.getJSON(url));
 
-Promise.all(proms).then(function(data){
-for (i = 0; i < data.length; i++) {
-	console.log('next one');
-//     var myObj = JSON.parse(data[i]);
-	console.log(data[i]);
-	console.log(data[i].message.items[0].title);
-}
-});
-
-
-
-
-
-// 	$.when(
-// 		$.getJSON(url[0]),
-// 		$.getJSON(url[1])
-// 	).done(function(rr[0],rr[1]) {
-// 		console.log(rr[0][0].message.title);
-// 		console.log(rr[1]);
-// 	});
+	Promise.all(proms).then(function(data){
+		for (i = 0; i < data.length; i++) {
+			console.log('next one');
+			console.log(data[i]);
+			console.log(data[i].message.items[0].title);
+			output += data[i].message.items[0].title + '\n\n';
+		}
+console.log("output:\n" + output);
+	});
 }
 // end of new stuff about parsing and looking up a reference //
 
