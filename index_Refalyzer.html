@@ -1,0 +1,108 @@
+<html>
+
+<head>
+	<title>File Overlap</title>
+	<meta charset="UTF-8">
+	<meta name="description" content="file overlap isn't a good name">
+	<meta name="keywords" content="program">
+	<meta name="author" content="Nate Kornell">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="shortcut icon" href="favicon.ico">
+	<link rel="stylesheet" type="text/css" href="mystyle.css">
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> <!-- dfd -->
+
+</head>
+
+
+<body>
+
+	<!--  navigation menu -->
+	<nav>
+		<ul>
+			<li><a href="index.html"><div class="navMenuItem"><img src="images/pm.png" > Masher Home</div></a></li>
+			<li><a href="index_CombineAndClean.html"><div class="navMenuItem"><img src="images/cac.png"> Combine Datafiles</div></a></li>
+			<li><a href="index_PivotTablePlus.html"><div class="navMenuItem"><img src="images/ptp.png"> StatBuddy</div></a></li>
+			<li style="float:right"><a href="index_About.html"><div class="navMenuItem">About</div></a></li>
+		</ul>
+	</nav>
+
+	<!-- ~~- processing files ~~- -->
+	<div id="processingBox">
+		<div class="dragDropBox" id="processing" style='text-align: left; vertical-align: bottom; padding: 5px'> </div>
+	</div>
+	
+	<!-- ~~- choosing a file ~~- -->
+	<div id="fileSelectorBox" style='text-align: center'>
+		<div class="roundedBox dragDropBox" id="drop_zone">
+			<div class="middleCenter">
+				<h1>citation overlap</h1>
+				<h2>drag text files here</h2>
+			</div>
+		</div>
+		
+		<p style="font-size: 11px;">Or if you prefer <input type="file" id="files" name="files[]" multiple />
+		<output id="list"></output> <!---- I don't know what this is -->
+	</div>
+
+<!-- ~~- fo ~~- -->
+
+<div class='bigBox' id='foBigBox' style="display: none;">
+	<!-- Box for excluded files -->
+	<div class='boxAroundTable' id='foProblemBox' style="display: none;">
+		<div class='heading'>Problems</div> <br>
+		<p>
+		<div id="foProblemText" style="font-family: monospace;"></div>
+	</div>
+
+	<!-- here is a period below here because there has to be a character here because heading is a float left. 
+		I should change that and make it work on all pages, probably. 
+		I'll make it so the export button goes with the data, not above it, and 
+		then this won't have to float left.  -->
+	<!-- Box for file info and export button -->
+	<!-- <div class='boxAroundTable'>
+		<div class='heading' id="foTable_heading"></div>  
+		. 
+	</div> -->
+
+
+	<!-- Box for FO table that shows how many times each article was cited by year -->
+	<div class='boxAroundTable'>
+		<div class="clearfix"> <!-- Clearfix makes it so that the floating buttons don't overflow downwards -->
+			<div style='float: right;'>
+				<a id="exportButton" class='coolButton'>Export Data</a>
+			</div>
+		</div>
+		<div id='foTable_numberOfOverlapsEtc' class='dataTable' style="max-height: 500px;"></div>
+	</div>
+
+	<!-- Box for FO table that lists all citers -->
+	<!-- Note: Clearfix makes it so that the floating buttons don't overflow downwards -->
+	<!-- <div class='boxAroundTable'>
+		<div class="clearfix"> 
+			<div style='float: right;'>
+				<a id="exportButton_listallciters" class='coolButton'>Export Data</a>
+			</div>
+		</div>
+		<div id='foTable_listAllCiters' class='dataTable' style="max-height: 500px;"></div>
+	</div> -->
+
+	<p>
+	</div>
+	
+	<p>
+	<div id="notes_for_user" class="roundedBox" style="display: none;"></div>
+	<p>
+	
+
+</body>
+</html>
+
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~- -->
+
+
+<script src="file_select.js"></script>
+<script src="file_importExportContent.js"></script>
+<script src="functions_fileOverlap.js"></script>
+<script src="functions_stats.js"></script>
+<script src="functions_indexpage.js"></script>
