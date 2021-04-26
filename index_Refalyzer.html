@@ -19,8 +19,10 @@
 	function json_practice() {
 		var output = "";
 		var authorList = "";
+		var year = "";
 		var numResultsToShow = 1;
 		var titleArray = [];
+		var messagearray = [];
 		authors = [];
 		
 		// map each url to a getJSON call
@@ -30,46 +32,41 @@
 		Promise.all(proms).then(function(data){
 			for (i = 0; i < data.length; i++) {
 				output = "";
-				for (j = 0; j < numResultsToShow; j++) {
-					authorList = "";
-					
-					// if crossref didn't find it, ignore it
-					if (typeof data[i].message.items[j].author === 'undefined') {
-						authorList = "not found";
-					} else {
-						// if this is already in the list, ignore it
-						if (titleArray.includes(data[i].message.items[j].title[0]) == true) {
-							authorList = "duplicate";
-						} else {
-							// figure out authors
-							titleArray.push(data[i].message.items[j].title[0]);
+				authorList = "";
 
-							for (a = 0; a < data[i].message.items[j].author.length; a++) {
-								tempAuthor = data[i].message.items[j].author[a].family + ", ";
-								tempAuthor += data[i].message.items[j].author[a].given;
-								authorList += tempAuthor + "; ";
-					
-								// keep track of all of the authors (who had the top score)
-								if (j == 0) {
-									if (authors[tempAuthor] === undefined) {
-										authors[tempAuthor] = 1;
-									} else {
-										authors[tempAuthor]++;
-									} 
-								}
-							}
+				// if crossref didn't find it, ignore it
+				if (typeof data[i].message.items[0].author === 'undefined') {
+					authorList = "not found";
+				} else {
+					// if this title is already in the list, ignore it
+					if (titleArray.includes(data[i].message.items[0].title[0]) == true) {
+						authorList = "duplicate";
+					} else {
+						// figure out authors
+						titleArray.push(data[i].message.items[0].title[0]);
+
+						for (a = 0; a < data[i].message.items[0].author.length; a++) {
+							tempAuthor = data[i].message.items[0].author[a].family + ", ";
+							tempAuthor += data[i].message.items[0].author[a].given;
+							authorList += tempAuthor + "; ";
+				
+							// keep track of all of the authors
+							if (authors[tempAuthor] === undefined) {
+								authors[tempAuthor] = 1;
+							} else {
+								authors[tempAuthor]++;
+							} 
 						}
 					}
- 					
-					// assign value to output
-					if (authorList == "not found" || authorList == "duplicate") {
-						output += "<p>" + authorList;
-					} else {
-						output += "<p>" + authorList + data[i].message.items[j].title + " " +data[i].message.items[j].URL;
-						console.log( data[i].message.items[j]);
-						console.log(data[i].message.items[j].issued['date-parts'][0][0]); // dfd https://stackoverflow.com/questions/7122609/how-do-i-reference-a-javascript-object-property-with-a-hyphen-in-it
-						
-					}
+				}
+				
+				// assign value to output
+				if (authorList == "not found" || authorList == "duplicate") {
+					output += "<p>" + authorList;
+				} else {
+					year = data[i].message.items[0].issued['date-parts'][0][0];
+					output += "<p>" + authorList + "("+year+") "+data[i].message.items[0].title + " <i>" +data[i].message.items[0]['container-title'] + ", " + data[i].message.items[0].volume + ",</i> " + data[i].message.items[0].page + ". " + data[i].message.items[0].URL;
+					console.log(data[i].message.items[0]);
 				}
 				document.getElementById(urls[i]).innerHTML = output;
 			}
