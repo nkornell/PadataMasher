@@ -9,37 +9,149 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="shortcut icon" href="favicon.ico">
 	<link rel="stylesheet" type="text/css" href="mystyle.css">
-
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> <!-- dfd -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
 
 <script>
-// new stuff about parsing and looking up a reference //
-function json_practice() {
 	var urls = [];
-	var output = "";
-	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Son+Terrace');
-	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Cantlon+Ferrigno');
-	urls.push( 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=Kornell+Klein+Rawson');
+	var authors = [];
+	
+	function json_practice() {
+		var output = "";
+		var authorList = "";
+		var numResultsToShow = 1;
+		var titleArray = [];
+		authors = [];
+		
+		// map each url to a getJSON call
+		var proms = urls.map(url=>$.getJSON(url));
 
-	//map each url to a getJSON call
-	var proms = urls.map(url=>$.getJSON(url));
+		// put the results in a table
+		Promise.all(proms).then(function(data){
+			for (i = 0; i < data.length; i++) {
+				output = "";
+				for (j = 0; j < numResultsToShow; j++) {
+					authorList = "";
+					
+					// if crossref didn't find it, ignore it
+					if (typeof data[i].message.items[j].author === 'undefined') {
+						authorList = "not found";
+					} else {
+						// if this is already in the list, ignore it
+						if (titleArray.includes(data[i].message.items[j].title[0]) == true) {
+							authorList = "duplicate";
+						} else {
+							// figure out authors
+							titleArray.push(data[i].message.items[j].title[0]);
 
-	Promise.all(proms).then(function(data){
-		for (i = 0; i < data.length; i++) {
-			console.log('next one');
-			console.log(data[i]);
-			console.log(data[i].message.items[0].title);
-			output += data[i].message.items[0].title + '\n\n';
+							for (a = 0; a < data[i].message.items[j].author.length; a++) {
+								tempAuthor = data[i].message.items[j].author[a].family + ", ";
+								tempAuthor += data[i].message.items[j].author[a].given;
+								authorList += tempAuthor + "; ";
+					
+								// keep track of all of the authors (who had the top score)
+								if (j == 0) {
+									if (authors[tempAuthor] === undefined) {
+										authors[tempAuthor] = 1;
+									} else {
+										authors[tempAuthor]++;
+									} 
+								}
+							}
+						}
+					}
+ 					
+					// assign value to output
+					if (authorList == "not found" || authorList == "duplicate") {
+						output += "<p>" + authorList;
+					} else {
+						output += "<p>" + authorList + data[i].message.items[j].title + " " +data[i].message.items[j].URL ;
+					}
+				}
+				document.getElementById(urls[i]).innerHTML = output;
+			}
+			showAuthors();
+		});
+	}
+	
+	function showAuthors() {
+		var authorTableText = "<table>"
+		var authorArrayTemp = [];
+		
+		// authors is an object. in order to sort it, first turn the author names into an array.
+		for (var key in authors) {
+			if (authors.hasOwnProperty(key)) {
+				authorArrayTemp.push(key);
+			}
 		}
-console.log("output:\n" + output);
-	});
-}
-// end of new stuff about parsing and looking up a reference //
+		
+		authorArrayTemp.sort();
+		
+		// add authors to the html table
+		for (i = 0; i < authorArrayTemp.length; i++) {
+			authorTableText += "<tr><td>";
+			authorTableText += authorArrayTemp[i] + "</td><td>" + authors[authorArrayTemp[i]];
+			authorTableText += "</td></tr>";
+		}
+
+		authorTableText += "</table>"
+		document.getElementById('authorTable').innerHTML = authorTableText;
+	}
+	
+
+	
+	function showBoxes() {
+		var x = document.getElementById("refalyzerArticleListBox");
+		x.style.display = "flex";
+		x = document.getElementById("refalyzerAuthorsBox");
+		x.style.display = "flex";
+	}
+	
+	function getText() {
+		showBoxes();
+		parse_input();
+		json_practice();
+	}
+	
+	function parse_input() {
+		urls = [];
+
+		var inputText = document.getElementById("myText").value;		
+		inputText = inputText.replaceAll('&', '');
+		
+		var inputRow = inputText.split(/\r\n|\r|\n/g);
+		
+		// get rid of rows with too few characters
+		for (i = inputRow.length - 1; i >= 0; i--) {
+			inputRow[i] = inputRow[i].trim();
+			if (inputRow[i].length < 5) {
+				inputRow.splice(i, 1);
+			}
+		}
+		
+		// Fill in urls variable
+		for (i = 0; i < inputRow.length; i++) { 
+			urls.push('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=2&query.bibliographic=' + inputRow[i].replaceAll(' ', '+'));
+		}
+		
+		// Build article table
+		var articleTableText = "<table>";
+		articleTableText += '<tr><th style="width:50%">Search text</th>';
+    	articleTableText += '<th style="width:50%">Article found</th></tr>';
+
+		for (i = 0; i < inputRow.length; i++) {
+			articleTableText += "<tr><td>";
+			articleTableText += inputRow[i];
+			articleTableText += "</td><td>";
+			articleTableText += "<div id='"+urls[i]+"'>searching...</div>";
+			articleTableText += "</td></tr>";
+		}
+		articleTableText += "</table>";
+		document.getElementById('articleTable').innerHTML = articleTableText;
+		
+		document.getElementById('authorTable').innerHTML = "<table><tr><td>searching...</td></tr></table>";
+	}
 </script>
-
-
-
 </head>
 
 
@@ -55,73 +167,61 @@ console.log("output:\n" + output);
 		</ul>
 	</nav>
 
-	<!-- ~~- processing files ~~- -->
-	<div id="processingBox">
-		<div class="dragDropBox" id="processing" style='text-align: left; vertical-align: bottom; padding: 5px'> </div>
-	</div>
-	
-	<!-- ~~- choosing a file ~~- -->
-	<div id="fileSelectorBox" style='text-align: center'>
-		<div class="roundedBox dragDropBox" id="drop_zone">
-			<div class="middleCenter">
-				<h1>citation overlap</h1>
-				<h2>drag text files here</h2>
-			</div>
+<!-- new stuff -->
+<textarea id="myText" name="inputTextArea" rows="20" cols="80">
+kornell klein rawson
+</textarea>
+<!-- Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
+ -->
+
+<p>
+<button onclick="getText()">Run</button>
+
+<!-- <p id="outputText"></p> -->
+
+<!-- 	Results preview table 	-->
+<div class='bigBox' id='refalyzerArticleListBox' style="display: none">
+	<div class='bigBox' display="block"> 
+		<div class='boxAroundTable'>
+			<div class='heading'>Articles</div><br>
+			<p>
+			<div id='articleTable' class='dataTable'></div>
 		</div>
-		
-		<p style="font-size: 11px;">Or if you prefer <input type="file" id="files" name="files[]" multiple />
-		<output id="list"></output> <!---- I don't know what this is -->
 	</div>
+</div>
 
-<!-- ~~- fo ~~- -->
-
-<div class='bigBox' id='foBigBox' style="display: none;">
-	<!-- Box for excluded files -->
-	<div class='boxAroundTable' id='foProblemBox' style="display: none;">
-		<div class='heading'>Problems</div> <br>
-		<p>
-		<div id="foProblemText" style="font-family: monospace;"></div>
+<div class='bigBox' id='refalyzerAuthorsBox' style="display: none">
+	<div class='bigBox' display="block"> 
+		<div class='boxAroundTable'>
+			<div class='heading'>Authors</div><br>
+			<p>
+			<div id='authorTable' class='dataTable'></div>
+		</div>
 	</div>
-
-	<!-- here is a period below here because there has to be a character here because heading is a float left. 
-		I should change that and make it work on all pages, probably. 
-		I'll make it so the export button goes with the data, not above it, and 
-		then this won't have to float left.  -->
-	<!-- Box for file info and export button -->
-	<!-- <div class='boxAroundTable'>
-		<div class='heading' id="foTable_heading"></div>  
-		. 
-	</div> -->
+</div>
 
 
-	<!-- Box for FO table that shows how many times each article was cited by year -->
+<!-- end new stuff -->
+
+
+
+
+
+
+
+
+
+
+
+	<!-- Export button -->
 	<div class='boxAroundTable'>
-		<div class="clearfix"> <!-- Clearfix makes it so that the floating buttons don't overflow downwards -->
+		<div class="clearfix">
 			<div style='float: right;'>
 				<a id="exportButton" class='coolButton'>Export Data</a>
 			</div>
 		</div>
-		<div id='foTable_numberOfOverlapsEtc' class='dataTable' style="max-height: 500px;"></div>
 	</div>
 
-	<!-- Box for FO table that lists all citers -->
-	<!-- Note: Clearfix makes it so that the floating buttons don't overflow downwards -->
-	<!-- <div class='boxAroundTable'>
-		<div class="clearfix"> 
-			<div style='float: right;'>
-				<a id="exportButton_listallciters" class='coolButton'>Export Data</a>
-			</div>
-		</div>
-		<div id='foTable_listAllCiters' class='dataTable' style="max-height: 500px;"></div>
-	</div> -->
-
-	<p>
-	</div>
-	
-	<p>
-	<div id="notes_for_user" class="roundedBox" style="display: none;"></div>
-	<p>
-	
 
 </body>
 </html>
@@ -129,8 +229,8 @@ console.log("output:\n" + output);
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~- -->
 
 
-<script src="file_select.js"></script>
+<!-- <script src="file_select.js"></script> -->
 <script src="file_importExportContent.js"></script>
-<script src="functions_fileOverlap.js"></script>
-<script src="functions_stats.js"></script>
-<script src="functions_indexpage.js"></script>
+<!-- <script src="functions_fileOverlap.js"></script> -->
+<!-- <script src="functions_stats.js"></script> -->
+<!-- <script src="functions_indexpage.js"></script> -->
