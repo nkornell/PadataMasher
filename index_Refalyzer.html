@@ -17,33 +17,32 @@
 	var authors = [];
 	var titleArray = [];
 
-	function json_practice() {
-// 		map each url to a getJSON call
- 		var proms = urls.map(url=>$.getJSON(url));
-
-// me
-// 		var proms = [];
-// 		for (i = 0; i < urls.length; i++){
-// 			$.getJSON(urls[i], function(result){
-// 				proms.push(result.message.items[0]);
-// 				urls.push(result);
-// 				console.log( "proms: " + proms[0]);
-// 				console.log(urls[i]);
-// 				document.getElementById(urls[i]).innerHTML = parse_JSON(result.message.items[0]);
-// 				showAuthors();
-// 
-// 		    });
-// 		}	
-	
-
-		// put the results in a table
-		Promise.all(proms).then(function(data){
-			for (i = 0; i < data.length; i++) {
-				document.getElementById(urls[i]).innerHTML = parse_JSON(data[i].message.items[0]);
-			}
-			showAuthors();
-		});
+	async function getAllUrls(urls) {
+		var data = await Promise.all(
+			urls.map(
+				url =>
+					fetch(url).then(
+						(response) => response.json()
+				)));
+		for (i = 0; i < data.length; i++) {
+			document.getElementById(urls[i]).innerHTML = parse_JSON(data[i].message.items[0]);
+		}
+		showAuthors();
 	}
+
+// this worked but it was inefficient so now I use getAllURLs instead. 
+// 	function json_practice() {
+// 		map each url to a getJSON call
+//  		var proms = urls.map(url=>$.getJSON(url));
+// 
+// 		// put the results in a table
+// 		Promise.all(proms).then(function(data){
+// 			for (i = 0; i < data.length; i++) {
+// 				document.getElementById(urls[i]).innerHTML = parse_JSON(data[i].message.items[0]);
+// 			}
+// 			showAuthors();
+// 		});	
+// 	}
 	
 	function parse_JSON(input) {
 		var output = "";
@@ -103,7 +102,10 @@
 		// add authors to the html table
 		for (i = 0; i < authorArrayTemp.length; i++) {
 			authorTableText += "<tr><td>";
-			authorTableText += authorArrayTemp[i] + "</td><td>" + authors[authorArrayTemp[i]];
+			authorTableText += authorArrayTemp[i] + "</td><td>" + authors[authorArrayTemp[i]] + "</td><td>";
+			for (j = 0; j < authors[authorArrayTemp[i]]; j++) {
+				authorTableText += '-';
+			}
 			authorTableText += "</td></tr>";
 		}
 
@@ -120,19 +122,22 @@
 	}
 	
 	function getText() {
+		urls = [];
+		authors = [];
+		titleArray = [];
+
 		showBoxes();
 		parse_input();
-		json_practice();
+		getAllUrls(urls);
 	}
 	
+	
 	function parse_input() {
-		urls = [];
-
-		var inputText = document.getElementById("myText").value;		
+		var inputText = document.getElementById("myText").value;	
 		inputText = inputText.replaceAll('&', '');
 		
 		var inputRow = inputText.split(/\r\n|\r|\n/g);
-		
+			
 		// get rid of rows with too few characters
 		for (i = inputRow.length - 1; i >= 0; i--) {
 			inputRow[i] = inputRow[i].trim();
@@ -140,6 +145,11 @@
 				inputRow.splice(i, 1);
 			}
 		}
+		
+		// get rid of duplicate lines
+		inputRow = inputRow.filter(function(item, pos, self) {
+   			return self.indexOf(item) == pos;
+		})
 		
 		// Fill in urls variable
 		for (i = 0; i < inputRow.length; i++) { 
