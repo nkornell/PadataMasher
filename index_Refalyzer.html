@@ -26,6 +26,7 @@
 				)));
 		for (i = 0; i < data.length; i++) {
 			document.getElementById(urls[i]).innerHTML = parse_JSON(data[i].message.items[0]);
+// 			console.log(data[i]);
 		}
 		showAuthors();
 	}
@@ -79,7 +80,9 @@
 		if (authorList == "not found" || authorList == "duplicate") {
 			output += "<p>" + authorList;
 		} else {
-			output += "<p>" + authorList + "(" + input.issued['date-parts'][0][0] + ") "+input.title;
+			output += "<p>" + authorList;
+			output += "(" + input.issued['date-parts'][0][0] + ") ";
+			output += input.title;
 			output +=" <i>" +input['container-title'] + ", " + input.volume + ",</i> ";
 			output += input.page + ". " + input.URL;
 		}	
@@ -154,6 +157,9 @@
 		// Fill in urls variable
 		for (i = 0; i < inputRow.length; i++) { 
 			urls.push('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputRow[i].replaceAll(' ', '+'));
+// i tried selecting data, below, but i couldn't get things with hyphens to work and moreover, it didn't speed things up. 
+// 			urls.push('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&select=URL,title,volume,page,author&query.bibliographic=' + inputRow[i].replaceAll(' ', '+'));
+// 			urls.push('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&select=URL,title,date-parts,container-title,volume,page,author&query.bibliographic=' + inputRow[i].replaceAll(' ', '+'));
 		}
 		
 		// Build article table
