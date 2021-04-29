@@ -23,15 +23,14 @@
 				url =>
 					fetch(url).then(
 						(response) => response.json()
-				)));
+					)));
 		for (i = 0; i < data.length; i++) {
 			document.getElementById(urls[i]).innerHTML = parse_JSON(data[i].message.items[0]);
-// 			console.log(data[i]);
 		}
 		showAuthors();
 	}
 
-// this worked but it was inefficient so now I use getAllURLs instead. 
+// this worked but it was slow so now I use getAllURLs instead. which is also slow. 
 // 	function json_practice() {
 // 		map each url to a getJSON call
 //  		var proms = urls.map(url=>$.getJSON(url));
