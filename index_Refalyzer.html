@@ -16,8 +16,32 @@
 	var urls = [];
 	var authors = [];
 	var titleArray = [];
-
+	
+	async function getURLx(input) {
+		console.log( 'starting ' + input);
+		let myText = await $.getJSON(input);
+		console.log( 'my text: ');
+// 		console.log(parse_JSON(myText.message.items[0])); // parse json
+		document.getElementById(input).innerHTML = parse_JSON(myText.message.items[0]);
+	}
+	
 	async function getAllUrls(urls) {
+// 	var temp = fetch('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=kornell+rhodes');
+// 	var temp2 = fetch('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=kornell+neuringer');
+// 	console.log('done fetching');
+// 	console.log( temp);
+// 	console.log( temp2);
+
+// 		console.log( 'point 1');
+// 		getURLx("d");
+// 		console.log( 'point 2');
+
+console.log( 'loop start');
+for (i = 0; i < urls.length; i++) {
+	getURLx(urls[i]);
+}
+console.log( 'loop end');
+
 		var data = await Promise.all(
 			urls.map(
 				url =>
@@ -28,6 +52,7 @@
 			document.getElementById(urls[i]).innerHTML = parse_JSON(data[i].message.items[0]);
 		}
 		showAuthors();
+
 	}
 
 // this worked but it was slow so now I use getAllURLs instead. which is also slow. 
@@ -58,6 +83,7 @@
 				authorList = "duplicate";
 			} else {
 				// figure out authors
+				console.log( 'title: '+ input.title[0]);
 				titleArray.push(input.title[0]);
 
 				for (a = 0; a < input.author.length; a++) {
