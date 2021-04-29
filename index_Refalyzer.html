@@ -16,44 +16,42 @@
 	var urls = [];
 	var authors = [];
 	var titleArray = [];
+	var numCompleted = 0;
 	
-	async function getURLx(input) {
-		console.log( 'starting ' + input);
-		let myText = await $.getJSON(input);
-		console.log( 'my text: ');
-// 		console.log(parse_JSON(myText.message.items[0])); // parse json
-		document.getElementById(input).innerHTML = parse_JSON(myText.message.items[0]);
+	async function getOneURL(input) {
+// 		console.log( 'starting ' + input);
+		let myJSON = await $.getJSON(input);
+		document.getElementById(input).innerHTML = parse_JSON(myJSON.message.items[0]);
+		showAuthors();
+		numCompleted++;
+		updateProgressBar();
 	}
 	
 	async function getAllUrls(urls) {
-// 	var temp = fetch('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=kornell+rhodes');
-// 	var temp2 = fetch('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=kornell+neuringer');
-// 	console.log('done fetching');
-// 	console.log( temp);
-// 	console.log( temp2);
-
-// 		console.log( 'point 1');
-// 		getURLx("d");
-// 		console.log( 'point 2');
-
-console.log( 'loop start');
-for (i = 0; i < urls.length; i++) {
-	getURLx(urls[i]);
-}
-console.log( 'loop end');
-
-		var data = await Promise.all(
-			urls.map(
-				url =>
-					fetch(url).then(
-						(response) => response.json()
-					)));
-		for (i = 0; i < data.length; i++) {
-			document.getElementById(urls[i]).innerHTML = parse_JSON(data[i].message.items[0]);
+		for (i = 0; i < urls.length; i++) {
+			getOneURL(urls[i]);
 		}
-		showAuthors();
-
 	}
+	
+	function updateProgressBar() {
+		document.getElementById('progress').innerHTML = 'Articles processed: ' + numCompleted + '/' + urls.length;
+	}
+
+// 	async function getAllUrls(urls) {
+// 
+// this worked but it didn't show any progress until everything was done. 
+// 		var data = await Promise.all(
+// 			urls.map(
+// 				url =>
+// 					fetch(url).then(
+// 						(response) => response.json()
+// 					)));
+// 		for (i = 0; i < data.length; i++) {
+// 			document.getElementById(urls[i]).innerHTML = parse_JSON(data[i].message.items[0]);
+// 		}
+// 		showAuthors();
+// 	}
+
 
 // this worked but it was slow so now I use getAllURLs instead. which is also slow. 
 // 	function json_practice() {
@@ -153,10 +151,12 @@ console.log( 'loop end');
 		urls = [];
 		authors = [];
 		titleArray = [];
+		numCompleted = 0;
 
 		showBoxes();
 		parse_input();
 		getAllUrls(urls);
+		updateProgressBar();
 	}
 	
 	
@@ -227,8 +227,9 @@ kornell klein rawson
 <!-- Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
  -->
 
-<p>
-<button onclick="getText()">Run</button>
+<p><button onclick="getText()">Run</button>
+
+<p><div id='progress'></div>
 
 <!-- <p id="outputText"></p> -->
 
