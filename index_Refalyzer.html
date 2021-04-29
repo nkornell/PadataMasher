@@ -17,14 +17,14 @@
 	var authors = [];
 	var titleArray = [];
 	var numCompleted = 0;
+	var startTime = 0;
 	
 	async function getOneURL(input) {
-// 		console.log( 'starting ' + input);
-		let myJSON = await $.getJSON(input);
+		let myJSON = await $.getJSON(encodeURI(input));
 		document.getElementById(input).innerHTML = parse_JSON(myJSON.message.items[0]);
 		showAuthors();
 		numCompleted++;
-		updateProgressBar();
+		updateProgress();
 	}
 	
 	async function getAllUrls(urls) {
@@ -33,8 +33,8 @@
 		}
 	}
 	
-	function updateProgressBar() {
-		document.getElementById('progress').innerHTML = 'Articles processed: ' + numCompleted + '/' + urls.length;
+	function updateProgress() {
+		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numCompleted + ' of ' + urls.length + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
 	}
 
 // 	async function getAllUrls(urls) {
@@ -71,7 +71,6 @@
 		var output = "";
 		var authorList = "";
 		
-
 		// if crossref didn't find it, ignore it
 		if (typeof input.author === 'undefined') {
 			authorList = "not found";
@@ -81,7 +80,6 @@
 				authorList = "duplicate";
 			} else {
 				// figure out authors
-				console.log( 'title: '+ input.title[0]);
 				titleArray.push(input.title[0]);
 
 				for (a = 0; a < input.author.length; a++) {
@@ -145,25 +143,27 @@
 		x.style.display = "flex";
 		x = document.getElementById("refalyzerAuthorsBox");
 		x.style.display = "flex";
+		x = document.getElementById("progressBox");
+		x.style.display = "flex";
 	}
 	
-	function getText() {
+	function start() {
 		urls = [];
 		authors = [];
 		titleArray = [];
 		numCompleted = 0;
-
+		startTime = Date.now();
+    
 		showBoxes();
-		parse_input();
+		parse_user_input();
 		getAllUrls(urls);
-		updateProgressBar();
+		updateProgress();
 	}
 	
 	
-	function parse_input() {
+	function parse_user_input() {
 		var inputText = document.getElementById("myText").value;	
-		inputText = inputText.replaceAll('&', '');
-		
+		inputText = inputText.replace(/[&\\#,+()$~%'"*?<>{}]/g, '');
 		var inputRow = inputText.split(/\r\n|\r|\n/g);
 			
 		// get rid of rows with too few characters
@@ -182,7 +182,7 @@
 		// Fill in urls variable
 		for (i = 0; i < inputRow.length; i++) { 
 			urls.push('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputRow[i].replaceAll(' ', '+'));
-// i tried selecting data, below, but i couldn't get things with hyphens to work and moreover, it didn't speed things up. 
+// 			i tried selecting data, below, but i couldn't get things with hyphens to work and moreover, it didn't speed things up. 
 // 			urls.push('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&select=URL,title,volume,page,author&query.bibliographic=' + inputRow[i].replaceAll(' ', '+'));
 // 			urls.push('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&select=URL,title,date-parts,container-title,volume,page,author&query.bibliographic=' + inputRow[i].replaceAll(' ', '+'));
 		}
@@ -227,9 +227,15 @@ kornell klein rawson
 <!-- Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
  -->
 
-<p><button onclick="getText()">Run</button>
+<p><button onclick="start()">Run</button>
 
-<p><div id='progress'></div>
+<div class='bigBox' id='progressBox' style="display: none">
+	<div class='boxAroundTable'>
+		<div class='heading'>Progress</div><br>
+		<p>
+		<div id='progressText'></div>
+	</div>
+</div>
 
 <!-- <p id="outputText"></p> -->
 
