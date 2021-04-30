@@ -35,6 +35,9 @@
 	
 	function updateProgress() {
 		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numCompleted + ' of ' + urls.length + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
+		if (numCompleted == urls.length) {
+			document.getElementById('progressHeader').innerHTML = "Done";
+		}
 	}
 
 // 	async function getAllUrls(urls) {
@@ -157,6 +160,7 @@
 		showBoxes();
 		parse_user_input();
 		getAllUrls(urls);
+		document.getElementById('progressHeader').innerHTML = "Working...";
 		updateProgress();
 	}
 	
@@ -191,13 +195,17 @@
 		var articleTableText = "<table>";
 		articleTableText += '<tr><th style="width:50%">Search text</th>';
     	articleTableText += '<th style="width:50%">Article found</th></tr>';
-
+// 		var pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
+// 		var pattern = (10[.][0-9]{4,}[^\s"/<>]*/[^\s"<>]+);
+		var pattern = '\b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b';
+		
 		for (i = 0; i < inputRow.length; i++) {
 			articleTableText += "<tr><td>";
 			articleTableText += inputRow[i];
-			articleTableText += "</td><td>";
-			articleTableText += "<div id='"+urls[i]+"'>searching...</div>";
-			articleTableText += "</td></tr>";
+			articleTableText += "</td>";
+			articleTableText += "<td><div id='"+urls[i]+"'>searching...</div></td>";
+			articleTableText += "<td>" + inputRow[i].match(pattern) + "</td>";
+			articleTableText += "</tr>";
 		}
 		articleTableText += "</table>";
 		document.getElementById('articleTable').innerHTML = articleTableText;
@@ -231,7 +239,7 @@ kornell klein rawson
 
 <div class='bigBox' id='progressBox' style="display: none">
 	<div class='boxAroundTable'>
-		<div class='heading'>Progress</div><br>
+		<div class='heading' id='progressHeader'>Progress</div><br>
 		<p>
 		<div id='progressText'></div>
 	</div>
@@ -286,6 +294,11 @@ kornell klein rawson
 <!-- <script src="functions_fileOverlap.js"></script> -->
 <!-- <script src="functions_stats.js"></script> -->
 <!-- <script src="functions_indexpage.js"></script> -->
+
+<p>17/17 92s
+<p>18/18 65s, with select
+<p>18/18 58s
+<p>18/18 76s, with select
 
 <p>Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. https://doi.org/10.1037/xlm0000246
 <p>Besken, M., & Mulligan, N. W. (2013). Easily perceived, easily remembered? Perceptual interference produces a double dissociation between metamemory and memory performance. Memory & Cognition, 41, 897–903. https://doi.org/10.3758/s13421-013-0307-8
