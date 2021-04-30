@@ -13,29 +13,38 @@
 
 
 <script>
-	var urls = [];
+	var urlSuffix = [];
 	var authors = [];
 	var titleArray = [];
 	var numCompleted = 0;
 	var startTime = 0;
 	
+
+
 	async function getOneURL(input) {
-		let myJSON = await $.getJSON(encodeURI(input));
+// 		var stringToSend = 'https://api.crossref.org/works/'+'10.1037/a0034407';
+// 		let myJSON = await $.getJSON(encodeURI(stringToSend));
+// 		document.getElementById(input).innerHTML = parse_JSON(myJSON.message);
+
+		var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + input.replaceAll(' ', '+');
+		let myJSON = await $.getJSON(encodeURI(stringToSend));		
 		document.getElementById(input).innerHTML = parse_JSON(myJSON.message.items[0]);
+		
 		showAuthors();
 		numCompleted++;
 		updateProgress();
+		console.log( document.getElementById(input).innerHTML);
 	}
 	
-	async function getAllUrls(urls) {
-		for (i = 0; i < urls.length; i++) {
-			getOneURL(urls[i]);
+	async function getAllUrls(inputArray) {
+		for (i = 0; i < inputArray.length; i++) {
+			getOneURL(inputArray[i]);
 		}
 	}
 	
 	function updateProgress() {
-		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numCompleted + ' of ' + urls.length + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
-		if (numCompleted == urls.length) {
+		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numCompleted + ' of ' + urlSuffix.length + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
+		if (numCompleted == urlSuffix.length) {
 			document.getElementById('progressHeader').innerHTML = "Done";
 		}
 	}
@@ -151,7 +160,7 @@
 	}
 	
 	function start() {
-		urls = [];
+		urlSuffix = [];
 		authors = [];
 		titleArray = [];
 		numCompleted = 0;
@@ -159,7 +168,7 @@
     
 		showBoxes();
 		parse_user_input();
-		getAllUrls(urls);
+		getAllUrls(urlSuffix);
 		document.getElementById('progressHeader').innerHTML = "Working...";
 		updateProgress();
 	}
@@ -183,12 +192,10 @@
    			return self.indexOf(item) == pos;
 		})
 		
-		// Fill in urls variable
+		// Fill in urlSuffix variable
 		for (i = 0; i < inputRow.length; i++) { 
-			urls.push('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputRow[i].replaceAll(' ', '+'));
-// 			i tried selecting data, below, but i couldn't get things with hyphens to work and moreover, it didn't speed things up. 
-// 			urls.push('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&select=URL,title,volume,page,author&query.bibliographic=' + inputRow[i].replaceAll(' ', '+'));
-// 			urls.push('https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&select=URL,title,date-parts,container-title,volume,page,author&query.bibliographic=' + inputRow[i].replaceAll(' ', '+'));
+			urlSuffix.push(inputRow[i]); // dfd get rid of inputRow as a variable above etc
+			console.log( urlSuffix[i]);
 		}
 		
 		// Build article table
@@ -197,14 +204,25 @@
     	articleTableText += '<th style="width:50%">Article found</th></tr>';
 // 		var pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
 // 		var pattern = (10[.][0-9]{4,}[^\s"/<>]*/[^\s"<>]+);
-		var pattern = '\b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b';
+// 		var pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
+		var pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i;
 		
+		var tempDOIArray = [];
+		var tempDOI; 
 		for (i = 0; i < inputRow.length; i++) {
+			tempDOIArray = inputRow[i].match(pattern);
+			if (typeof tempDOIArray !== 'undefined' && tempDOIArray !== null && tempDOIArray.length > 0) {
+				tempDOI = tempDOIArray[0];
+			} else {
+				tempDOI = "doi not found in search string";
+			}
+			console.log( 'tempDOI');
+			console.log( tempDOI);
 			articleTableText += "<tr><td>";
 			articleTableText += inputRow[i];
 			articleTableText += "</td>";
-			articleTableText += "<td><div id='"+urls[i]+"'>searching...</div></td>";
-			articleTableText += "<td>" + inputRow[i].match(pattern) + "</td>";
+			articleTableText += "<td><div id='"+urlSuffix[i]+"'>searching...</div></td>";
+			articleTableText += "<td>" + tempDOI + "</td>";
 			articleTableText += "</tr>";
 		}
 		articleTableText += "</table>";
@@ -230,10 +248,12 @@
 
 <!-- new stuff -->
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-kornell klein rawson
+Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
+
 </textarea>
 <!-- Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
  -->
+<!-- kornell klein rawson -->
 
 <p><button onclick="start()">Run</button>
 
