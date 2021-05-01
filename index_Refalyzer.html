@@ -16,29 +16,55 @@
 	var urlSuffix = [];
 	var authors = [];
 	var titleArray = [];
+	var DOIarray = [];
 	var numCompleted = 0;
 	var startTime = 0;
 	
 
 
-	async function getOneURL(input) {
-// 		var stringToSend = 'https://api.crossref.org/works/'+'10.1037/a0034407';
-// 		let myJSON = await $.getJSON(encodeURI(stringToSend));
-// 		document.getElementById(input).innerHTML = parse_JSON(myJSON.message);
+	async function getOneURL(inputURL, inputDOI) {
+		console.log( 'trying stuff');
+		try {
+			if (inputDOI === "") {
+				console.log('calling blank doi');
+				var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputURL.replaceAll(' ', '+');
+				let myJSON = await $.getJSON(encodeURI(stringToSend));
+				document.getElementById(inputURL).innerHTML = parse_JSON(myJSON.message.items[0]);
+// 				document.getElementById(inputURL).innerHTML = "skipping for now";
+			} else {
+				console.log( 'calling when doi exists');
+				var stringToSend = 'https://api.crossref.org/works/'+inputDOI+'?mailto=nkornell@gmail.com';
+	// 			let myJSON = await $.getJSON(encodeURI(stringToSend));
+				let myJSON = await $.getJSON(encodeURI(stringToSend), function() {
+					console.log( "success" );
+				}).fail(function() { 
+					console.log( "fail function called" ); 
+					document.getElementById(inputURL).innerHTML = 'doi not found; searching again...';
+					getOneURL(inputURL, '');
+					return;
+				}); 
 
-		var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + input.replaceAll(' ', '+');
-		let myJSON = await $.getJSON(encodeURI(stringToSend));		
-		document.getElementById(input).innerHTML = parse_JSON(myJSON.message.items[0]);
-		
-		showAuthors();
-		numCompleted++;
-		updateProgress();
-		console.log( document.getElementById(input).innerHTML);
+				document.getElementById(inputURL).innerHTML = parse_JSON(myJSON.message);
+			}
+			
+			console.log( 'show authors');
+			showAuthors();
+			numCompleted++;
+			updateProgress();
+	// 		console.log( document.getElementById(inputURL).innerHTML);
+		}
+		catch(err) {
+			console.log("caught the error listed below: ");
+			console.log(err);
+		}
 	}
 	
 	async function getAllUrls(inputArray) {
+		console.log( inputArray.length);
 		for (i = 0; i < inputArray.length; i++) {
-			getOneURL(inputArray[i]);
+// 			if (DOIarray[i] !== "") {
+				getOneURL(inputArray[i], DOIarray[i]);
+// 			}
 		}
 	}
 	
@@ -163,6 +189,7 @@
 		urlSuffix = [];
 		authors = [];
 		titleArray = [];
+		DOIarray = [];
 		numCompleted = 0;
 		startTime = Date.now();
     
@@ -195,7 +222,7 @@
 		// Fill in urlSuffix variable
 		for (i = 0; i < inputRow.length; i++) { 
 			urlSuffix.push(inputRow[i]); // dfd get rid of inputRow as a variable above etc
-			console.log( urlSuffix[i]);
+// 			console.log( urlSuffix[i]);
 		}
 		
 		// Build article table
@@ -203,26 +230,28 @@
 		articleTableText += '<tr><th style="width:50%">Search text</th>';
     	articleTableText += '<th style="width:50%">Article found</th></tr>';
 // 		var pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
+		var pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/i; // works
 // 		var pattern = (10[.][0-9]{4,}[^\s"/<>]*/[^\s"<>]+);
 // 		var pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
-		var pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i;
+// 		var pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
 		
 		var tempDOIArray = [];
-		var tempDOI; 
 		for (i = 0; i < inputRow.length; i++) {
-			tempDOIArray = inputRow[i].match(pattern);
+			tempDOIArray = inputRow[i].match(pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
 			if (typeof tempDOIArray !== 'undefined' && tempDOIArray !== null && tempDOIArray.length > 0) {
-				tempDOI = tempDOIArray[0];
+// 				console.log( 'tempDOIArray:');
+// 				console.log( tempDOIArray[0]);
+				DOIarray.push(tempDOIArray[0]);
 			} else {
-				tempDOI = "doi not found in search string";
+				DOIarray.push("");
 			}
-			console.log( 'tempDOI');
-			console.log( tempDOI);
+// 			console.log( 'DOIarray[DOIarray.length-1]');
+// 			console.log( DOIarray[DOIarray.length-1]);
 			articleTableText += "<tr><td>";
 			articleTableText += inputRow[i];
 			articleTableText += "</td>";
 			articleTableText += "<td><div id='"+urlSuffix[i]+"'>searching...</div></td>";
-			articleTableText += "<td>" + tempDOI + "</td>";
+			articleTableText += "<td>" + DOIarray[i] + "</td>";
 			articleTableText += "</tr>";
 		}
 		articleTableText += "</table>";
@@ -249,6 +278,7 @@
 <!-- new stuff -->
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
 Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
+Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the future: Object and source memory for real and imagined events. Applied Cognitive Psychology, 13, 373–390. https://doi.org/10.1002/(SICI)1099-0720(199908)13:4<373::AID- ACP605>3.0.CO;2-F
 
 </textarea>
 <!-- Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
