@@ -23,48 +23,56 @@
 
 
 	async function getOneURL(inputURL, inputDOI) {
-		console.log( 'trying stuff');
+		var reference_returned = "";
+		var stringToSend = '';
+		var score = 0;
+		
 		try {
 			if (inputDOI === "") {
-				console.log('calling blank doi');
-				var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputURL.replaceAll(' ', '+');
+				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputURL.replaceAll(' ', '+');
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
-				document.getElementById(inputURL).innerHTML = parse_JSON(myJSON.message.items[0]);
-// 				document.getElementById(inputURL).innerHTML = "skipping for now";
+				reference_returned = parse_JSON(myJSON.message.items[0]);
 			} else {
-				console.log( 'calling when doi exists');
-				var stringToSend = 'https://api.crossref.org/works/'+inputDOI+'?mailto=nkornell@gmail.com';
-	// 			let myJSON = await $.getJSON(encodeURI(stringToSend));
+				stringToSend = 'https://api.crossref.org/works/'+inputDOI+'?mailto=nkornell@gmail.com';
 				let myJSON = await $.getJSON(encodeURI(stringToSend), function() {
-					console.log( "success" );
+					// nothing happens until after
 				}).fail(function() { 
-					console.log( "fail function called" ); 
+					console.log( "failed to find DOI (below)"); 
+					console.log(inputDOI); 
 					document.getElementById(inputURL).innerHTML = 'doi not found; searching again...';
 					getOneURL(inputURL, '');
 					return;
 				}); 
+				reference_returned = parse_JSON(myJSON.message);
+			}
 
-				document.getElementById(inputURL).innerHTML = parse_JSON(myJSON.message);
+			document.getElementById(inputURL).innerHTML = reference_returned;
+			
+			// figure out how closely the input matches the output
+			if (reference_returned !== '<p>not found' && reference_returned !== '<p>duplicate') {
+				score = Math.ceil(100*similarity(reference_returned, inputURL));
+				if (score < 60) {
+					document.getElementById('status_' + inputURL).innerHTML = '<div style="background-color:tomato;">Match strength: ' + score + '</div>';
+				} else {
+					document.getElementById('status_' + inputURL).innerHTML = 'Match strength: ' + score;
+				}
+			} else {
+				document.getElementById('status_' + inputURL).innerHTML = "na";
 			}
 			
-			console.log( 'show authors');
 			showAuthors();
 			numCompleted++;
 			updateProgress();
-	// 		console.log( document.getElementById(inputURL).innerHTML);
 		}
 		catch(err) {
-			console.log("caught the error listed below: ");
-			console.log(err);
+// 			console.log("caught the error listed below: ");
+// 			console.log(err);
 		}
 	}
 	
-	async function getAllUrls(inputArray) {
-		console.log( inputArray.length);
-		for (i = 0; i < inputArray.length; i++) {
-// 			if (DOIarray[i] !== "") {
-				getOneURL(inputArray[i], DOIarray[i]);
-// 			}
+	async function getAllUrls() {
+		for (i = 0; i < urlSuffix.length; i++) {
+			getOneURL(urlSuffix[i], DOIarray[i]);
 		}
 	}
 	
@@ -75,36 +83,6 @@
 		}
 	}
 
-// 	async function getAllUrls(urls) {
-// 
-// this worked but it didn't show any progress until everything was done. 
-// 		var data = await Promise.all(
-// 			urls.map(
-// 				url =>
-// 					fetch(url).then(
-// 						(response) => response.json()
-// 					)));
-// 		for (i = 0; i < data.length; i++) {
-// 			document.getElementById(urls[i]).innerHTML = parse_JSON(data[i].message.items[0]);
-// 		}
-// 		showAuthors();
-// 	}
-
-
-// this worked but it was slow so now I use getAllURLs instead. which is also slow. 
-// 	function json_practice() {
-// 		map each url to a getJSON call
-//  		var proms = urls.map(url=>$.getJSON(url));
-// 
-// 		// put the results in a table
-// 		Promise.all(proms).then(function(data){
-// 			for (i = 0; i < data.length; i++) {
-// 				document.getElementById(urls[i]).innerHTML = parse_JSON(data[i].message.items[0]);
-// 			}
-// 			showAuthors();
-// 		});	
-// 	}
-	
 	function parse_JSON(input) {
 		var output = "";
 		var authorList = "";
@@ -115,7 +93,8 @@
 		} else {
 			// if this title is already in the list, ignore it
 			if (titleArray.includes(input.title[0]) == true) {
-				authorList = "duplicate";
+				console.log( 'duplicate: ' + titleArray.indexOf(input.title[0]) +' = ' + titleArray.length);
+				authorList = "duplicate"; // dfd join duplicates together? 
 			} else {
 				// figure out authors
 				titleArray.push(input.title[0]);
@@ -148,6 +127,60 @@
 		return output;
 	}
 	
+	
+	function parse_user_input() {
+		var inputText = document.getElementById("myText").value;
+		inputText = inputText.replace(/[&\\#$~%'"*?{}]/g, ''); // remove illegal characters
+		inputText = inputText.replaceAll("- ","-"); 
+		urlSuffix = inputText.split(/\r\n|\r|\n/g);
+			
+		// get rid of rows with too few characters
+		for (i = urlSuffix.length - 1; i >= 0; i--) {
+			urlSuffix[i] = urlSuffix[i].trim();
+			if (urlSuffix[i].length < 5) {
+				urlSuffix.splice(i, 1);
+			}
+		}
+		
+		// get rid of duplicate lines
+		urlSuffix = urlSuffix.filter(function(item, pos, self) {
+   			return self.indexOf(item) == pos;
+		})
+				
+		// Build article table
+		var articleTableText = "<table>";
+		articleTableText += '<tr><th style="width:40%">Search text</th>';
+    	articleTableText += '<th style="width:40%">Article found</th>';
+    	articleTableText += '<th style="width:20%">Notes</th></tr>';
+    	
+    	// pattern is used to find a DOI within the input string
+// 		var pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
+// 		var pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
+// 		var pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
+		var pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/i; // works
+		
+		var tempDOIArray = [];
+		for (i = 0; i < urlSuffix.length; i++) {
+			tempDOIArray = urlSuffix[i].match(pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
+			if (typeof tempDOIArray !== 'undefined' && tempDOIArray !== null && tempDOIArray.length > 0) {
+				tempDOIArray[0] = tempDOIArray[0].replaceAll('//','/');
+				DOIarray.push(tempDOIArray[0]);
+			} else {
+				DOIarray.push("");
+			}
+			articleTableText += "<tr><td>";
+			articleTableText += urlSuffix[i];
+			articleTableText += "</td>";
+			articleTableText += "<td><div id='"+urlSuffix[i]+"'>searching...</div></td>";
+			articleTableText += "<td id='status_" + urlSuffix[i] + "'" + DOIarray[i] + "</td>";
+			articleTableText += "</tr>";
+		}
+		articleTableText += "</table>";
+		document.getElementById('articleTable').innerHTML = articleTableText;
+		
+		document.getElementById('authorTable').innerHTML = "<table><tr><td>searching...</td></tr></table>";
+	}
+
 	function showAuthors() {
 		var authorTableText = "<table>"
 		var authorArrayTemp = [];
@@ -160,6 +193,8 @@
 		}
 		
 		authorArrayTemp.sort();
+		
+		//dfd make author table sortable
 		
 		// add authors to the html table
 		for (i = 0; i < authorArrayTemp.length; i++) {
@@ -195,70 +230,11 @@
     
 		showBoxes();
 		parse_user_input();
-		getAllUrls(urlSuffix);
+		getAllUrls();
 		document.getElementById('progressHeader').innerHTML = "Working...";
 		updateProgress();
 	}
 	
-	
-	function parse_user_input() {
-		var inputText = document.getElementById("myText").value;	
-		inputText = inputText.replace(/[&\\#,+()$~%'"*?<>{}]/g, '');
-		var inputRow = inputText.split(/\r\n|\r|\n/g);
-			
-		// get rid of rows with too few characters
-		for (i = inputRow.length - 1; i >= 0; i--) {
-			inputRow[i] = inputRow[i].trim();
-			if (inputRow[i].length < 5) {
-				inputRow.splice(i, 1);
-			}
-		}
-		
-		// get rid of duplicate lines
-		inputRow = inputRow.filter(function(item, pos, self) {
-   			return self.indexOf(item) == pos;
-		})
-		
-		// Fill in urlSuffix variable
-		for (i = 0; i < inputRow.length; i++) { 
-			urlSuffix.push(inputRow[i]); // dfd get rid of inputRow as a variable above etc
-// 			console.log( urlSuffix[i]);
-		}
-		
-		// Build article table
-		var articleTableText = "<table>";
-		articleTableText += '<tr><th style="width:50%">Search text</th>';
-    	articleTableText += '<th style="width:50%">Article found</th></tr>';
-// 		var pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
-		var pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/i; // works
-// 		var pattern = (10[.][0-9]{4,}[^\s"/<>]*/[^\s"<>]+);
-// 		var pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
-// 		var pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
-		
-		var tempDOIArray = [];
-		for (i = 0; i < inputRow.length; i++) {
-			tempDOIArray = inputRow[i].match(pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
-			if (typeof tempDOIArray !== 'undefined' && tempDOIArray !== null && tempDOIArray.length > 0) {
-// 				console.log( 'tempDOIArray:');
-// 				console.log( tempDOIArray[0]);
-				DOIarray.push(tempDOIArray[0]);
-			} else {
-				DOIarray.push("");
-			}
-// 			console.log( 'DOIarray[DOIarray.length-1]');
-// 			console.log( DOIarray[DOIarray.length-1]);
-			articleTableText += "<tr><td>";
-			articleTableText += inputRow[i];
-			articleTableText += "</td>";
-			articleTableText += "<td><div id='"+urlSuffix[i]+"'>searching...</div></td>";
-			articleTableText += "<td>" + DOIarray[i] + "</td>";
-			articleTableText += "</tr>";
-		}
-		articleTableText += "</table>";
-		document.getElementById('articleTable').innerHTML = articleTableText;
-		
-		document.getElementById('authorTable').innerHTML = "<table><tr><td>searching...</td></tr></table>";
-	}
 </script>
 </head>
 
@@ -278,7 +254,7 @@
 <!-- new stuff -->
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
 Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
-Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the future: Object and source memory for real and imagined events. Applied Cognitive Psychology, 13, 373–390. https://doi.org/10.1002/(SICI)1099-0720(199908)13:4<373::AID- ACP605>3.0.CO;2-F
+Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the future: Object and source memory for real and imagined events. Applied Cognitive Psychology, 13, 373–390. https://doi.org/10.1002/(SICI)1099-0720(199908)13:4<373::AID-ACP605>3.0.CO;2-F
 
 </textarea>
 <!-- Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
@@ -342,13 +318,9 @@ Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the futur
 <!-- <script src="file_select.js"></script> -->
 <!-- <script src="file_importExportContent.js"></script> -->
 <!-- <script src="functions_fileOverlap.js"></script> -->
-<!-- <script src="functions_stats.js"></script> -->
+<script src="functions_stats.js"></script>
 <!-- <script src="functions_indexpage.js"></script> -->
 
-<p>17/17 92s
-<p>18/18 65s, with select
-<p>18/18 58s
-<p>18/18 76s, with select
 
 <p>Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. https://doi.org/10.1037/xlm0000246
 <p>Besken, M., & Mulligan, N. W. (2013). Easily perceived, easily remembered? Perceptual interference produces a double dissociation between metamemory and memory performance. Memory & Cognition, 41, 897–903. https://doi.org/10.3758/s13421-013-0307-8
