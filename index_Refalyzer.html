@@ -21,7 +21,6 @@
 	var startTime = 0;
 	
 
-
 	async function getOneURL(inputURL, inputDOI) {
 		var reference_returned = "";
 		var stringToSend = '';
@@ -193,16 +192,18 @@
 		}
 		
 		authorArrayTemp.sort();
-		
-		//dfd make author table sortable
-		
+				
 		// add authors to the html table
+		authorTableText += "<tr><th onclick='sortTable(0, "+'"authorTable"'+")' title='Click to Sort'>Author (click to sort)</th>";
+		authorTableText += "<th onclick='sortTable(1, "+'"authorTable"'+")' title='Click to Sort'>Articles Cited (click to sort)</th></tr>";
+
 		for (i = 0; i < authorArrayTemp.length; i++) {
 			authorTableText += "<tr><td>";
-			authorTableText += authorArrayTemp[i] + "</td><td>" + authors[authorArrayTemp[i]] + "</td><td>";
-			for (j = 0; j < authors[authorArrayTemp[i]]; j++) {
-				authorTableText += '-';
-			}
+			authorTableText += authorArrayTemp[i] + "</td><td>" + authors[authorArrayTemp[i]];
+// 			authorTableText += "</td><td>";
+// 			for (j = 0; j < authors[authorArrayTemp[i]]; j++) {
+// 				authorTableText += '-';
+// 			}
 			authorTableText += "</td></tr>";
 		}
 
@@ -295,20 +296,6 @@ Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the futur
 </div>
 
 
-
-
-<!-- Export button -->
-<!-- 
-<div class='boxAroundTable'>
-	<div class="clearfix">
-		<div style='float: right;'>
-			<a id="exportButton" class='coolButton'>Export Data</a>
-		</div>
-	</div>
-</div>
- -->
-
-
 </body>
 </html>
 
@@ -319,7 +306,7 @@ Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the futur
 <!-- <script src="file_importExportContent.js"></script> -->
 <!-- <script src="functions_fileOverlap.js"></script> -->
 <script src="functions_stats.js"></script>
-<!-- <script src="functions_indexpage.js"></script> -->
+<script src="functions_indexpage.js"></script>
 
 
 <p>Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. https://doi.org/10.1037/xlm0000246
