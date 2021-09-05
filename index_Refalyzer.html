@@ -1,5 +1,7 @@
 <!--
 To do: 
+If there's a duplicate and it seems like it's the same as the reference above/below it, combine them.
+
 If it looks at a line and it seems like there might be a line break and then more of the same 
 reference (e.g., the score isn't high, or there's no DOI in the line, etc), have it try combining 
 this line with the next line, versus keeping them separate. And then, whichever works better, do 
@@ -31,16 +33,26 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	var DOIarray = [];
 	var numCompleted = 0;
 	var startTime = 0;
+	var urlSuffix_for_reference_returned = [];
 	
 
-	async function getOneURL(inputURL, inputDOI) {
+	async function getAllUrls() {
+		for (i = 0; i < urlSuffix.length; i++) {
+			getOneURL(urlSuffix[i], DOIarray[i]);
+		}
+	}
+	
+	async function getOneURL(inputString, inputDOI) {
 		var reference_returned = "";
 		var stringToSend = '';
 		var score = 0;
+		var a = 0;
+		var b = 0;
+		var combo = "";
 		
 		try {
 			if (inputDOI === "") {
-				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputURL.replaceAll(' ', '+');
+				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputString.replaceAll(' ', '+');
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
 				reference_returned = parse_JSON(myJSON.message.items[0]);
 			} else {
@@ -48,32 +60,57 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				let myJSON = await $.getJSON(encodeURI(stringToSend), function() {
 					// nothing happens until after
 				}).fail(function() { 
+					// this happens if I find a DOI but it's not real (i.e., it can't be found in crossref)
 					console.log( "failed to find DOI (below)"); 
 					console.log(inputDOI); 
-					document.getElementById(inputURL).innerHTML = 'doi not found; searching again...';
-					getOneURL(inputURL, '');
+					document.getElementById(inputString).innerHTML = 'doi not found; searching again...';
+					getOneURL(inputString, '');
 					return;
 				}); 
 				reference_returned = parse_JSON(myJSON.message);
 			}
 
-			document.getElementById(inputURL).innerHTML = reference_returned;
+// 			console.log( 'reference_returned = ' + reference_returned);
+// 			console.log('inputString = ' + inputString);
 			
+						
+
 			// figure out how closely the input matches the output
-			if (reference_returned !== '<p>not found' && reference_returned !== '<p>duplicate') {
-				score = Math.ceil(100*similarity(reference_returned, inputURL));
+			if (reference_returned !== 'not found' && reference_returned.indexOf('dduplicate') < 0) {
+				document.getElementById(inputString).innerHTML = reference_returned;
+				urlSuffix_for_reference_returned[reference_returned] = inputString;
+// 				console.log( '2 thing');
+// 				console.log( reference_returned);
+// 				console.log( urlSuffix_for_reference_returned[reference_returned]);
+				
+				score = Math.ceil(100*similarity(reference_returned, inputString));
 				if (score < 60) {
-					document.getElementById('status_' + inputURL).innerHTML = '<div style="background-color:tomato;">Match strength: ' + score + '</div>';
+					document.getElementById('status_' + inputString).innerHTML = '<div style="background-color:tomato;">Match strength: ' + score + '</div>';
 				} else {
-					document.getElementById('status_' + inputURL).innerHTML = 'Match strength: ' + score;
+					document.getElementById('status_' + inputString).innerHTML = 'Match strength: ' + score;
 				}
 			} else {
-				document.getElementById('status_' + inputURL).innerHTML = "na";
+				document.getElementById(inputString).innerHTML = "duplicate";
+				document.getElementById('status_' + inputString).innerHTML = "na";
+				console.log( 'duplicate');
+				console.log('reference returned');
+				console.log( reference_returned.substr(11));
+				console.log('urlSuffix this time ' + inputString);
+				console.log('score a: ' + Math.ceil(100*similarity(reference_returned.substr(11), inputString)));
+				console.log('urlSuffix last time: ' + urlSuffix_for_reference_returned[reference_returned.substr(11)]);
+				console.log('score b: ' + Math.ceil(100*similarity(reference_returned.substr(11), urlSuffix_for_reference_returned[reference_returned.substr(11)])));
+				console.log( 'also that means row ' + urlSuffix.indexOf(inputString) + ' is the same as row ' + urlSuffix.indexOf(urlSuffix_for_reference_returned[reference_returned.substr(11)]));
+				a = urlSuffix.indexOf(inputString);
+				b = urlSuffix.indexOf(urlSuffix_for_reference_returned[reference_returned.substr(11)]);
+				combo = urlSuffix[Math.min(a,b)]+urlSuffix[Math.max(a,b)];
+				console.log('combo score = ' + Math.ceil(100*similarity(reference_returned.substr(11), combo)) + ", combo = " + combo);
 			}
 			
 			showAuthors();
 			numCompleted++;
 			updateProgress();
+			// dfd check if it works when 'not found' happens and check what happens with a "bad doi" which might be the same thing
+			// dfd check what happens if two refs are combined into a single string
 		}
 		catch(err) {
 // 			console.log("caught the error listed below: ");
@@ -81,19 +118,6 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		}
 	}
 	
-	async function getAllUrls() {
-		for (i = 0; i < urlSuffix.length; i++) {
-			getOneURL(urlSuffix[i], DOIarray[i]);
-		}
-	}
-	
-	function updateProgress() {
-		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numCompleted + ' of ' + urlSuffix.length + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
-		if (numCompleted == urlSuffix.length) {
-			document.getElementById('progressHeader').innerHTML = "Done";
-		}
-	}
-
 	function parse_JSON(input) {
 		var output = "";
 		var authorList = "";
@@ -102,39 +126,38 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		if (typeof input.author === 'undefined') {
 			authorList = "not found";
 		} else {
-			// if this title is already in the list, ignore it
-			if (titleArray.includes(input.title[0]) == true) {
-				console.log( 'duplicate: ' + titleArray.indexOf(input.title[0]) +' = ' + titleArray.length);
-				authorList = "duplicate"; // dfd join duplicates together? 
-			} else {
-				// figure out authors
-				titleArray.push(input.title[0]);
-
-				for (a = 0; a < input.author.length; a++) {
-					tempAuthor = input.author[a].family + ", ";
-					tempAuthor += input.author[a].given;
-					authorList += tempAuthor + "; ";
-		
-					// keep track of all of the authors
-					if (authors[tempAuthor] === undefined) {
-						authors[tempAuthor] = 1;
-					} else {
-						authors[tempAuthor]++;
-					} 
-				}
+			// figure out authors
+			for (a = 0; a < input.author.length; a++) {
+				tempAuthor = input.author[a].family + ", ";
+				tempAuthor += input.author[a].given;
+				authorList += tempAuthor + "; ";
+	
+				// keep track of all of the authors
+				if (authors[tempAuthor] === undefined) {
+					authors[tempAuthor] = 1;
+				} else {
+					authors[tempAuthor]++;
+				} 
 			}
 		}
 		
 		// assign value to output
 		if (authorList == "not found" || authorList == "duplicate") {
-			output += "<p>" + authorList;
+			output += authorList;
 		} else {
-			output += "<p>" + authorList;
+			output += authorList;
 			output += "(" + input.issued['date-parts'][0][0] + ") ";
 			output += input.title;
 			output +=" <i>" +input['container-title'] + ", " + input.volume + ",</i> ";
 			output += input.page + ". " + input.URL;
-		}	
+		}
+		if (titleArray.includes(input.title[0]) == true) {
+			console.log('duplicate');
+			output = "dduplicate:" + output;
+		} else {
+			titleArray.push(input.title[0]);		
+		}
+		
 		return output;
 	}
 	
@@ -182,7 +205,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			articleTableText += "<tr><td>";
 			articleTableText += urlSuffix[i];
 			articleTableText += "</td>";
-			articleTableText += "<td><div id='"+urlSuffix[i]+"'>searching...</div></td>";
+			articleTableText += "<td id='"+urlSuffix[i]+"'>searching...</td>";
 			articleTableText += "<td id='status_" + urlSuffix[i] + "'" + DOIarray[i] + "</td>";
 			articleTableText += "</tr>";
 		}
@@ -238,6 +261,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		authors = [];
 		titleArray = [];
 		DOIarray = [];
+		urlSuffix_for_reference_returned = [];
 		numCompleted = 0;
 		startTime = Date.now();
     
@@ -248,6 +272,14 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		updateProgress();
 	}
 	
+	function updateProgress() {
+		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numCompleted + ' of ' + urlSuffix.length + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
+		if (numCompleted == urlSuffix.length) {
+			console.log( 'done');
+			document.getElementById('progressHeader').innerHTML = "Done";
+		}
+	}
+
 </script>
 </head>
 
@@ -266,7 +298,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 
 <!-- new stuff -->
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
+Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative 
+Psychology, 128, 143-149. doi:10.1037/a0033444
 Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the future: Object and source memory for real and imagined events. Applied Cognitive Psychology, 13, 373–390. https://doi.org/10.1002/(SICI)1099-0720(199908)13:4<373::AID-ACP605>3.0.CO;2-F
 
 </textarea>
