@@ -43,6 +43,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	}
 	
 	async function getOneURL(inputString, inputDOI) {
+		// inputString is equal to urlSuffix for the current item. 
+		// and urlSuffix is the first column in the table
 		var reference_returned = "";
 		var stringToSend = '';
 		var score = 0;
@@ -69,41 +71,59 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				}); 
 				reference_returned = parse_JSON(myJSON.message);
 			}
-
-// 			console.log( 'reference_returned = ' + reference_returned);
-// 			console.log('inputString = ' + inputString);
 			
-						
+// 			dfd make a function that checks if two rows should be comboed. 
 
 			// figure out how closely the input matches the output
 			if (reference_returned !== 'not found' && reference_returned.indexOf('dduplicate') < 0) {
 				document.getElementById(inputString).innerHTML = reference_returned;
 				urlSuffix_for_reference_returned[reference_returned] = inputString;
-// 				console.log( '2 thing');
-// 				console.log( reference_returned);
-// 				console.log( urlSuffix_for_reference_returned[reference_returned]);
 				
 				score = Math.ceil(100*similarity(reference_returned, inputString));
 				if (score < 60) {
-					document.getElementById('status_' + inputString).innerHTML = '<div style="background-color:tomato;">Match strength: ' + score + '</div>';
+					document.getElementById('notes_' + inputString).innerHTML = '<div style="background-color:tomato;">Match strength: ' + score + '</div>';
 				} else {
-					document.getElementById('status_' + inputString).innerHTML = 'Match strength: ' + score;
+					document.getElementById('notes_' + inputString).innerHTML = 'Match strength: ' + score;
 				}
 			} else {
-				document.getElementById(inputString).innerHTML = "duplicate";
-				document.getElementById('status_' + inputString).innerHTML = "na";
-				console.log( 'duplicate');
-				console.log('reference returned');
-				console.log( reference_returned.substr(11));
-				console.log('urlSuffix this time ' + inputString);
-				console.log('score a: ' + Math.ceil(100*similarity(reference_returned.substr(11), inputString)));
-				console.log('urlSuffix last time: ' + urlSuffix_for_reference_returned[reference_returned.substr(11)]);
-				console.log('score b: ' + Math.ceil(100*similarity(reference_returned.substr(11), urlSuffix_for_reference_returned[reference_returned.substr(11)])));
-				console.log( 'also that means row ' + urlSuffix.indexOf(inputString) + ' is the same as row ' + urlSuffix.indexOf(urlSuffix_for_reference_returned[reference_returned.substr(11)]));
-				a = urlSuffix.indexOf(inputString);
-				b = urlSuffix.indexOf(urlSuffix_for_reference_returned[reference_returned.substr(11)]);
-				combo = urlSuffix[Math.min(a,b)]+urlSuffix[Math.max(a,b)];
-				console.log('combo score = ' + Math.ceil(100*similarity(reference_returned.substr(11), combo)) + ", combo = " + combo);
+				// aIndex and bIndex are row numbers of references that match. 
+				// combo is a string that combines the first column of a and b. 
+				console.log('rr='+reference_returned);
+				if (reference_returned == 'not found') {
+					console.log('not found');
+				}
+				aIndex = parseInt(urlSuffix.indexOf(inputString));
+				bIndex = parseInt(urlSuffix.indexOf(urlSuffix_for_reference_returned[reference_returned.substr(11)]));
+				combo = urlSuffix[Math.min(aIndex,bIndex)]+' '+urlSuffix[Math.max(aIndex,bIndex)];
+				ascore = parseInt(Math.ceil(100*similarity(reference_returned.substr(11), urlSuffix[aIndex])));
+				bscore = parseInt(Math.ceil(100*similarity(reference_returned.substr(11), urlSuffix[bIndex])));
+				comboScore = parseInt(Math.ceil(100*similarity(reference_returned.substr(11), combo)));
+
+				console.log('a ['+a+']='+ascore+' b ['+b+']='+bscore+' comboScore='+comboScore);
+				if (Math.max(ascore,bscore,comboScore) == comboScore) {
+					console.log( "combo wins");
+					
+					document.getElementById('inputText_' + urlSuffix[aIndex]).innerHTML = combo;
+					document.getElementById(urlSuffix[aIndex]).innerHTML = combo;
+					document.getElementById('notes_' + urlSuffix[aIndex]).innerHTML = 'Match strength: ' + comboScore;
+					
+					document.getElementById('inputText_' + urlSuffix[bIndex]).innerHTML = "--";
+					document.getElementById(urlSuffix[bIndex]).innerHTML = "--";
+					document.getElementById('notes_' + urlSuffix[bIndex]).innerHTML = "--";
+				} else {
+					console.log( "combo lost");
+					document.getElementById(inputString).innerHTML = "duplicate";
+					document.getElementById('notes_' + inputString).innerHTML = "na";
+				}
+
+
+// 				console.log('reference returned:' + reference_returned.substr(11));
+// 				console.log('urlSuffix this time ' + inputString);
+// 				console.log('score a: ' + Math.ceil(100*similarity(reference_returned.substr(11), inputString)));
+// 				console.log('urlSuffix last time: ' + urlSuffix_for_reference_returned[reference_returned.substr(11)]);
+// 				console.log('score b: ' + Math.ceil(100*similarity(reference_returned.substr(11), urlSuffix_for_reference_returned[reference_returned.substr(11)])));
+// 				console.log( 'also that means row ' + urlSuffix.indexOf(inputString) + ' is the same as row ' + urlSuffix.indexOf(urlSuffix_for_reference_returned[reference_returned.substr(11)]));
+// 				console.log('combo score = ' + Math.ceil(100*similarity(reference_returned.substr(11), combo)) + ", combo = " + combo);
 			}
 			
 			showAuthors();
@@ -183,7 +203,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				
 		// Build article table
 		var articleTableText = "<table>";
-		articleTableText += '<tr><th style="width:40%">Search text</th>';
+		articleTableText += '<tr><th style="width:40%">Input text</th>';
     	articleTableText += '<th style="width:40%">Article found</th>';
     	articleTableText += '<th style="width:20%">Notes</th></tr>';
     	
@@ -202,11 +222,10 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			} else {
 				DOIarray.push("");
 			}
-			articleTableText += "<tr><td>";
-			articleTableText += urlSuffix[i];
-			articleTableText += "</td>";
+			articleTableText += "<tr>";
+			articleTableText += "<td id='inputText_"+ urlSuffix[i]+"'>"+urlSuffix[i]+"</td>";
 			articleTableText += "<td id='"+urlSuffix[i]+"'>searching...</td>";
-			articleTableText += "<td id='status_" + urlSuffix[i] + "'" + DOIarray[i] + "</td>";
+			articleTableText += "<td id='notes_" + urlSuffix[i] + "'>" + DOIarray[i] + "</td>";
 			articleTableText += "</tr>";
 		}
 		articleTableText += "</table>";
