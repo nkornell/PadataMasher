@@ -1,11 +1,15 @@
 <!--
 To do: 
-If there's a duplicate and it seems like it's the same as the reference above/below it, combine them.
+Split lines if:
+there are two DOIs 
+it seems like a good idea???
 
-If it looks at a line and it seems like there might be a line break and then more of the same 
-reference (e.g., the score isn't high, or there's no DOI in the line, etc), have it try combining 
-this line with the next line, versus keeping them separate. And then, whichever works better, do 
-that. 
+
+Try combining lines if: 
+the score isn't high
+there's no DOI in the line
+it returns not found
+compare together versus separate and then, whichever gets a better score
 
 Look for cases where it's the same author but the name is different (e.g., Bjork, E. L. and Bjork, 
 Elizabeth Ligon). Put both names in the same row of the author table, and add up the citations. 
@@ -34,6 +38,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	var numCompleted = 0;
 	var startTime = 0;
 	var urlSuffix_for_reference_returned = [];
+	var isDuplicate = [];
 	
 
 	async function getAllUrls() {
@@ -48,15 +53,22 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		var reference_returned = "";
 		var stringToSend = '';
 		var score = 0;
-		var a = 0;
-		var b = 0;
-		var combo = "";
+		var aScore = 0;
+		var bScore = 0;
+		var comboScore = 0;
+		var aIndex = 0;
+		var bIndex = 0;
+		var comboText = "";
+		var isDuplicate = false;
+		var theOneToChange = "";
 		
 		try {
 			if (inputDOI === "") {
 				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputString.replaceAll(' ', '+');
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
 				reference_returned = parse_JSON(myJSON.message.items[0]);
+			} else if (inputDOI == "not found") {
+				reference_returned = "not found";
 			} else {
 				stringToSend = 'https://api.crossref.org/works/'+inputDOI+'?mailto=nkornell@gmail.com';
 				let myJSON = await $.getJSON(encodeURI(stringToSend), function() {
@@ -68,83 +80,109 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 					document.getElementById(inputString).innerHTML = 'doi not found; searching again...';
 					getOneURL(inputString, '');
 					return;
+					console.log( 'this cant happen so if it does, check something!');
 				}); 
 				reference_returned = parse_JSON(myJSON.message);
 			}
 			
-// 			dfd make a function that checks if two rows should be comboed. 
-
-			// figure out how closely the input matches the output
-			if (reference_returned !== 'not found' && reference_returned.indexOf('dduplicate') < 0) {
-				document.getElementById(inputString).innerHTML = reference_returned;
-				urlSuffix_for_reference_returned[reference_returned] = inputString;
-				
-				score = Math.ceil(100*similarity(reference_returned, inputString));
-				if (score < 60) {
-					document.getElementById('notes_' + inputString).innerHTML = '<div style="background-color:tomato;">Match strength: ' + score + '</div>';
-				} else {
-					document.getElementById('notes_' + inputString).innerHTML = 'Match strength: ' + score;
-				}
+			if (reference_returned.indexOf('dduplicate') >= 0) {
+				isDuplicate = true;
+				reference_returned = reference_returned.substr(11); // get rid of the extra letters dduplicate:
+				document.getElementById(inputString).innerHTML = "";
 			} else {
-				// aIndex and bIndex are row numbers of references that match. 
-				// combo is a string that combines the first column of a and b. 
-				console.log('rr='+reference_returned);
-				if (reference_returned == 'not found') {
-					console.log('not found');
-				}
-				aIndex = parseInt(urlSuffix.indexOf(inputString));
-				bIndex = parseInt(urlSuffix.indexOf(urlSuffix_for_reference_returned[reference_returned.substr(11)]));
-				combo = urlSuffix[Math.min(aIndex,bIndex)]+' '+urlSuffix[Math.max(aIndex,bIndex)];
-				ascore = parseInt(Math.ceil(100*similarity(reference_returned.substr(11), urlSuffix[aIndex])));
-				bscore = parseInt(Math.ceil(100*similarity(reference_returned.substr(11), urlSuffix[bIndex])));
-				comboScore = parseInt(Math.ceil(100*similarity(reference_returned.substr(11), combo)));
-
-				console.log('a ['+a+']='+ascore+' b ['+b+']='+bscore+' comboScore='+comboScore);
-				if (Math.max(ascore,bscore,comboScore) == comboScore) {
-					console.log( "combo wins");
-					
-					document.getElementById('inputText_' + urlSuffix[aIndex]).innerHTML = combo;
-					document.getElementById(urlSuffix[aIndex]).innerHTML = combo;
-					document.getElementById('notes_' + urlSuffix[aIndex]).innerHTML = 'Match strength: ' + comboScore;
-					
-					document.getElementById('inputText_' + urlSuffix[bIndex]).innerHTML = "--";
-					document.getElementById(urlSuffix[bIndex]).innerHTML = "--";
-					document.getElementById('notes_' + urlSuffix[bIndex]).innerHTML = "--";
-				} else {
-					console.log( "combo lost");
-					document.getElementById(inputString).innerHTML = "duplicate";
-					document.getElementById('notes_' + inputString).innerHTML = "na";
-				}
-
-
-// 				console.log('reference returned:' + reference_returned.substr(11));
-// 				console.log('urlSuffix this time ' + inputString);
-// 				console.log('score a: ' + Math.ceil(100*similarity(reference_returned.substr(11), inputString)));
-// 				console.log('urlSuffix last time: ' + urlSuffix_for_reference_returned[reference_returned.substr(11)]);
-// 				console.log('score b: ' + Math.ceil(100*similarity(reference_returned.substr(11), urlSuffix_for_reference_returned[reference_returned.substr(11)])));
-// 				console.log( 'also that means row ' + urlSuffix.indexOf(inputString) + ' is the same as row ' + urlSuffix.indexOf(urlSuffix_for_reference_returned[reference_returned.substr(11)]));
-// 				console.log('combo score = ' + Math.ceil(100*similarity(reference_returned.substr(11), combo)) + ", combo = " + combo);
+				urlSuffix_for_reference_returned[reference_returned] = inputString;			
+				document.getElementById(inputString).innerHTML = reference_returned;
 			}
 			
+			// console.log( 'another');
+// 			console.log( reference_returned);
+			console.log("another:" + inputString);
+// 			console.log('urlSuffix_for_reference_returned[reference_returned]='+urlSuffix_for_reference_returned[reference_returned]);
+
+			// figure out how closely the input matches the output
+			if (isDuplicate == true) {
+				// aIndex and bIndex are row numbers of references that match. 
+				// a is the row that was already found. It is treated as the 'real' one. b is the new one, it's labelled a duplicate.
+				// comboText is a string that combines the first column of rows a and b. 
+console.log( 'duplicate');
+// console.log( urlSuffix);
+// console.log( urlSuffix_for_reference_returned[reference_returned]);
+				aIndex = parseInt(urlSuffix.indexOf(urlSuffix_for_reference_returned[reference_returned]));
+				bIndex = parseInt(urlSuffix.indexOf(inputString));
+// 				console.log( aIndex+"=aIndex, bIndex="+bIndex);
+			
+// 				comboText = urlSuffix[Math.min(aIndex,bIndex)]+' '+urlSuffix[Math.max(aIndex,bIndex)];
+// console.log('first part='+document.getElementById('inputText_'+urlSuffix[Math.min(aIndex,bIndex)]).innerHTML);
+// console.log('2nd part  ='+document.getElementById('inputText_'+urlSuffix[Math.max(aIndex,bIndex)]).innerHTML);
+comboText = document.getElementById('inputText_'+urlSuffix[Math.min(aIndex,bIndex)]).innerHTML+' '+document.getElementById('inputText_'+urlSuffix[Math.max(aIndex,bIndex)]).innerHTML;
+				aScore = parseInt(Math.ceil(100*similarity(reference_returned, urlSuffix[aIndex])));
+				bScore = parseInt(Math.ceil(100*similarity(reference_returned, urlSuffix[bIndex])));
+				comboScore = parseInt(Math.ceil(100*similarity(reference_returned, comboText)));
+
+
+				if (Math.max(aScore,bScore,comboScore) == comboScore) {
+					theOneToChange = urlSuffix[aIndex];
+					document.getElementById('inputText_' + urlSuffix[aIndex]).innerHTML = comboText;
+// 					document.getElementById(urlSuffix[aIndex]).innerHTML = reference_returned;
+// 					urlSuffix_for_reference_returned[reference_returned] = comboText;
+					
+					document.getElementById('inputText_'+urlSuffix[bIndex]).innerHTML = "(combined)";
+					document.getElementById(urlSuffix[bIndex]).innerHTML = "duplicate";
+					document.getElementById('notes_' + urlSuffix[bIndex]).innerHTML = "--";
+// 					urlSuffix[bIndex] = "--";
+
+				} else {
+					comboScore = 0;
+					document.getElementById(inputString).innerHTML = "duplicate";
+					document.getElementById('notes_' + inputString).innerHTML = "--";
+				}
+			} else if (reference_returned == 'not found') {
+				console.log( 'not found');
+				document.getElementById(inputString).innerHTML = reference_returned;
+				urlSuffix_for_reference_returned[reference_returned] = "";
+				document.getElementById('notes_' + inputString).innerHTML = "--";
+			}
+
+// console.log('combotext='+comboText);
+// console.log('rr='+reference_returned);
+
+
+			if (theOneToChange == "") {
+				theOneToChange = inputString;
+			}
+			if (document.getElementById('notes_' + theOneToChange).innerHTML != "--") {
+				score = Math.ceil(100*similarity(reference_returned, document.getElementById('inputText_' + theOneToChange).innerHTML));			
+// console.log( 'score='+score);
+				if (score < 60) {
+					document.getElementById('notes_' + theOneToChange).innerHTML = '<div style="background-color:tomato;">Match strength: ' + score + '</div>';
+				} else {
+					document.getElementById('notes_' + theOneToChange).innerHTML = '<div style="background-color:white; ">Match strength: ' + score + '</div>';
+				}
+			}
+
 			showAuthors();
 			numCompleted++;
 			updateProgress();
-			// dfd check if it works when 'not found' happens and check what happens with a "bad doi" which might be the same thing
-			// dfd check what happens if two refs are combined into a single string
 		}
 		catch(err) {
-// 			console.log("caught the error listed below: ");
-// 			console.log(err);
+			console.log("caught the error listed below: ");
+			console.log(err);
 		}
 	}
 	
 	function parse_JSON(input) {
 		var output = "";
 		var authorList = "";
+		var isDuplicate = false;
+		
+		if (titleArray.includes(input.title[0]) == true) {
+			isDuplicate = true;
+		}
 		
 		// if crossref didn't find it, ignore it
 		if (typeof input.author === 'undefined') {
 			authorList = "not found";
+			console.log( 'parse_JSON not found');
 		} else {
 			// figure out authors
 			for (a = 0; a < input.author.length; a++) {
@@ -153,28 +191,29 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				authorList += tempAuthor + "; ";
 	
 				// keep track of all of the authors
-				if (authors[tempAuthor] === undefined) {
-					authors[tempAuthor] = 1;
-				} else {
-					authors[tempAuthor]++;
-				} 
+				if (isDuplicate == false) {
+					if (authors[tempAuthor] === undefined) {
+						authors[tempAuthor] = 1;
+					} else {
+						authors[tempAuthor]++;
+					} 
+				}
 			}
 		}
 		
 		// assign value to output
-		if (authorList == "not found" || authorList == "duplicate") {
-			output += authorList;
+		if (authorList == "not found") {
+			output = authorList;
 		} else {
-			output += authorList;
+			output = authorList;
 			output += "(" + input.issued['date-parts'][0][0] + ") ";
 			output += input.title;
 			output +=" <i>" +input['container-title'] + ", " + input.volume + ",</i> ";
 			output += input.page + ". " + input.URL;
 		}
-		if (titleArray.includes(input.title[0]) == true) {
-			console.log('duplicate');
+		if (isDuplicate == true) {
 			output = "dduplicate:" + output;
-		} else {
+		} else if (authorList != "not found") {
 			titleArray.push(input.title[0]);		
 		}
 		
@@ -211,7 +250,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 // 		var pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
 // 		var pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
 // 		var pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
-		var pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/i; // works
+		var pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/gi; // works. note: I added in the g, which makes it return all of the DOIs instead of just 1 (i.e., tempDOIArray can have more than one value)
 		
 		var tempDOIArray = [];
 		for (i = 0; i < urlSuffix.length; i++) {
@@ -219,6 +258,9 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			if (typeof tempDOIArray !== 'undefined' && tempDOIArray !== null && tempDOIArray.length > 0) {
 				tempDOIArray[0] = tempDOIArray[0].replaceAll('//','/');
 				DOIarray.push(tempDOIArray[0]);
+				console.log( urlSuffix[i].match(pattern));
+// 				console.log(urlSuffix[i]);
+// 				console.log("tempDOIArray.length="+tempDOIArray.length+", tempDOIArray="+tempDOIArray);
 			} else {
 				DOIarray.push("");
 			}
@@ -320,6 +362,11 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative 
 Psychology, 128, 143-149. doi:10.1037/a0033444
 Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the future: Object and source memory for real and imagined events. Applied Cognitive Psychology, 13, 373–390. https://doi.org/10.1002/(SICI)1099-0720(199908)13:4<373::AID-ACP605>3.0.CO;2-F
+Nelson, T. O., Narens, L., & Dunlosky, J. (2004). A revised methodology for research on
+metamemory: Pre-judgment recall and monitoring (PRAM). Psychological methods, 9,
+53–69. https://doi.org/10.1037/1082-989X.9.1.53
+
+
 
 </textarea>
 <!-- Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
