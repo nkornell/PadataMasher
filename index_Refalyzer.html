@@ -134,7 +134,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			}
 			if (document.getElementById('notes_' + theOneToChange).innerHTML != "--") {
 				// if this isn't something that should be left blank, adjust what the score says
-				score = Math.ceil(100*similarity(reference_returned, document.getElementById('inputText_' + theOneToChange).innerHTML));			
+				score = compute_score(reference_returned, document.getElementById('inputText_' + theOneToChange).innerHTML);			
 				if (score < 60) {
 					document.getElementById('notes_' + theOneToChange).innerHTML = '<div style="background-color:tomato;">Match strength: ' + score + '</div>';
 				} else {
@@ -150,6 +150,26 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			console.log("caught the error listed below: ");
 			console.log(err);
 		}
+	}
+	
+	function compute_score(databaseString,userString) {
+		var pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/gi; // works. note: I added in the g, which makes it return all of the DOIs instead of just 1 (i.e., tempDOIArray can have more than one value)
+		var userDOI = userString.match(pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
+		var databaseDOI = databaseString.match(pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
+
+		if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	
+			return 100;
+		} else {
+			// if there's no doi in the user input, remove if from the database string for the sake of comparison. 
+			databaseString = databaseString.replace("http://dx.doi.org/"+databaseDOI,"");
+			databaseString = databaseString.replace(databaseDOI,"");
+		}
+			
+// 		userString = "my name is nartt";
+		console.log( 'comparing:');
+		console.log( databaseString);
+		console.log( userString);
+		return Math.ceil(100*similarity(databaseString,userString));
 	}
 	
 	function parse_JSON(input) {
