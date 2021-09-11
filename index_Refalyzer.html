@@ -1,9 +1,5 @@
 <!--
 To do: 
-Split lines if:
-there are two DOIs 
-it seems like a good idea???
-
 
 Try combining lines if: 
 the score isn't high
@@ -94,44 +90,33 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				document.getElementById(inputString).innerHTML = reference_returned;
 			}
 			
-			// console.log( 'another');
-// 			console.log( reference_returned);
-			console.log("another:" + inputString);
-// 			console.log('urlSuffix_for_reference_returned[reference_returned]='+urlSuffix_for_reference_returned[reference_returned]);
 
 			// figure out how closely the input matches the output
 			if (isDuplicate == true) {
 				// aIndex and bIndex are row numbers of references that match. 
 				// a is the row that was already found. It is treated as the 'real' one. b is the new one, it's labelled a duplicate.
 				// comboText is a string that combines the first column of rows a and b. 
-console.log( 'duplicate');
-// console.log( urlSuffix);
-// console.log( urlSuffix_for_reference_returned[reference_returned]);
+				console.log( 'duplicate');
 				aIndex = parseInt(urlSuffix.indexOf(urlSuffix_for_reference_returned[reference_returned]));
 				bIndex = parseInt(urlSuffix.indexOf(inputString));
-// 				console.log( aIndex+"=aIndex, bIndex="+bIndex);
-			
-// 				comboText = urlSuffix[Math.min(aIndex,bIndex)]+' '+urlSuffix[Math.max(aIndex,bIndex)];
-// console.log('first part='+document.getElementById('inputText_'+urlSuffix[Math.min(aIndex,bIndex)]).innerHTML);
-// console.log('2nd part  ='+document.getElementById('inputText_'+urlSuffix[Math.max(aIndex,bIndex)]).innerHTML);
-comboText = document.getElementById('inputText_'+urlSuffix[Math.min(aIndex,bIndex)]).innerHTML+' '+document.getElementById('inputText_'+urlSuffix[Math.max(aIndex,bIndex)]).innerHTML;
+
+				comboText = document.getElementById('inputText_'+urlSuffix[Math.min(aIndex,bIndex)]).innerHTML+' '+document.getElementById('inputText_'+urlSuffix[Math.max(aIndex,bIndex)]).innerHTML;
 				aScore = parseInt(Math.ceil(100*similarity(reference_returned, urlSuffix[aIndex])));
 				bScore = parseInt(Math.ceil(100*similarity(reference_returned, urlSuffix[bIndex])));
 				comboScore = parseInt(Math.ceil(100*similarity(reference_returned, comboText)));
 
 
 				if (Math.max(aScore,bScore,comboScore) == comboScore) {
+					// if the combo is the best score, change the input column so that it is the combination
 					theOneToChange = urlSuffix[aIndex];
 					document.getElementById('inputText_' + urlSuffix[aIndex]).innerHTML = comboText;
-// 					document.getElementById(urlSuffix[aIndex]).innerHTML = reference_returned;
-// 					urlSuffix_for_reference_returned[reference_returned] = comboText;
 					
 					document.getElementById('inputText_'+urlSuffix[bIndex]).innerHTML = "(combined)";
 					document.getElementById(urlSuffix[bIndex]).innerHTML = "duplicate";
 					document.getElementById('notes_' + urlSuffix[bIndex]).innerHTML = "--";
-// 					urlSuffix[bIndex] = "--";
 
 				} else {
+					// if the combo isn't best, don't combine
 					comboScore = 0;
 					document.getElementById(inputString).innerHTML = "duplicate";
 					document.getElementById('notes_' + inputString).innerHTML = "--";
@@ -143,16 +128,13 @@ comboText = document.getElementById('inputText_'+urlSuffix[Math.min(aIndex,bInde
 				document.getElementById('notes_' + inputString).innerHTML = "--";
 			}
 
-// console.log('combotext='+comboText);
-// console.log('rr='+reference_returned);
-
 
 			if (theOneToChange == "") {
 				theOneToChange = inputString;
 			}
 			if (document.getElementById('notes_' + theOneToChange).innerHTML != "--") {
+				// if this isn't something that should be left blank, adjust what the score says
 				score = Math.ceil(100*similarity(reference_returned, document.getElementById('inputText_' + theOneToChange).innerHTML));			
-// console.log( 'score='+score);
 				if (score < 60) {
 					document.getElementById('notes_' + theOneToChange).innerHTML = '<div style="background-color:tomato;">Match strength: ' + score + '</div>';
 				} else {
@@ -173,6 +155,8 @@ comboText = document.getElementById('inputText_'+urlSuffix[Math.min(aIndex,bInde
 	function parse_JSON(input) {
 		var output = "";
 		var authorList = "";
+		var tempAuthor_full = "";
+		var tempAuthor_apa = "";
 		var isDuplicate = false;
 		
 		if (titleArray.includes(input.title[0]) == true) {
@@ -184,21 +168,33 @@ comboText = document.getElementById('inputText_'+urlSuffix[Math.min(aIndex,bInde
 			authorList = "not found";
 			console.log( 'parse_JSON not found');
 		} else {
-			// figure out authors
+			// figure out authors (for author table)
 			for (a = 0; a < input.author.length; a++) {
-				tempAuthor = input.author[a].family + ", ";
-				tempAuthor += input.author[a].given;
-				authorList += tempAuthor + "; ";
-	
-				// keep track of all of the authors
+				tempAuthor_full = input.author[a].family + ", ";
+				tempAuthor_full += input.author[a].given;
+					
+				// keep track of how many times this author has appeared for the table of authors
 				if (isDuplicate == false) {
-					if (authors[tempAuthor] === undefined) {
-						authors[tempAuthor] = 1;
+					if (authors[tempAuthor_full] === undefined) {
+						authors[tempAuthor_full] = 1;
 					} else {
-						authors[tempAuthor]++;
+						authors[tempAuthor_full]++;
 					} 
 				}
+				
+				// figure out list to show in apa reference style
+				var tempArray = input.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
+				var tempAuthor_apa = "";
+				
+				tempArray.forEach(firstLetters); // using the function below, make tempAuthor_apa equal the first letters of the author first names
+				function firstLetters(item, index) {
+  					tempAuthor_apa += item.slice(0,1)+". "; 
+				}
+				
+				authorList += input.author[a].family + ", " + tempAuthor_apa.trim() + ", "; // add this apa-formatted author to the author list. 
 			}
+
+		authorList = authorList.substring(0, authorList.length-2)+" "; // trim the last comma
 		}
 		
 		// assign value to output
@@ -256,11 +252,21 @@ comboText = document.getElementById('inputText_'+urlSuffix[Math.min(aIndex,bInde
 		for (i = 0; i < urlSuffix.length; i++) {
 			tempDOIArray = urlSuffix[i].match(pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
 			if (typeof tempDOIArray !== 'undefined' && tempDOIArray !== null && tempDOIArray.length > 0) {
-				tempDOIArray[0] = tempDOIArray[0].replaceAll('//','/');
-				DOIarray.push(tempDOIArray[0]);
-				console.log( urlSuffix[i].match(pattern));
-// 				console.log(urlSuffix[i]);
-// 				console.log("tempDOIArray.length="+tempDOIArray.length+", tempDOIArray="+tempDOIArray);
+				if (tempDOIArray.length > 1) { // if this row has more than one DOI in it
+					// split it into two strings, using the first doi as the delimiter
+					tempArraySplit = urlSuffix[i].split(tempDOIArray[0]);
+					var a = tempArraySplit[0]+tempDOIArray[0];
+					var b = tempArraySplit[1];
+					console.log( 'Splitting:');
+					console.log( a);
+					console.log( b);
+					urlSuffix[i] = a; // change suffix to be equal to the first part
+					urlSuffix.splice(i+1, 0, b); // add an item to the suffix array that's got the second part in it
+				}
+				
+				tempDOIArray[0] = tempDOIArray[0].replaceAll('//','/'); // i don't understand this
+				DOIarray.push(tempDOIArray[0]); 
+
 			} else {
 				DOIarray.push("");
 			}
@@ -296,10 +302,6 @@ comboText = document.getElementById('inputText_'+urlSuffix[Math.min(aIndex,bInde
 		for (i = 0; i < authorArrayTemp.length; i++) {
 			authorTableText += "<tr><td>";
 			authorTableText += authorArrayTemp[i] + "</td><td>" + authors[authorArrayTemp[i]];
-// 			authorTableText += "</td><td>";
-// 			for (j = 0; j < authors[authorArrayTemp[i]]; j++) {
-// 				authorTableText += '-';
-// 			}
 			authorTableText += "</td></tr>";
 		}
 
@@ -359,12 +361,8 @@ comboText = document.getElementById('inputText_'+urlSuffix[Math.min(aIndex,bInde
 
 <!-- new stuff -->
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative 
-Psychology, 128, 143-149. doi:10.1037/a0033444
+Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
 Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the future: Object and source memory for real and imagined events. Applied Cognitive Psychology, 13, 373–390. https://doi.org/10.1002/(SICI)1099-0720(199908)13:4<373::AID-ACP605>3.0.CO;2-F
-Nelson, T. O., Narens, L., & Dunlosky, J. (2004). A revised methodology for research on
-metamemory: Pre-judgment recall and monitoring (PRAM). Psychological methods, 9,
-53–69. https://doi.org/10.1037/1082-989X.9.1.53
 
 
 
