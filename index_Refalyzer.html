@@ -91,12 +91,12 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			}
 			
 
-			// figure out how closely the input matches the output
+			// if it's a duplicate, check whether the strings in the first column of the two matching rows should be combined (e.g., because there was a return character in the middle of the reference).
 			if (isDuplicate == true) {
 				// aIndex and bIndex are row numbers of references that match. 
-				// a is the row that was already found. It is treated as the 'real' one. b is the new one, it's labelled a duplicate.
+				// a is the row that was already found before. It is treated as the 'real' one. b is the new one that just got found, it's labelled a duplicate.
 				// comboText is a string that combines the first column of rows a and b. 
-				console.log( 'duplicate');
+
 				aIndex = parseInt(urlSuffix.indexOf(urlSuffix_for_reference_returned[reference_returned]));
 				bIndex = parseInt(urlSuffix.indexOf(inputString));
 
@@ -105,9 +105,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				bScore = parseInt(Math.ceil(100*similarity(reference_returned, urlSuffix[bIndex])));
 				comboScore = parseInt(Math.ceil(100*similarity(reference_returned, comboText)));
 
-
 				if (Math.max(aScore,bScore,comboScore) == comboScore) {
-					// if the combo is the best score, change the input column so that it is the combination
+					// if the combo score is the highest of the three, change the first column so that it is equal to the combination string
 					theOneToChange = urlSuffix[aIndex];
 					document.getElementById('inputText_' + urlSuffix[aIndex]).innerHTML = comboText;
 					
@@ -130,13 +129,15 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 
 
 			if (theOneToChange == "") {
-				theOneToChange = inputString;
+				theOneToChange = inputString; // if we're not combining, just set the values as normal for inputstring
 			}
 			if (document.getElementById('notes_' + theOneToChange).innerHTML != "--") {
 				// if this isn't something that should be left blank, adjust what the score says
 				score = compute_score(reference_returned, document.getElementById('inputText_' + theOneToChange).innerHTML);			
 				if (score < 60) {
 					document.getElementById('notes_' + theOneToChange).innerHTML = '<div style="background-color:tomato;">Match strength: ' + score + '</div>';
+				} else if (score >= 90) {
+					document.getElementById('notes_' + theOneToChange).innerHTML = '<div style="background-color:white; "></div>';
 				} else {
 					document.getElementById('notes_' + theOneToChange).innerHTML = '<div style="background-color:white; ">Match strength: ' + score + '</div>';
 				}
@@ -153,23 +154,21 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	}
 	
 	function compute_score(databaseString,userString) {
-		var pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/gi; // works. note: I added in the g, which makes it return all of the DOIs instead of just 1 (i.e., tempDOIArray can have more than one value)
-		var userDOI = userString.match(pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
-		var databaseDOI = databaseString.match(pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
+		// figure out whether a DOI was found in the user input
+		var pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/gi; // the same pattern as elsewhere
+		var userDOI = userString.match(pattern); 
+		var databaseDOI = databaseString.match(pattern); 
 
+		// return a score
 		if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	
-			return 100;
+			// if there was a valid DOI in the user input, return a score of 100
+			return 100; 
 		} else {
-			// if there's no doi in the user input, remove if from the database string for the sake of comparison. 
-			databaseString = databaseString.replace("http://dx.doi.org/"+databaseDOI,"");
-			databaseString = databaseString.replace(databaseDOI,"");
+			// if there's no doi in the user input, remove the doi from the database string for the sake of comparison. 
+			databaseString = databaseString.replace("http://dx.doi.org/"+databaseDOI,""); // assuming what seems like the standard format from the database
+			databaseString = databaseString.replace(databaseDOI,""); // in case that wasn't found, remove just the doi
+			return Math.ceil(100*similarity(databaseString,userString));
 		}
-			
-// 		userString = "my name is nartt";
-		console.log( 'comparing:');
-		console.log( databaseString);
-		console.log( userString);
-		return Math.ceil(100*similarity(databaseString,userString));
 	}
 	
 	function parse_JSON(input) {
