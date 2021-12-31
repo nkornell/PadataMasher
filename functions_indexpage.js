@@ -77,27 +77,13 @@ function showHide(elementName) {
 	}
 }
 
-function sortTable(n,tableName) {
+function sortTable(n,tableName,sortType) {
 	mostRecentPressedCheckBoxRow = 0; // this is so that after a sort it won't try to press everything spanned by two checkboxes (i.e., it's for something else). 
 
-  var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-  table = document.getElementById(tableName);
-  switching = true;
-	
-	if (tableName != "cfTable") {
-		sortType = "letters";
-	} else {
-		// This is hard-coded (i.e., it assumes column 1 is checkboxes, etc.)
-		var sortType = "";
-		if (n == 0) {
-			sortType = 'checkboxes';
-		} else if (n == 2 || n == 3) {
-			sortType = "numbers";
-		} else {
-			sortType = "letters";
-		}
-	}
-	
+	var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+	table = document.getElementById(tableName);
+  	switching = true;
+		
   // Set the sorting direction to ascending:
   dir = "asc"; 
   /* Make a loop that will continue until no switching has been done: */

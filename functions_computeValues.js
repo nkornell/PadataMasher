@@ -481,8 +481,9 @@ function buildTablePTP(typ) {
 		// Build Header
 		out = "<tr>";
 		for (i = 0; i < tempCell[0].length; i++) {
-			out += "<th onclick='sortTable("+i+", "+'"'+tableID+'"'+")' title='Click to Sort'><div id='" + typ + "," + tempCell[0][i] + "'>" + tempCell[0][i] + "</div></th>";
+			out += "<th onclick='sortTable("+i+", "+'"'+tableID+'",'+'"letters"'+")' title='Click to Sort'><div id='" + typ + "," + tempCell[0][i] + "'>" + tempCell[0][i] + "</div></th>";
 		}
+		// note, above, it sorts everything as letters. Ideally it would check whether the column is letters or numbers and sort accordingly. 
 
 		out = out + "</tr>";
 		out = out.replace(/no\twithin\tlevels/g,"");

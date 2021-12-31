@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="en">
 <!--
 To do: 
 
@@ -321,10 +323,10 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		}
 		
 		authorArrayTemp.sort();
-				
+
 		// add authors to the html table
-		authorTableText += "<tr><th onclick='sortTable(0, "+'"authorTable"'+")' title='Click to Sort'>Author (click to sort)</th>";
-		authorTableText += "<th onclick='sortTable(1, "+'"authorTable"'+")' title='Click to Sort'>Articles Cited (click to sort)</th></tr>";
+		authorTableText += "<tr><th onclick='sortTable(0, "+'"authorTable","letters"'+")' title='Click to Sort'>Author (click to sort)</th>";
+		authorTableText += "<th onclick='sortTable(1, "+'"authorTable","numbers"'+")' title='Click to Sort'>Articles Cited (click to sort)</th></tr>";
 
 		for (i = 0; i < authorArrayTemp.length; i++) {
 			authorTableText += "<tr><td>";
@@ -336,7 +338,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		document.getElementById('authorTable').innerHTML = authorTableText;
 	}
 	
-	
+
 	function showBoxes() {
 		var x = document.getElementById("refalyzerArticleListBox");
 		x.style.display = "flex";
@@ -345,6 +347,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		x = document.getElementById("progressBox");
 		x.style.display = "flex";
 	}
+	
 	
 	function start() {
 		urlSuffix = [];

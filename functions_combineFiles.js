@@ -516,11 +516,11 @@ function buildTableCF() {
 	document.getElementById('cfHeading').innerHTML = 'Notes about the imported files ';
 
 	// Build Header
-	out = "<tr><th onclick='sortTable(0, "+'"cfTable"'+")' title='Click to Sort'>Use in output</th>";
-	out += "<th onclick='sortTable(1, "+'"cfTable"'+")' title='Click to Sort'>File name</th>";
-	out += "<th onclick='sortTable(2, "+'"cfTable"'+")' title='Click to Sort'>Rows</th>";
-	out += "<th onclick='sortTable(3, "+'"cfTable"'+")' title='Click to Sort'>Problems</th>";
-	out += "<th onclick='sortTable(4, "+'"cfTable"'+")' title='Click to Sort'>Message</th></tr>";
+	out = "<tr><th onclick='sortTable(0, "+'"cfTable","checkboxes"'+")' title='Click to Sort'>Use in output</th>";
+	out += "<th onclick='sortTable(1, "+'"cfTable","letters"'+")' title='Click to Sort'>File name</th>";
+	out += "<th onclick='sortTable(2, "+'"cfTable","numbers"'+")' title='Click to Sort'>Rows</th>";
+	out += "<th onclick='sortTable(3, "+'"cfTable","numbers"'+")' title='Click to Sort'>Problems</th>";
+	out += "<th onclick='sortTable(4, "+'"cfTable","letters"'+")' title='Click to Sort'>Message</th></tr>";
 
 	// Build all the other cells.
 	for (i = 0; i < cfData.length; i++) {
