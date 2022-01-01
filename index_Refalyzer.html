@@ -3,13 +3,26 @@
 <!--
 To do: 
 
-Make it sort by numerical value, because right now it goes 1 12 2 etc.
-
 Put a checkbox next to each author. Check the box if they're an author 
 on this manuscript. Then have it highlight in the author list anyone
 whom they have published with (based only on the reference list of this
 article). That way, it'll be easy to see who the most-cited non-co-author 
 authors are. 
+
+Steps: As you make author list, add co-authors for each author. Maybe author should be an object that has these variables:
+	author name (string)
+	coauthor name (array of strings)
+	checked (boolean)
+	checked_authors_I_coauthored_with (array of strings), this is a list of checked authors this author is a coauthor with
+If they check a box for a given author, 
+	adjust checked_authors_I_coauthored_with and checked variables
+	highlight that author and all of their co-authors. in author list and also article list. actually, in article list it'd be better if it was just the authors. 
+	do this by writing a function that takes a single author as a parameter (or maybe the author object has a function that does this)
+If they uncheck a box
+	adjust checked_authors_I_coauthored_with and checked variables
+	for any checked_authors_I_coauthored_with that get changed, see if their array is empty and if it is, unhighlight it. 
+	how this will work for articles, I'm not so sure
+--
 
 Try combining lines if: 
 the score isn't high
@@ -17,6 +30,7 @@ there's no DOI in the line
 it returns not found
 compare together versus separate and then, whichever gets a better score
 
+--
 Look for cases where it's the same author but the name is different (e.g., Bjork, E. L. and Bjork, 
 Elizabeth Ligon). Put both names in the same row of the author table, and add up the citations. 
 
