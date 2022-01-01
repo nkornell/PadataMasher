@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
 <!--
 To do: 
 
@@ -9,14 +7,22 @@ whom they have published with (based only on the reference list of this
 article). That way, it'll be easy to see who the most-cited non-co-author 
 authors are. 
 
-Steps: As you make author list, add co-authors for each author. Maybe author should be an object that has these variables:
+Author variable
+	Maybe author should be an object that has these variables:
 	author name (string)
 	coauthor name (array of strings)
 	checked (boolean)
 	checked_authors_I_coauthored_with (array of strings), this is a list of checked authors this author is a coauthor with
-If they check a box for a given author, 
+While making author list
+	adjust the appropriate variables (author.name, author.co_author_name[])
+	add co-authors for each author
+When building author table
+	make a new column for co-authors
+If they check a box for a given author
+	highlight that author in bold in the author column
+	highlibht all of their co-authors (in bold) in the co-author column
 	adjust checked_authors_I_coauthored_with and checked variables
-	highlight that author and all of their co-authors. in author list and also article list. actually, in article list it'd be better if it was just the authors. 
+	highlight their articles in the article list. actually, in article list it'd be better if it was just the authors. 
 	do this by writing a function that takes a single author as a parameter (or maybe the author object has a function that does this)
 If they uncheck a box
 	adjust checked_authors_I_coauthored_with and checked variables
@@ -36,7 +42,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 
 -->
 
-<html>
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
 	<title>Reference Analyzer</title>
