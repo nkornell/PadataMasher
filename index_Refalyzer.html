@@ -10,6 +10,7 @@ authors are.
 Author variable
 	Maybe author should be an object that has these variables:
 	author name (string)
+	citation_count
 	coauthor name (array of strings)
 	checked (boolean)
 	checked_authors_I_coauthored_with (array of strings), this is a list of checked authors this author is a coauthor with
@@ -59,7 +60,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 
 <script>
 	var urlSuffix = [];
-	var authors = [];
+// 	var authors = [];
+var sdd = [];
 	var titleArray = [];
 	var DOIarray = [];
 	var numCompleted = 0;
@@ -67,7 +69,13 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	var urlSuffix_for_reference_returned = [];
 	var isDuplicate = [];
 	
-
+	function Authors(name) {
+		this.name = name;
+		this.citation_count = 1;
+		this.coauthors = [];
+		this.checked = false;
+	}
+	
 	async function getAllUrls() {
 		for (i = 0; i < urlSuffix.length; i++) {
 			getOneURL(urlSuffix[i], DOIarray[i]);
@@ -218,7 +226,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			authorList = "not found";
 			console.log( 'parse_JSON not found');
 		} else {
-			// figure out authors (for author table)
+			// figure out author stuff (for author table)
 			for (a = 0; a < input.author.length; a++) {
 				tempAuthor_full = input.author[a].family + ", ";
 				tempAuthor_full += input.author[a].given;
@@ -226,9 +234,11 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				// keep track of how many times this author has appeared for the table of authors
 				if (isDuplicate == false) {
 					if (authors[tempAuthor_full] === undefined) {
-						authors[tempAuthor_full] = 1;
+						sdd[0] = new Authors(tempAuthor_full);
+
+// 						authors[tempAuthor_full].citation_count = 1;
 					} else {
-						authors[tempAuthor_full]++;
+						authors[tempAuthor_full].citation_count++;
 					} 
 				}
 				
@@ -348,10 +358,11 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		// add authors to the html table
 		authorTableText += "<tr><th onclick='sortTable(0, "+'"authorTable","letters"'+")' title='Click to Sort'>Author (click to sort)</th>";
 		authorTableText += "<th onclick='sortTable(1, "+'"authorTable","numbers"'+")' title='Click to Sort'>Articles Cited (click to sort)</th></tr>";
-
+		authorTableText += sdd[0].name;
+		
 		for (i = 0; i < authorArrayTemp.length; i++) {
 			authorTableText += "<tr><td>";
-			authorTableText += authorArrayTemp[i] + "</td><td>" + authors[authorArrayTemp[i]];
+			authorTableText += authorArrayTemp[i] + "</td><td>" + authors[authorArrayTemp[i]].citation_count;
 			authorTableText += "</td></tr>";
 		}
 
