@@ -60,20 +60,27 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 
 <script>
 	var urlSuffix = [];
-// 	var authors = [];
-var sdd = [];
+	var sdd = [];
 	var titleArray = [];
 	var DOIarray = [];
 	var numCompleted = 0;
 	var startTime = 0;
 	var urlSuffix_for_reference_returned = [];
-	var isDuplicate = [];
 	
-	function Authors(name) {
+	function Author_object(name) {
 		this.name = name;
 		this.citation_count = 1;
 		this.coauthors = [];
 		this.checked = false;
+
+		this.coauthors_all = function() {
+			var i = 0;
+			var temp = "";
+			for (i = 0; i < this.coauthors.length; i++) {
+				temp += this.coauthors[i].name + "; ";
+			}
+			return temp.substring(0, temp.length-2); //remove the final ";"
+		};
 	}
 	
 	async function getAllUrls() {
@@ -212,10 +219,11 @@ var sdd = [];
 	
 	function parse_JSON(input) {
 		var output = "";
-		var authorList = "";
+		var authorList_thisRef = "";
 		var tempAuthor_full = "";
 		var tempAuthor_apa = "";
 		var isDuplicate = false;
+		var temp_list_of_co_authors_from_this_article = [];
 		
 		if (titleArray.includes(input.title[0]) == true) {
 			isDuplicate = true;
@@ -223,26 +231,26 @@ var sdd = [];
 		
 		// if crossref didn't find it, ignore it
 		if (typeof input.author === 'undefined') {
-			authorList = "not found";
+			authorList_thisRef = "not found";
 			console.log( 'parse_JSON not found');
 		} else {
 			// figure out author stuff (for author table)
 			for (a = 0; a < input.author.length; a++) {
-				tempAuthor_full = input.author[a].family + ", ";
-				tempAuthor_full += input.author[a].given;
+				tempAuthor_full = input.author[a].family + ", " + input.author[a].given;
 					
 				// keep track of how many times this author has appeared for the table of authors
 				if (isDuplicate == false) {
-					if (authors[tempAuthor_full] === undefined) {
-						sdd[0] = new Authors(tempAuthor_full);
-
+					if (sdd[tempAuthor_full] === undefined) {
+						sdd[tempAuthor_full] = new Author_object(tempAuthor_full);
+// 						console.log(sdd[tempAuthor_full].name);
 // 						authors[tempAuthor_full].citation_count = 1;
 					} else {
-						authors[tempAuthor_full].citation_count++;
-					} 
+						sdd[tempAuthor_full].citation_count++; //dfd change sdd to something meaningful
+					}
+					temp_list_of_co_authors_from_this_article.push(tempAuthor_full);
 				}
 				
-				// figure out list to show in apa reference style
+				// figure out list to show in apa reference style dfd maybe sometime I should move this function into the author object
 				var tempArray = input.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
 				var tempAuthor_apa = "";
 				
@@ -251,17 +259,19 @@ var sdd = [];
   					tempAuthor_apa += item.slice(0,1)+". "; 
 				}
 				
-				authorList += input.author[a].family + ", " + tempAuthor_apa.trim() + ", "; // add this apa-formatted author to the author list. 
+				authorList_thisRef += input.author[a].family + ", " + tempAuthor_apa.trim() + ", "; // add this apa-formatted author to the author list. 
 			}
 
-		authorList = authorList.substring(0, authorList.length-2)+" "; // trim the last comma
+			connect_coauthors(temp_list_of_co_authors_from_this_article);
+
+			authorList_thisRef = authorList_thisRef.substring(0, authorList_thisRef.length-2)+" "; // trim the last comma
 		}
 		
 		// assign value to output
-		if (authorList == "not found") {
-			output = authorList;
+		if (authorList_thisRef == "not found") {
+			output = authorList_thisRef;
 		} else {
-			output = authorList;
+			output = authorList_thisRef;
 			output += "(" + input.issued['date-parts'][0][0] + ") ";
 			output += input.title;
 			output +=" <i>" +input['container-title'] + ", " + input.volume + ",</i> ";
@@ -269,13 +279,32 @@ var sdd = [];
 		}
 		if (isDuplicate == true) {
 			output = "dduplicate:" + output;
-		} else if (authorList != "not found") {
+		} else if (authorList_thisRef != "not found") {
 			titleArray.push(input.title[0]);		
 		}
 		
 		return output;
 	}
-	
+
+	function connect_coauthors(list_of_coauthors) {
+		var i = 0;
+		var j = 0;
+		
+		// if it's a single-author paper, don't do anything
+		if (list_of_coauthors.length == 1) {
+			return;
+		}
+		
+// 		go through each pair of authors in the author list and connect each to the other
+		for (i = 0; i < list_of_coauthors.length + 1; i++) {			
+			for (j = i + 1; j < list_of_coauthors.length; j++) {
+				if (sdd[list_of_coauthors[i]].coauthors.includes(sdd[list_of_coauthors[j]]) === false) { // if they aren't already connected
+					sdd[list_of_coauthors[i]].coauthors.push(sdd[list_of_coauthors[j]]);
+					sdd[list_of_coauthors[j]].coauthors.push(sdd[list_of_coauthors[i]]);
+				}
+			}
+		}
+	}
 	
 	function parse_user_input() {
 		var inputText = document.getElementById("myText").value;
@@ -343,31 +372,43 @@ var sdd = [];
 	}
 
 	function showAuthors() {
-		var authorTableText = "<table>"
-		var authorArrayTemp = [];
-				
-		// authors is an object. in order to sort it, first turn the author names into an array.
-		for (var key in authors) {
-			if (authors.hasOwnProperty(key)) {
-				authorArrayTemp.push(key);
-			}
-		}
-		
-		authorArrayTemp.sort();
+// 		var authorTableText = "";
+// 		var authorArrayTemp = [];		
 
-		// add authors to the html table
-		authorTableText += "<tr><th onclick='sortTable(0, "+'"authorTable","letters"'+")' title='Click to Sort'>Author (click to sort)</th>";
-		authorTableText += "<th onclick='sortTable(1, "+'"authorTable","numbers"'+")' title='Click to Sort'>Articles Cited (click to sort)</th></tr>";
-		authorTableText += sdd[0].name;
+		// create the html table 
+		authorTableText = "<table><tr><th onclick='sortTable(0, "+'"authorTable","letters"'+")' title='Click to Sort'>Author (click to sort)</th>";
+		authorTableText += "<th onclick='sortTable(1, "+'"authorTable","numbers"'+")' title='Click to Sort'>Articles Cited (click to sort)</th>";
+		authorTableText += "<th onclick='sortTable(2, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors (click to sort)</th>";
+		authorTableText += "</tr>";
 		
-		for (i = 0; i < authorArrayTemp.length; i++) {
+		// authors is an object. in order to sort it, first turn the author names into an array.
+// 		for (var key in authors) {
+// 			if (authors.hasOwnProperty(key)) {
+// 				authorArrayTemp.push(key);
+// 			}
+// 		}
+// 		authorArrayTemp.sort();
+
+// 		console.log( sdd);
+		for (var key in sdd) {
+// 		console.log( 'thing');
+// 		console.log(sdd[key].coauthors_all());
 			authorTableText += "<tr><td>";
-			authorTableText += authorArrayTemp[i] + "</td><td>" + authors[authorArrayTemp[i]].citation_count;
+			authorTableText += sdd[key].name + "</td><td>" + sdd[key].citation_count + "</td><td>" + sdd[key].coauthors_all();
 			authorTableText += "</td></tr>";
 		}
 
+// 		for (i = 0; i < authorArrayTemp.length; i++) {
+// 			authorTableText += "<tr><td>";
+// 			authorTableText += authorArrayTemp[i] + "</td><td>" + authors[authorArrayTemp[i]].citation_count;
+// 			authorTableText += sdd[0].name;
+// 			authorTableText += "</td></tr>";
+// 		}	
+
 		authorTableText += "</table>"
 		document.getElementById('authorTable').innerHTML = authorTableText;
+		
+		sortTable(1, "authorTable", "numbers");
 	}
 	
 
@@ -383,7 +424,8 @@ var sdd = [];
 	
 	function start() {
 		urlSuffix = [];
-		authors = [];
+// 		authors = [];
+		sdd = [];
 		titleArray = [];
 		DOIarray = [];
 		urlSuffix_for_reference_returned = [];
@@ -424,7 +466,8 @@ var sdd = [];
 <!-- new stuff -->
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
 Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
-Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the future: Object and source memory for real and imagined events. Applied Cognitive Psychology, 13, 373–390. https://doi.org/10.1002/(SICI)1099-0720(199908)13:4<373::AID-ACP605>3.0.CO;2-F
+Finn, B., & Metcalfe, J. (2007). The role of memory for past test in the underconfidence with practice effect. Journal of Experimental Psychology: Learning, Memory, and Cognition, 33, 238–244. https://doi.org/10.1037/0278-7393.33.1.238
+Finn, B., & Metcalfe, J. (2008). Judgments of learning are influenced by memory for past test. Journal of Memory and Language, 58, 19–34. https://doi.org/10.1016/j.jml.2007.03.006
 
 
 
