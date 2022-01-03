@@ -1,38 +1,6 @@
 <!--
 To do: 
 
-Put a checkbox next to each author. Check the box if they're an author 
-on this manuscript. Then have it highlight in the author list anyone
-whom they have published with (based only on the reference list of this
-article). That way, it'll be easy to see who the most-cited non-co-author 
-authors are. 
-
-Author variable
-	Maybe author should be an object that has these variables:
-	author name (string)
-	citation_count
-	coauthor name (array of strings)
-	checked (boolean)
-	checked_authors_I_coauthored_with (array of strings), this is a list of checked authors this author is a coauthor with
-While making author list
-	adjust the appropriate variables (author.name, author.co_author_name[])
-	add co-authors for each author
-When building author table
-	make a new column for co-authors
-	add in checkboxes
-If they check a box for a given author
-	highlight that author in bold in the author column
-	highlibht all of their co-authors (in bold) in the co-author column
-	adjust checked_authors_I_coauthored_with and checked variables
-	maybe add columns for number of coauthorschecked or something, for sorting
-	highlight their articles in the article list. actually, in article list it'd be better if it was just the authors. 
-	do this by writing a function that takes a single author as a parameter (or maybe the author object has a function that does this)
-If they uncheck a box
-	adjust checked_authors_I_coauthored_with and checked variables
-	for any checked_authors_I_coauthored_with that get changed, see if their array is empty and if it is, unhighlight it. 
-	how this will work for articles, I'm not so sure
---
-
 Try combining lines if: 
 the score isn't high
 there's no DOI in the line
@@ -70,12 +38,13 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	var urlSuffix_for_reference_returned = [];
 	
 	function Author_object(name) {
+		// this creates instances of an author object, which is how I keep track of authors. 
 		this.name = name;
 		this.citation_count = 1;
 		this.coauthors = [];
 		this.checked = false;
 
-		this.coauthors_all = function() {
+		this.all_coauthors_string = function() {
 			var i = 0;
 			var temp = "";
 			for (i = 0; i < this.coauthors.length; i++) {
@@ -244,8 +213,6 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				if (isDuplicate == false) {
 					if (sdd[tempAuthor_full] === undefined) {
 						sdd[tempAuthor_full] = new Author_object(tempAuthor_full);
-// 						console.log(sdd[tempAuthor_full].name);
-// 						authors[tempAuthor_full].citation_count = 1;
 					} else {
 						sdd[tempAuthor_full].citation_count++; //dfd change sdd to something meaningful
 					}
@@ -297,7 +264,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			return;
 		}
 		
-// 		go through each pair of authors in the author list and connect each to the other
+// 		go through each pair of authors in the author list and connect each to the other (i.e., add them to each other's list of coauthors)
 		for (i = 0; i < list_of_coauthors.length + 1; i++) {			
 			for (j = i + 1; j < list_of_coauthors.length; j++) {
 				if (sdd[list_of_coauthors[i]].coauthors.includes(sdd[list_of_coauthors[j]]) === false) { // if they aren't already connected
@@ -374,20 +341,41 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	}
 
 	function authorCheckBoxPress(whichOne) {
+		// this is called when a checkbox is pressed
+		var i = 0;
 		const nameString = whichOne.id;
-		sdd[nameString].checked = whichOne.checked;
-		console.log( nameString);
-		console.log(document.getElementById('name_' + nameString));
-		document.getElementById('name_' + nameString).style.color = 'red';
-		// dfd 
+		sdd[nameString].checked = whichOne.checked; // set this author's status (i.e., checked or not) to the status of the checkbox
+		
+		// for this author and their coauthors, compute their status 
+		computeStatus(nameString);
+		for (i = 0; i < sdd[nameString].coauthors.length; i++) {
+			computeStatus(sdd[nameString].coauthors[i].name);
+		}
+	}
+	
+	function computeStatus(nameString) {
+		// this figures out whether an author should be highlighted (i.e., whether they or their coauthors are checked)
+		var i = 0;
+				
+		if (sdd[nameString].checked == true) {
+			// if this author is checked, turn them red
+			document.getElementById('name_' + nameString).style.color = 'red';
+		} else {
+			// if this author has a co-author that is checked, turn them purple and return
+			for (i = 0; i < sdd[nameString].coauthors.length; i++) {
+				if (sdd[nameString].coauthors[i].checked) {
+					document.getElementById('name_' + nameString).style.color = 'purple';
+					return;
+				}
+			}
+			// otherwise, turn them black		
+			document.getElementById('name_' + nameString).style.color = 'black';
+		}
 	}
 
 	function showAuthors() {
 		var authorTableText = "";
-// 		var markup = "";
-// 		var markupend = "";
-// 		var tempchecked = "";
-		
+
 		// create the html table 
 		authorTableText = "<p>Click headings to sort</p><table><tr>";
 		authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes"'+")' title='Click to Sort'>Make bold</th>";
@@ -397,28 +385,16 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		authorTableText += "</tr>";
 
 		for (var key in sdd) {
-// 			if (sdd[key].checked == true) {
-// 				tempchecked = "checked"
-// 				markup = "<b>";
-// 				markupend = "</b>";
-// 			} else {
-// 				tempchecked = ""
-// 				markup = "";
-// 				markupend = "";			
-// 			}
-// 			
 			authorTableText += "<tr>";
-//			authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
 			authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
 			authorTableText += "<td><div id='name_" + sdd[key].name + "'>" + sdd[key].name + "</td>";
 			authorTableText += "<td>" + sdd[key].citation_count + "</td>";
-			authorTableText +=  "<td>" + sdd[key].coauthors_all();
+			authorTableText +=  "<td>" + sdd[key].all_coauthors_string();
 			authorTableText += "</td></tr>";
 		}
 
 		authorTableText += "</table>"
-		document.getElementById('authorTable').innerHTML = authorTableText;
-		
+		document.getElementById('authorTable').innerHTML = authorTableText;		
 		sortTable(2, "authorTable", "numbers");
 	}
 	
@@ -435,7 +411,6 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	
 	function start() {
 		urlSuffix = [];
-// 		authors = [];
 		sdd = [];
 		titleArray = [];
 		DOIarray = [];
@@ -479,7 +454,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
 Finn, B., & Metcalfe, J. (2007). The role of memory for past test in the underconfidence with practice effect. Journal of Experimental Psychology: Learning, Memory, and Cognition, 33, 238–244. https://doi.org/10.1037/0278-7393.33.1.238
 Finn, B., & Metcalfe, J. (2008). Judgments of learning are influenced by memory for past test. Journal of Memory and Language, 58, 19–34. https://doi.org/10.1016/j.jml.2007.03.006
-
+Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL effect”. Memory, 26, 771–783. https://doi.org/10.1080/09658211.2017.1406523
 
 
 </textarea>
