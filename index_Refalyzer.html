@@ -19,10 +19,12 @@ While making author list
 	add co-authors for each author
 When building author table
 	make a new column for co-authors
+	add in checkboxes
 If they check a box for a given author
 	highlight that author in bold in the author column
 	highlibht all of their co-authors (in bold) in the co-author column
 	adjust checked_authors_I_coauthored_with and checked variables
+	maybe add columns for number of coauthorschecked or something, for sorting
 	highlight their articles in the article list. actually, in article list it'd be better if it was just the authors. 
 	do this by writing a function that takes a single author as a parameter (or maybe the author object has a function that does this)
 If they uncheck a box
@@ -371,44 +373,53 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		document.getElementById('authorTable').innerHTML = "<table><tr><td>searching...</td></tr></table>";
 	}
 
+	function authorCheckBoxPress(whichOne) {
+		const nameString = whichOne.id;
+		sdd[nameString].checked = whichOne.checked;
+		console.log( nameString);
+		console.log(document.getElementById('name_' + nameString));
+		document.getElementById('name_' + nameString).style.color = 'red';
+		// dfd 
+	}
+
 	function showAuthors() {
-// 		var authorTableText = "";
-// 		var authorArrayTemp = [];		
-
-		// create the html table 
-		authorTableText = "<table><tr><th onclick='sortTable(0, "+'"authorTable","letters"'+")' title='Click to Sort'>Author (click to sort)</th>";
-		authorTableText += "<th onclick='sortTable(1, "+'"authorTable","numbers"'+")' title='Click to Sort'>Articles Cited (click to sort)</th>";
-		authorTableText += "<th onclick='sortTable(2, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors (click to sort)</th>";
-		authorTableText += "</tr>";
+		var authorTableText = "";
+// 		var markup = "";
+// 		var markupend = "";
+// 		var tempchecked = "";
 		
-		// authors is an object. in order to sort it, first turn the author names into an array.
-// 		for (var key in authors) {
-// 			if (authors.hasOwnProperty(key)) {
-// 				authorArrayTemp.push(key);
-// 			}
-// 		}
-// 		authorArrayTemp.sort();
+		// create the html table 
+		authorTableText = "<p>Click headings to sort</p><table><tr>";
+		authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes"'+")' title='Click to Sort'>Make bold</th>";
+		authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Cited author name</th>";
+		authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers"'+")' title='Click to Sort'>Times cited</th>";
+		authorTableText += "<th onclick='sortTable(3, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
+		authorTableText += "</tr>";
 
-// 		console.log( sdd);
 		for (var key in sdd) {
-// 		console.log( 'thing');
-// 		console.log(sdd[key].coauthors_all());
-			authorTableText += "<tr><td>";
-			authorTableText += sdd[key].name + "</td><td>" + sdd[key].citation_count + "</td><td>" + sdd[key].coauthors_all();
+// 			if (sdd[key].checked == true) {
+// 				tempchecked = "checked"
+// 				markup = "<b>";
+// 				markupend = "</b>";
+// 			} else {
+// 				tempchecked = ""
+// 				markup = "";
+// 				markupend = "";			
+// 			}
+// 			
+			authorTableText += "<tr>";
+//			authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
+			authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
+			authorTableText += "<td><div id='name_" + sdd[key].name + "'>" + sdd[key].name + "</td>";
+			authorTableText += "<td>" + sdd[key].citation_count + "</td>";
+			authorTableText +=  "<td>" + sdd[key].coauthors_all();
 			authorTableText += "</td></tr>";
 		}
-
-// 		for (i = 0; i < authorArrayTemp.length; i++) {
-// 			authorTableText += "<tr><td>";
-// 			authorTableText += authorArrayTemp[i] + "</td><td>" + authors[authorArrayTemp[i]].citation_count;
-// 			authorTableText += sdd[0].name;
-// 			authorTableText += "</td></tr>";
-// 		}	
 
 		authorTableText += "</table>"
 		document.getElementById('authorTable').innerHTML = authorTableText;
 		
-		sortTable(1, "authorTable", "numbers");
+		sortTable(2, "authorTable", "numbers");
 	}
 	
 
