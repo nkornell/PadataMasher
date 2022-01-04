@@ -608,15 +608,6 @@ function rowOfThisCheckbox(whichIndex) {
 	return document.getElementById('cfTableCell_Row'+whichIndex+'_Col0').parentNode.parentNode.rowIndex;
 }
 
-function checkboxOfThisRow(rowIndex) {
-	// Pass this the current row number of a checkbox in its table.
-	// It returns the checkbox element that was pressed.
-	var table = document.getElementById('cfTable');
-	var rows = table.getElementsByTagName("TR");
-	var whichTD = rows[rowIndex].getElementsByTagName("TD")[0]; // this is zero because the checkboxes are in the first column
-	return whichTD.getElementsByTagName('input')[0];
-}
-
 function buildOutputStringCAC() {
 	// Turn the data into a string that can be stuck in a file for export. 
 	// It uses the modal delimiter as the output delimiter for all rows.

@@ -377,10 +377,10 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		var authorTableText = "";
 
 		// create the html table 
-		authorTableText = "<p>Click headings to sort</p><table><tr>";
-		authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes"'+")' title='Click to Sort'>Make bold</th>";
-		authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Cited author name</th>";
-		authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers"'+")' title='Click to Sort'>Times cited</th>";
+		authorTableText = "<table><tr>";
+		authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes"'+")' title='Click to Sort'>Highlight</th>";
+		authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Author</th>";
+		authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers"'+")' title='Click to Sort'>Citations</th>";
 		authorTableText += "<th onclick='sortTable(3, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
 		authorTableText += "</tr>";
 
@@ -395,7 +395,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 
 		authorTableText += "</table>"
 		document.getElementById('authorTable').innerHTML = authorTableText;		
-		sortTable(2, "authorTable", "numbers");
+		sortTable(1, "authorTable", "letters");
 	}
 	
 
@@ -488,7 +488,7 @@ Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning 
 <div class='bigBox' id='refalyzerAuthorsBox' style="display: none">
 	<div class='bigBox' display="block"> 
 		<div class='boxAroundTable'>
-			<div class='heading'>Authors</div><br>
+			<div class='heading'>Authors (click headings to sort)</p></div><br>
 			<p>
 			<div id='authorTable' class='dataTable'></div>
 		</div>

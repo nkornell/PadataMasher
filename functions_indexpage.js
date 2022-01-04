@@ -12,16 +12,13 @@ var numLevels = [];
 var setsOfValues = [];
 var fileDelimiterArray = [];
 
-
 window.addEventListener("keydown", checkKeyPressed, false); // make the window listen for a key press	
-
 
 function checkKeyPressed(e) {
 	if (e.keyCode == "79" && fileDelimiterArray.length == 0) { // if they pressed 'o' or 'O', and haven't already input data...
 		document.getElementById("files").click(); // Simulate a button press 
 	}
 }	
-
 
 function convertTabsToArrayMembers(inArray, inString) {
 	var i = 0;
@@ -109,8 +106,8 @@ function sortTable(n,tableName,sortType) {
 		y = Number(y.innerHTML);
 	  } else if (sortType == 'checkboxes') {
 	  	// checkboxes
-		x = checkboxOfThisRow(i).checked;
-		y = checkboxOfThisRow(i+1).checked;
+		x = checkboxOfThisRow(i,tableName).checked; //note: this function only works with combinefiles right now
+		y = checkboxOfThisRow(i+1,tableName).checked;
 	  }
 	  
 //		// This figures out whether they're both numbers. Nate added it but I don't need it anymore. Note that this isn't perfect; number will convert the following to numbers: true, false, " ", "", and probably others. 
@@ -152,6 +149,14 @@ function sortTable(n,tableName,sortType) {
 // document.body.style.cursor = 'auto';
 }
 
+function checkboxOfThisRow(rowIndex,tableName) {
+	// Pass this the current row number of a checkbox in its table.
+	// It returns the checkbox element that was pressed.
+	var table = document.getElementById(tableName);
+	var rows = table.getElementsByTagName("TR");
+	var whichTD = rows[rowIndex].getElementsByTagName("TD")[0]; // this is zero because the checkboxes are in the first column
+	return whichTD.getElementsByTagName('input')[0];
+}
 
 
 // 	 /* When the user clicks on the dropdown button, 
