@@ -28,6 +28,38 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
 <!-- https://peerj.com/articles/cs-214/?td=bl#p-37 -->
+<!-- 
+<html> <head> <!~~ Altmetric widget code ~~> <script
+4 src="https://dlbxh8uaslmnw7.cloudfront.net/assets/embed.js"></script> <script src="https://cdn.jsdelivr.net/npm/citation-js"></script> </head> <body>
+<div id="element"></div> <script> window.onload = async function () {
+let Cite = require('citation-js') let cite = await Cite.async ('10.1371/journal.pone.0185809')
+let bibliography = cite. format ('bibliography', {
+format: 'html', append ({DOI}) {
+return <span class="altmetric-embed" data-badge-type="badge" data-doi="${DOI}"></span>
+})
+let element = document.getElementById('element') element.innerHTML = bibliography _altmetric_embed_init()
+</script> </body> </html>
+ -->
+
+<script src="https://cdn.jsdelivr.net/npm/citation-js"></script>
+<script>
+	window.onload = async function () {
+		let Cite = require('citation-js')
+		let cite = await Cite.async ('10.1080/09658211.2017.1406523')
+		console.log( cite);
+
+		let bibliography = cite.format ('bibliography', {
+			format: 'html', 
+			append ({DOI}) {
+				return '<span class="altmetric-embed" data-badge-type="badge" data-doi="${DOI}"></span>'
+			}
+		})
+		let element = document.getElementById('element')
+		element.innerHTML = bibliography
+		}
+		
+</script> </body> </html>
+
 
 <script>
 	var urlSuffix = [];
@@ -109,6 +141,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 					console.log( 'this cant happen so if it does, check something!');
 				}); 
 				reference_returned = parse_JSON(myJSON.message);
+				console.log(myJSON);
 			}
 			
 			if (reference_returned.indexOf('dduplicate') >= 0) {
@@ -452,7 +485,10 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			<li style="float:right"><a href="index_About.html"><div class="navMenuItem">About</div></a></li>
 		</ul>
 	</nav>
-
+<p>thing
+<p>
+<div id="element"></div> 
+<p> end thing</p>
 <!-- new stuff -->
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
 Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
