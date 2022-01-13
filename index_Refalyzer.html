@@ -27,6 +27,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	<link rel="stylesheet" type="text/css" href="mystyle.css">
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
+<!-- https://peerj.com/articles/cs-214/?td=bl#p-37 -->
 
 <script>
 	var urlSuffix = [];
@@ -37,12 +38,15 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	var startTime = 0;
 	var urlSuffix_for_reference_returned = [];
 	
-	function Author_object(name) {
+	function Author_object(input_familyname, input_firstname) {
 		// this creates instances of an author object, which is how I keep track of authors. 
-		this.name = name;
+		this.name = input_familyname + ", " + input_firstname;
 		this.citation_count = 1;
 		this.coauthors = [];
 		this.checked = false;
+		
+		var firstName_array = input_firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
+		this.name_apa = input_familyname + ", " + first_letters(firstName_array);
 
 		this.all_coauthors_string = function() {
 			var i = 0;
@@ -54,6 +58,15 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		};
 	}
 	
+	function first_letters(inputString) {
+		var foof = "";
+		
+		for (i = 0; i < inputString.length; i++) {
+			foof += inputString[i].slice(0,1)+". "; 
+		}
+		return foof.trim();
+	}
+
 	async function getAllUrls() {
 		for (i = 0; i < urlSuffix.length; i++) {
 			getOneURL(urlSuffix[i], DOIarray[i]);
@@ -190,9 +203,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	
 	function parse_JSON(input) {
 		var output = "";
-		var authorList_thisRef = "";
+		var authorList_thisRef_apa = "";
 		var tempAuthor_full = "";
-		var tempAuthor_apa = "";
 		var isDuplicate = false;
 		var temp_list_of_co_authors_from_this_article = [];
 		
@@ -202,45 +214,37 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		
 		// if crossref didn't find it, ignore it
 		if (typeof input.author === 'undefined') {
-			authorList_thisRef = "not found";
+			authorList_thisRef_apa = "not found";
 			console.log( 'parse_JSON not found');
 		} else {
 			// figure out author stuff (for author table)
 			for (a = 0; a < input.author.length; a++) {
-				tempAuthor_full = input.author[a].family + ", " + input.author[a].given;
+				temp_firstname = input.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim();
+				tempAuthor_full = input.author[a].family + ", " + temp_firstname;
 					
 				// keep track of how many times this author has appeared for the table of authors
 				if (isDuplicate == false) {
 					if (sdd[tempAuthor_full] === undefined) {
-						sdd[tempAuthor_full] = new Author_object(tempAuthor_full);
+						sdd[tempAuthor_full] = new Author_object(input.author[a].family, temp_firstname);
 					} else {
 						sdd[tempAuthor_full].citation_count++; //dfd change sdd to something meaningful
 					}
 					temp_list_of_co_authors_from_this_article.push(tempAuthor_full);
 				}
 				
-				// figure out list to show in apa reference style dfd maybe sometime I should move this function into the author object
-				var tempArray = input.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
-				var tempAuthor_apa = "";
-				
-				tempArray.forEach(firstLetters); // using the function below, make tempAuthor_apa equal the first letters of the author first names
-				function firstLetters(item, index) {
-  					tempAuthor_apa += item.slice(0,1)+". "; 
-				}
-				
-				authorList_thisRef += input.author[a].family + ", " + tempAuthor_apa.trim() + ", "; // add this apa-formatted author to the author list. 
+				authorList_thisRef_apa += sdd[tempAuthor_full].name_apa + ", "; // add this apa-formatted author to the author list. 				
 			}
 
 			connect_coauthors(temp_list_of_co_authors_from_this_article);
 
-			authorList_thisRef = authorList_thisRef.substring(0, authorList_thisRef.length-2)+" "; // trim the last comma
+			authorList_thisRef_apa = authorList_thisRef_apa.substring(0, authorList_thisRef_apa.length-2)+" "; // trim the last comma
 		}
 		
 		// assign value to output
-		if (authorList_thisRef == "not found") {
-			output = authorList_thisRef;
+		if (authorList_thisRef_apa == "not found") {
+			output = "not found";
 		} else {
-			output = authorList_thisRef;
+			output = authorList_thisRef_apa;
 			output += "(" + input.issued['date-parts'][0][0] + ") ";
 			output += input.title;
 			output +=" <i>" +input['container-title'] + ", " + input.volume + ",</i> ";
@@ -248,7 +252,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		}
 		if (isDuplicate == true) {
 			output = "dduplicate:" + output;
-		} else if (authorList_thisRef != "not found") {
+		} else if (authorList_thisRef_apa != "not found") {
 			titleArray.push(input.title[0]);		
 		}
 		
