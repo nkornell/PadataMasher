@@ -69,7 +69,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			}
 
 			document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
-			document.getElementById(this.user_input).innerHTML = this.apa; 
+			document.getElementById('reference_'+this.user_input).innerHTML = this.apa; 
 			document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
 		};
 	}
@@ -120,7 +120,6 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		var aIndex = 0;
 		var bIndex = 0;
 		var comboText = "";
-		var isDuplicate = false;
 		var theOneToChange = "";
 		var temp_doi = "";
 		
@@ -132,11 +131,10 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				// This is wasteful because it means going to a server to find JSON that's already 
 				// been found, but I need the JSON in the format Cite uses, which is called Citation 
 				// Style Language (CSL). And I couldn't figure out any other way. 
+				if (typeof myJSON.message.items[0].DOI === 'undefined') {
+					console.log( "undefined");
+				}
 				temp_doi = myJSON.message.items[0].DOI;
-				// the next 3 lines change the id of the elements in the table. but hopefully these will become obsolete. 
-// 				document.getElementById(inputString).id = temp_doi;
-// 				document.getElementById('inputText_'+inputString).id = 'inputText_'+temp_doi;
-// 				document.getElementById('notes_'+inputString).id = 'notes_'+temp_doi;			
 				getOneURL(inputString, temp_doi);
 				return;
 //				reference_returned = parse_JSON(myJSON.message.items[0],""); // this would just use the JSON it found instead of repeating the process.
@@ -149,101 +147,32 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 					format: 'html'
 				});
 				
-// 				console.log(' input string should be ' + inputString);
-
 				if (reference_obj[myJSON.data[0].DOI] === undefined) { 
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(inputString, myJSON.data[0], bibliography);
 					reference_returned = parse_JSON(myJSON.data[0], bibliography); 
-				} else {
-// 					console.log( 'best combi')
-					var bescomb = best_combination(inputString, reference_obj[myJSON.data[0].DOI].user_input, reference_obj[myJSON.data[0].DOI].apa);
-					change_elementIDs(from, to) // write this
-					remove row 
-					reference_obj[myJSON.data[0].DOI].user_input = bescomb; // maybe changing this but not the id of the html element is a mistake. change the html element!?
-					reference_returned = 'dduplicate this is a duplicate :('; // dfd make combinations work starting here
-// 					what needs to happen here:
-// 					make it so one of the rows (the good one) has the appropriate combo in column 1 and the correct answer in column 2
-// 					and the other row either gets deleted or blanked out
-// 					and then get rid of the stuff about duplicate rows, and the one to change, below, that's now irrelevant. 
+				} else { // if it finds a doi that's been found before
+					combine_rows(inputString, reference_obj[myJSON.data[0].DOI]);
+					reference_returned = 'dduplicate this is a duplicate :('; 
+//dfd
+// 	x get rid of the stuff about duplicate rows, and the one to change, below, that's now irrelevant. 
 				}
 				temp_doi = myJSON.data[0].DOI;
 			}
 			
 			if (reference_returned.indexOf('dduplicate') >= 0) {
-				isDuplicate = true;
-				console.log( "duplicate for: " + reference_returned)
-				reference_returned = reference_returned.substr(11); // get rid of the extra letters dduplicate:
-// 				document.getElementById(inputString).innerHTML = "";
-			} else {
-// 				urlSuffix_for_reference_returned[reference_returned] = inputString;			
-// 				document.getElementById(inputString).innerHTML = reference_returned;
-				
-// 				var x = document.getElementById(inputString);   // Get the element with id="demo"
-// 				x.innerHTML = "this is fun"; 
-// 				console.log( "not fun")
-// console.log('is'+ inputString)
-// const results = reference_obj.filter(obj => {
-//   return obj.user_input  === inputString;
-// });
-// console.log( results)
-// console.log( reference_obj)
-
+// 				console.log( "duplicate for: " + reference_returned)
+				reference_returned = reference_returned.substr(11); // get rid of the extra letters dduplicate
 			}
+			
 			reference_obj[temp_doi].update_html();
 			
 			// if it's a duplicate, check whether the strings in the first column of the two matching rows should be combined (e.g., because there was a return character in the middle of the reference).
-			if (isDuplicate == true) {
-				// aIndex and bIndex are row numbers of references that match. 
-				// a is the row that was already found before. It is treated as the 'real' one. b is the new one that just got found, it's labelled a duplicate.
-				// comboText is a string that combines the first column of rows a and b. 
-
-
-// dfd this doesn't work anymore because i changed the element ids. I think this must assume that the user input is the element id,
-// but it isn't anymore. Hopefully when i make an article object, this problem will go away naturally. otherwise i'll have to fix it. 
-// As far as I know, the only thing that goes wrong is the match strength is wrong. 
-// 				aIndex = parseInt(urlSuffix.indexOf(urlSuffix_for_reference_returned[reference_returned]));
-// 				bIndex = parseInt(urlSuffix.indexOf(inputString));
-// 				comboText = document.getElementById('inputText_'+urlSuffix[Math.min(aIndex,bIndex)]).innerHTML+' '+document.getElementById('inputText_'+urlSuffix[Math.max(aIndex,bIndex)]).innerHTML;
-// 				aScore = parseInt(Math.ceil(100*similarity(reference_returned, urlSuffix[aIndex])));
-// 				bScore = parseInt(Math.ceil(100*similarity(reference_returned, urlSuffix[bIndex])));
-// 				comboScore = parseInt(Math.ceil(100*similarity(reference_returned, comboText)));
-// 
-// 				if (Math.max(aScore,bScore,comboScore) == comboScore) {
-// 					// if the combo score is the highest of the three, change the first column so that it is equal to the combination string
-// 					theOneToChange = urlSuffix[aIndex];
-// 					document.getElementById('inputText_' + urlSuffix[aIndex]).innerHTML = comboText;
-// 					
-// 					document.getElementById('inputText_'+urlSuffix[bIndex]).innerHTML = "(combined)";
-// 					document.getElementById(urlSuffix[bIndex]).innerHTML = "duplicate";
-// 					document.getElementById('notes_' + urlSuffix[bIndex]).innerHTML = "--";
-// 
-// 				} else {
-// 					// if the combo isn't best, don't combine
-// 					comboScore = 0;
-// 					document.getElementById(inputString).innerHTML = "duplicate";
-// 					document.getElementById('notes_' + inputString).innerHTML = "--";
-// 				}
-			} else if (reference_returned == 'not found') {
+			if (reference_returned == 'not found') {
 				console.log( 'not found');
 // 				document.getElementById(inputString).innerHTML = reference_returned;
 // 				urlSuffix_for_reference_returned[reference_returned] = "";
 				document.getElementById('notes_' + inputString).innerHTML = "-- not found";
 			}
-
-// 			if (theOneToChange == "") {
-// 				theOneToChange = inputString; // if we're not combining, just set the values as normal for inputstring
-// 			}
-// 			if (document.getElementById('notes_' + theOneToChange).innerHTML != "--") {
-// 				// if this isn't something that should be left blank, adjust what the score says
-// 				score = compute_score(reference_returned, document.getElementById('inputText_' + theOneToChange).innerHTML);			
-// 				if (score < 60) {
-// 					document.getElementById('notes_' + theOneToChange).innerHTML = '<div style="background-color:tomato;">Match strength: ' + score + '</div>';
-// 				} else if (score >= 90) {
-// 					document.getElementById('notes_' + theOneToChange).innerHTML = '<div style="background-color:white; "></div>';
-// 				} else {
-// 					document.getElementById('notes_' + theOneToChange).innerHTML = '<div style="background-color:white; ">Match strength: ' + score + '</div>';
-// 				}
-// 			}
 
 			showAuthors();
 			numCompleted++;
@@ -261,13 +190,30 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		}
 	}
 	
+	function combine_rows(input_string, input_reference_obj) {
+		var bestcombo = best_combination(input_string, input_reference_obj.user_input, input_reference_obj.apa);
+					
+		if (input_reference_obj.user_input !== bestcombo) {
+			change_elementIDs(input_reference_obj.user_input, bestcombo);
+			input_reference_obj.user_input = bestcombo;
+		}
+		// remove row that is no longer needed
+		var row_to_remove = document.getElementById(input_string).rowIndex;
+	  	document.getElementById("article_table").deleteRow(row_to_remove);
+	  	// dfd: if this function ends up being used to remove rows that both already have an object, the next step here would be to get rid of the bad object. 
+	}
+	
+	function change_elementIDs(from, to) {
+// 		console.log( "changing element ids");
+		document.getElementById('reference_'+from).id = 'reference_'+to;
+		document.getElementById('inputText_'+from).id = 'inputText_'+to;
+		document.getElementById('notes_'+from).id = 'notes_'+to;			
+	}
+	
 	function best_combination(user_input_current, user_input_older, apa_goal) {
 		aText = user_input_older;
 		bText = user_input_current;
 		comboText = aText + " " + bText;
-// 		console.log( "cobotext, apagoal");
-// 		console.log( comboText);
-// 		console.log( apa_goal);
 		reverse_comboText = bText + " " + aText;
 		aScore = parseInt(Math.ceil(100*similarity(aText, apa_goal)));
 		bScore = parseInt(Math.ceil(100*similarity(bText, apa_goal)));
@@ -404,7 +350,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		})
 				
 		// Build article table
-		var articleTableText = "<table>";
+		var articleTableText = "<table id='article_table'>";
 		articleTableText += '<tr><th style="width:40%">Input text</th>';
     	articleTableText += '<th style="width:40%">Article found</th>';
     	articleTableText += '<th style="width:20%">Notes</th></tr>';
@@ -437,9 +383,9 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			} else {
 				DOIarray.push("");
 			}
-			articleTableText += "<tr>";
+			articleTableText += "<tr id='"+urlSuffix[i]+"'>";
 			articleTableText += "<td id='inputText_"+ urlSuffix[i]+"'>"+urlSuffix[i]+"</td>";
-			articleTableText += "<td id='"+urlSuffix[i]+"'>searching...</td>";
+			articleTableText += "<td id='reference_"+urlSuffix[i]+"'>searching...</td>";
 			articleTableText += "<td id='notes_" + urlSuffix[i] + "'>" + DOIarray[i] + "</td>";
 			articleTableText += "</tr>";
 		}
@@ -563,6 +509,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 10.1007/978-1-4419-5716-0_6
 Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL effect”. Memory, 26, 771–783. 
 10.1080/09658211.2017.1406523
+asdddksflsd
 
 </textarea>
 <!-- 
