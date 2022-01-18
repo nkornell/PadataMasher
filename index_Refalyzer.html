@@ -40,27 +40,30 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	var DOIarray = [];
 	var numCompleted = 0;
 	var startTime = 0;
-	var urlSuffix_for_reference_returned = [];
+// 	var urlSuffix_for_reference_returned = [];
 	
 	let Cite = require('citation-js');
 	
 	function Reference_object(input_userInput, input_json, input_apa) {
 		this.user_input = input_userInput;
-		this.user_input_original = input_userInput; // not sure if I'll ever use this.
+// 		this.user_input_original = input_userInput; // not sure if I'll ever use this.
 		this.json = input_json;
 		this.apa = input_apa;
+		this.apa_no_html = jQuery(input_apa).text().trim(); // apa without the html tags
 		this.doi = this.json.DOI;
 		this.notes = "";
 		this.score = 0;
 
 		this.update_html = function() {
-			console.log( "frez brain")
-			// this should update score as well (and coloring)
-			this.score = compute_score(this.user_input, this.apa);			
+// 			console.log( "frez brain")
+			// update score and coloring
+// 			console.log( this.apa);
+			this.score = compute_score(this.apa_no_html, this.user_input); // order has to be database version, user version 	
+// 			console.log('score=' + this.score)		
 			if (this.score < 60) {
 				this.notes = '<div style="background-color:tomato;">Match strength: ' + this.score + '</div>';
 			} else if (this.score >= 90) {
-				this.notes = '<div style="background-color:white;">' + 'perf' + '</div>'; // dfd why is this happeneing 
+				this.notes = '<div style="background-color:white;">' + 'perf ' +this.score + '</div>';
 			} else {
 				this.notes = '<div style="background-color:white;">Match strength: ' + this.score + '</div>';
 			}
@@ -68,7 +71,6 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
 			document.getElementById(this.user_input).innerHTML = this.apa; 
 			document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
-			
 		};
 	}
 
@@ -132,9 +134,9 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				// Style Language (CSL). And I couldn't figure out any other way. 
 				temp_doi = myJSON.message.items[0].DOI;
 				// the next 3 lines change the id of the elements in the table. but hopefully these will become obsolete. 
-				document.getElementById(inputString).id = temp_doi;
-				document.getElementById('inputText_'+inputString).id = 'inputText_'+temp_doi;
-				document.getElementById('notes_'+inputString).id = 'notes_'+temp_doi;			
+// 				document.getElementById(inputString).id = temp_doi;
+// 				document.getElementById('inputText_'+inputString).id = 'inputText_'+temp_doi;
+// 				document.getElementById('notes_'+inputString).id = 'notes_'+temp_doi;			
 				getOneURL(inputString, temp_doi);
 				return;
 //				reference_returned = parse_JSON(myJSON.message.items[0],""); // this would just use the JSON it found instead of repeating the process.
@@ -146,6 +148,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				let bibliography = myJSON.format ('bibliography', {
 					format: 'html'
 				});
+				
+// 				console.log(' input string should be ' + inputString);
 
 				if (reference_obj[myJSON.data[0].DOI] === undefined) { 
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(inputString, myJSON.data[0], bibliography);
@@ -153,8 +157,10 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				} else {
 // 					console.log( 'best combi')
 					var bescomb = best_combination(inputString, reference_obj[myJSON.data[0].DOI].user_input, reference_obj[myJSON.data[0].DOI].apa);
-					reference_obj[myJSON.data[0].DOI].user_input = bescomb;
-					reference_returned = 'dduplicate this is a duplicate :(';
+					change_elementIDs(from, to) // write this
+					remove row 
+					reference_obj[myJSON.data[0].DOI].user_input = bescomb; // maybe changing this but not the id of the html element is a mistake. change the html element!?
+					reference_returned = 'dduplicate this is a duplicate :('; // dfd make combinations work starting here
 // 					what needs to happen here:
 // 					make it so one of the rows (the good one) has the appropriate combo in column 1 and the correct answer in column 2
 // 					and the other row either gets deleted or blanked out
@@ -169,8 +175,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				reference_returned = reference_returned.substr(11); // get rid of the extra letters dduplicate:
 // 				document.getElementById(inputString).innerHTML = "";
 			} else {
-				urlSuffix_for_reference_returned[reference_returned] = inputString;			
-				document.getElementById(inputString).innerHTML = reference_returned;
+// 				urlSuffix_for_reference_returned[reference_returned] = inputString;			
+// 				document.getElementById(inputString).innerHTML = reference_returned;
 				
 // 				var x = document.getElementById(inputString);   // Get the element with id="demo"
 // 				x.innerHTML = "this is fun"; 
@@ -219,14 +225,14 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 // 				}
 			} else if (reference_returned == 'not found') {
 				console.log( 'not found');
-				document.getElementById(inputString).innerHTML = reference_returned;
-				urlSuffix_for_reference_returned[reference_returned] = "";
-				document.getElementById('notes_' + inputString).innerHTML = "--";
+// 				document.getElementById(inputString).innerHTML = reference_returned;
+// 				urlSuffix_for_reference_returned[reference_returned] = "";
+				document.getElementById('notes_' + inputString).innerHTML = "-- not found";
 			}
 
-			if (theOneToChange == "") {
-				theOneToChange = inputString; // if we're not combining, just set the values as normal for inputstring
-			}
+// 			if (theOneToChange == "") {
+// 				theOneToChange = inputString; // if we're not combining, just set the values as normal for inputstring
+// 			}
 // 			if (document.getElementById('notes_' + theOneToChange).innerHTML != "--") {
 // 				// if this isn't something that should be left blank, adjust what the score says
 // 				score = compute_score(reference_returned, document.getElementById('inputText_' + theOneToChange).innerHTML);			
@@ -262,7 +268,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 // 		console.log( "cobotext, apagoal");
 // 		console.log( comboText);
 // 		console.log( apa_goal);
-		reverse_comboText = bText + " " + aText; // dfd use this
+		reverse_comboText = bText + " " + aText;
 		aScore = parseInt(Math.ceil(100*similarity(aText, apa_goal)));
 		bScore = parseInt(Math.ceil(100*similarity(bText, apa_goal)));
 		comboScore = parseInt(Math.ceil(100*similarity(comboText, apa_goal)));
@@ -278,7 +284,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		} else if (maxScore == bScore) {
 			return bText;
 		} else {
-		return "this aint a good look";
+			return "this aint a good look";
 		}
 	}
 	
@@ -294,7 +300,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			return 100; 
 		} else {
 			// if there's no doi in the user input, remove the doi from the database string for the sake of comparison. 
-			databaseString = databaseString.replace("http://dx.doi.org/"+databaseDOI,""); // assuming what seems like the standard format from the database
+			databaseString = databaseString.replace("https://doi.org/"+databaseDOI,""); // assuming what seems like the standard format from the database
 			databaseString = databaseString.replace(databaseDOI,""); // in case that wasn't found, remove just the doi
 			return Math.ceil(100*similarity(databaseString,userString));
 		}
@@ -308,7 +314,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		var temp_list_of_co_authors_from_this_article = [];
 		
 		if (titleArray.includes(input_json.title) == true) { // switch title to something better, like apa or even json. but hopefully this will become obsolete because this function won't be called if there's a duplicate. 
-			isDuplicate = true; // dfd maybe don't even call parse_JSON if it's a duplicate? (i.e., maybe check for this before calling this function)
+			isDuplicate = true; // dfd maybe don't even call parse_JSON if it's a duplicate? NOTE: maybe i'm already not?
 		}
 		
 		// figure out author stuff (for author table)
@@ -515,9 +521,10 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	function start() {
 		urlSuffix = [];
 		author_obj = [];
+		reference_obj = [];
 		titleArray = [];
 		DOIarray = [];
-		urlSuffix_for_reference_returned = [];
+// 		urlSuffix_for_reference_returned = [];
 		numCompleted = 0;
 		startTime = Date.now();
     
