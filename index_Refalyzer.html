@@ -4,11 +4,10 @@ To do:
 Find duplicate lines with low scores and get rid of them (headers, running heads, etc)
 
 --
-Try combining lines if: 
-the score isn't high
-there's no DOI in the line
-it returns not found
-compare together versus separate and then, whichever gets a better score
+If the score is low or it returns not found, 
+Check if it's a repeated line
+Check whether it should be combined
+	compare together versus separate and then, whichever gets a better score
 
 --
 Look for cases where it's the same author but the name is different (e.g., Bjork, E. L. and Bjork, 
@@ -36,17 +35,15 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	var urlSuffix = [];
 	var author_obj = [];
 	var reference_obj = [];
-	var titleArray = [];
 	var DOIarray = [];
 	var numCompleted = 0;
 	var startTime = 0;
-// 	var urlSuffix_for_reference_returned = [];
+	var bad_rows = [];
 	
 	let Cite = require('citation-js');
 	
 	function Reference_object(input_userInput, input_json, input_apa) {
 		this.user_input = input_userInput;
-// 		this.user_input_original = input_userInput; // not sure if I'll ever use this.
 		this.json = input_json;
 		this.apa = input_apa;
 		this.apa_no_html = jQuery(input_apa).text().trim(); // apa without the html tags
@@ -55,11 +52,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		this.score = 0;
 
 		this.update_html = function() {
-// 			console.log( "frez brain")
 			// update score and coloring
-// 			console.log( this.apa);
 			this.score = compute_score(this.apa_no_html, this.user_input); // order has to be database version, user version 	
-// 			console.log('score=' + this.score)		
 			if (this.score < 60) {
 				this.notes = '<div style="background-color:tomato;">Match strength: ' + this.score + '</div>';
 			} else if (this.score >= 90) {
@@ -68,6 +62,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				this.notes = '<div style="background-color:white;">Match strength: ' + this.score + '</div>';
 			}
 
+			// update values
 			document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
 			document.getElementById('reference_'+this.user_input).innerHTML = this.apa; 
 			document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
@@ -94,15 +89,6 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		};
 	}
 	
-	function first_letters(inputString) {
-		var foof = "";
-		
-		for (i = 0; i < inputString.length; i++) {
-			foof += inputString[i].slice(0,1)+". "; 
-		}
-		return foof.trim();
-	}
-
 	async function getAllUrls() {
 		for (i = 0; i < urlSuffix.length; i++) {
 			getOneURL(urlSuffix[i], DOIarray[i]);
@@ -111,69 +97,49 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	
 	async function getOneURL(inputString, inputDOI) {
 		// inputString is equal to urlSuffix for the current item, and urlSuffix is the first column in the table (i.e., user input)
-		var reference_returned = "";
 		var stringToSend = '';
-		var score = 0;
-		var aScore = 0;
-		var bScore = 0;
-		var comboScore = 0;
-		var aIndex = 0;
-		var bIndex = 0;
-		var comboText = "";
-		var theOneToChange = "";
 		var temp_doi = "";
 		
 		try {
 			if (inputDOI === "") {
-				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputString.replaceAll(' ', '+');
-				let myJSON = await $.getJSON(encodeURI(stringToSend));
 				// If this function finds a doi in crossref, it recursively calls itself and returns. 
 				// This is wasteful because it means going to a server to find JSON that's already 
 				// been found, but I need the JSON in the format Cite uses, which is called Citation 
 				// Style Language (CSL). And I couldn't figure out any other way. 
-				if (typeof myJSON.message.items[0].DOI === 'undefined') {
-					console.log( "undefined");
+				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputString.replaceAll(' ', '+');
+				let myJSON = await $.getJSON(encodeURI(stringToSend));
+				if (typeof myJSON.message.items[0] === 'undefined') {	
+					document.getElementById('notes_' + inputString).innerHTML = "not found";
+					document.getElementById('reference_' + inputString).innerHTML = "";
+					investigate_bad_rows(inputString);
+				} else {
+					// if a doi was found, run this thing again but with the doi in the parameter, so Cite will work.
+					temp_doi = myJSON.message.items[0].DOI;
+					getOneURL(inputString, temp_doi);
+					return;
 				}
-				temp_doi = myJSON.message.items[0].DOI;
-				getOneURL(inputString, temp_doi);
-				return;
-//				reference_returned = parse_JSON(myJSON.message.items[0],""); // this would just use the JSON it found instead of repeating the process.
-				
-			} else if (inputDOI == "not found") {
-				reference_returned = "not found";
-			} else {
+			} else { // if a doi was found
 				let myJSON = await Cite.async(inputDOI);
 				let bibliography = myJSON.format ('bibliography', {
 					format: 'html'
 				});
 				
 				if (reference_obj[myJSON.data[0].DOI] === undefined) { 
+					// create new reference
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(inputString, myJSON.data[0], bibliography);
-					reference_returned = parse_JSON(myJSON.data[0], bibliography); 
-				} else { // if it finds a doi that's been found before
+					parse_JSON_for_authors(myJSON.data[0]); 
+				} else { 
+					// if it finds a doi that's been found before
 					combine_rows(inputString, reference_obj[myJSON.data[0].DOI]);
-					reference_returned = 'dduplicate this is a duplicate :('; 
-//dfd
-// 	x get rid of the stuff about duplicate rows, and the one to change, below, that's now irrelevant. 
 				}
 				temp_doi = myJSON.data[0].DOI;
+				reference_obj[temp_doi].update_html();
+				
+				if (reference_obj[temp_doi].score < 90) {
+					investigate_bad_rows(reference_obj[temp_doi].user_input);
+				}
 			}
-			
-			if (reference_returned.indexOf('dduplicate') >= 0) {
-// 				console.log( "duplicate for: " + reference_returned)
-				reference_returned = reference_returned.substr(11); // get rid of the extra letters dduplicate
-			}
-			
-			reference_obj[temp_doi].update_html();
-			
-			// if it's a duplicate, check whether the strings in the first column of the two matching rows should be combined (e.g., because there was a return character in the middle of the reference).
-			if (reference_returned == 'not found') {
-				console.log( 'not found');
-// 				document.getElementById(inputString).innerHTML = reference_returned;
-// 				urlSuffix_for_reference_returned[reference_returned] = "";
-				document.getElementById('notes_' + inputString).innerHTML = "-- not found";
-			}
-
+						
 			showAuthors();
 			numCompleted++;
 			updateProgress();
@@ -190,9 +156,39 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		}
 	}
 	
+	function investigate_bad_rows(input_string) {
+		// dfd
+		var i = 0;
+		var tempScore = 0;
+		
+// 		console.log('investigate_bad_rows ' + input_string)
+		
+		for (i = 0; i < bad_rows.length; i++) {
+			tempScore = parseInt(Math.ceil(100*similarity(input_string, bad_rows[i])));
+// 			console.log('tempScore ' + tempScore)
+if (tempScore > 50) { console.log( tempScore);}
+			if (tempScore > 90) {
+				console.log( "bad row found="+input_string);
+			}
+		}
+		
+		bad_rows.push(input_string);
+	
+// https://github.com/burgaard/string-algorithms/blob/master/README.md	
+import { longestCommonSubstring } from 'string-algorithms';
+
+const strings = [
+  '12apple',
+  '3apple4',
+  'apple56'
+];
+
+console.log(longestCommonSubstring(strings));
+	}
+	
 	function combine_rows(input_string, input_reference_obj) {
-		var bestcombo = best_combination(input_string, input_reference_obj.user_input, input_reference_obj.apa);
-					
+		var bestcombo = best_combination(input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
+				
 		if (input_reference_obj.user_input !== bestcombo) {
 			change_elementIDs(input_reference_obj.user_input, bestcombo);
 			input_reference_obj.user_input = bestcombo;
@@ -200,14 +196,17 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		// remove row that is no longer needed
 		var row_to_remove = document.getElementById(input_string).rowIndex;
 	  	document.getElementById("article_table").deleteRow(row_to_remove);
-	  	// dfd: if this function ends up being used to remove rows that both already have an object, the next step here would be to get rid of the bad object. 
-	}
-	
-	function change_elementIDs(from, to) {
-// 		console.log( "changing element ids");
-		document.getElementById('reference_'+from).id = 'reference_'+to;
-		document.getElementById('inputText_'+from).id = 'inputText_'+to;
-		document.getElementById('notes_'+from).id = 'notes_'+to;			
+
+		// remove it from urlSuffix (which is used to keep track of how many there are)
+	  	const index = urlSuffix.indexOf(input_string);
+		if (index > -1) {
+		  urlSuffix.splice(index, 1);
+		} else {
+			console.log( "whoa")
+		}
+		numCompleted--;
+
+	  	// if this function ends up being used to remove rows that both already have an object, the next step here would be to get rid of the bad object. 
 	}
 	
 	function best_combination(user_input_current, user_input_older, apa_goal) {
@@ -215,23 +214,31 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		bText = user_input_current;
 		comboText = aText + " " + bText;
 		reverse_comboText = bText + " " + aText;
+		
 		aScore = parseInt(Math.ceil(100*similarity(aText, apa_goal)));
 		bScore = parseInt(Math.ceil(100*similarity(bText, apa_goal)));
 		comboScore = parseInt(Math.ceil(100*similarity(comboText, apa_goal)));
 		reverse_comboScore = parseInt(Math.ceil(100*similarity(reverse_comboText, apa_goal)));
+		
+		
 		maxScore = Math.max(aScore,bScore,comboScore,reverse_comboScore);
-
 		if (maxScore == comboScore) {
 			return comboText;
-		} else if (reverse_comboScore) {
+		} else if (maxScore == reverse_comboScore) {
 			return reverse_comboText;
 		} else if (maxScore == aScore) {
 			return aText;
 		} else if (maxScore == bScore) {
 			return bText;
 		} else {
-			return "this aint a good look";
+			return "error in: best_combination()";
 		}
+	}
+	
+	function change_elementIDs(from, to) {
+		document.getElementById('reference_'+from).id = 'reference_'+to;
+		document.getElementById('inputText_'+from).id = 'inputText_'+to;
+		document.getElementById('notes_'+from).id = 'notes_'+to;			
 	}
 	
 	function compute_score(databaseString,userString) {
@@ -252,62 +259,29 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		}
 	}
 	
-	function parse_JSON(input_json, input_apa) {
-		var output = "";
-		var authorList_thisRef_apa = "";
+	function parse_JSON_for_authors(input_json) {
 		var tempAuthor_full = "";
-		var isDuplicate = false;
 		var temp_list_of_co_authors_from_this_article = [];
-		
-		if (titleArray.includes(input_json.title) == true) { // switch title to something better, like apa or even json. but hopefully this will become obsolete because this function won't be called if there's a duplicate. 
-			isDuplicate = true; // dfd maybe don't even call parse_JSON if it's a duplicate? NOTE: maybe i'm already not?
-		}
-		
+				
 		// figure out author stuff (for author table)
 		if (typeof input_json.author === 'undefined') { // if crossref didn't find it, ignore it
-			authorList_thisRef_apa = "not found";
-			console.log('parse_JSON returned not found');
+			console.log('no authors found ' + input_json.DOI);
 		} else {
 			for (a = 0; a < input_json.author.length; a++) {
 				temp_firstname = input_json.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim();
 				tempAuthor_full = input_json.author[a].family + ", " + temp_firstname;
 					
 				// keep track of how many times this author has appeared for the table of authors
-				if (isDuplicate == false) {
-					if (author_obj[tempAuthor_full] === undefined) {
-						author_obj[tempAuthor_full] = new Author_object(input_json.author[a].family, temp_firstname);
-					} else {
-						author_obj[tempAuthor_full].citation_count++;
-					}
-					temp_list_of_co_authors_from_this_article.push(tempAuthor_full);
-					authorList_thisRef_apa += author_obj[tempAuthor_full].name_apa + ", "; // add this apa-formatted author to the author list. 				
+				if (author_obj[tempAuthor_full] === undefined) {
+					author_obj[tempAuthor_full] = new Author_object(input_json.author[a].family, temp_firstname);
+				} else {
+					author_obj[tempAuthor_full].citation_count++;
 				}
+				temp_list_of_co_authors_from_this_article.push(tempAuthor_full);
 			}
 
 			connect_coauthors(temp_list_of_co_authors_from_this_article);
-
-			authorList_thisRef_apa = authorList_thisRef_apa.substring(0, authorList_thisRef_apa.length-2)+" "; // trim the last comma
 		}
-		
-		// assign value to output
-		if (authorList_thisRef_apa == "not found") {
-			output = "not found";
-		} else if (input_apa == "") {
-			output = authorList_thisRef_apa;
-			output += "(" + input_json.issued['date-parts'][0][0] + ") ";
-			output += input_json.title;
-			output +=" <i>" +input_json['container-title'] + ", " + input_json.volume + ",</i> ";
-			output += input_json.page + ". " + input_json.URL;
-		} else {
-			output = input_apa;
-		}
-		if (isDuplicate == true) {
-			output = "dduplicate:" + output;
-		} else if (authorList_thisRef_apa != "not found") {
-			titleArray.push(input_json.title[0]);		
-		}
-		
-		return output;
 	}
 
 	function connect_coauthors(list_of_coauthors) {
@@ -344,10 +318,10 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			}
 		}
 		
-		// get rid of duplicate lines
-		urlSuffix = urlSuffix.filter(function(item, pos, self) {
-   			return self.indexOf(item) == pos;
-		})
+		// get rid of duplicate lines (this works but I don't want to use it anymore because i'm checking for bad rows now)
+// 		urlSuffix = urlSuffix.filter(function(item, pos, self) {
+//    			return self.indexOf(item) == pos;
+// 		})
 				
 		// Build article table
 		var articleTableText = "<table id='article_table'>";
@@ -395,6 +369,15 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		document.getElementById('authorTable').innerHTML = "<table><tr><td>searching...</td></tr></table>";
 	}
 
+	function first_letters(inputString) {
+		var foof = "";
+		
+		for (i = 0; i < inputString.length; i++) {
+			foof += inputString[i].slice(0,1)+". "; 
+		}
+		return foof.trim();
+	}
+
 	function authorCheckBoxPress(whichOne) {
 		// this is called when a checkbox is pressed
 		var i = 0;
@@ -416,10 +399,10 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			// if this author is checked, turn them red
 			document.getElementById('name_' + nameString).style.color = 'red';
 		} else {
-			// if this author has a co-author that is checked, turn them purple and return
+			// if this author has a co-author that is checked, turn them red and return
 			for (i = 0; i < author_obj[nameString].coauthors.length; i++) {
 				if (author_obj[nameString].coauthors[i].checked) {
-					document.getElementById('name_' + nameString).style.color = 'purple';
+					document.getElementById('name_' + nameString).style.color = 'red';
 					return;
 				}
 			}
@@ -468,11 +451,10 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		urlSuffix = [];
 		author_obj = [];
 		reference_obj = [];
-		titleArray = [];
 		DOIarray = [];
-// 		urlSuffix_for_reference_returned = [];
 		numCompleted = 0;
 		startTime = Date.now();
+		bad_rows = [];
     
 		showBoxes();
 		parse_user_input();
@@ -506,10 +488,10 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	</nav>
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-10.1007/978-1-4419-5716-0_6
-Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL effect”. Memory, 26, 771–783. 
-10.1080/09658211.2017.1406523
 asdddksflsd
+10.1007/978-1-4419-5716-0_6
+asdddksflsd
+Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely 
 
 </textarea>
 <!-- 
@@ -570,8 +552,8 @@ Finn, B., & Metcalfe, J. (2008). Judgments of learning are influenced by memory 
 <p>Besken, M., & Mulligan, N. W. (2013). Easily perceived, easily remembered? Perceptual interference produces a double dissociation between metamemory and memory performance. Memory & Cognition, 41, 897–903. https://doi.org/10.3758/s13421-013-0307-8
 <p>Besken, M., & Mulligan, N. W. (2014). Perceptual fluency, auditory generation, and
 metamemory: Analyzing the perceptual fluency hypothesis in the auditory modality. Journal of Experimental Psychology: Learning, Memory, and Cognition, 40, 429–440. https://doi.org/10.1037/a0034407
-
 <!-- 
+
 <p>Bröder, A., & Meiser, T. (2007). Measuring source memory. Zeitschrift für Psychologie/Journal of Psychology, 215, 52–60. https://doi.org/10.1027/0044- 3409.215.1.52
 <p>Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL effect”. Memory, 26, 771–783. https://doi.org/10.1080/09658211.2017.1406523
 <p>Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the future: Object and source memory for real and imagined events. Applied Cognitive Psychology, 13, 373–390. https://doi.org/10.1002/(SICI)1099-0720(199908)13:4<373::AID- ACP605>3.0.CO;2-F
