@@ -30,7 +30,9 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script> <!-- this is to use citation-js -->
-
+<!-- 	<script src="https://cdn.jsdelivr.net/npm/string-similarity"></script> -->
+<!-- 	<script src="https://cdn.jsdelivr.net/npm/string-algorithms"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/string-similarity@4/package.json"></script> -->
 <script>
 	var urlSuffix = [];
 	var author_obj = [];
@@ -39,6 +41,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	var numCompleted = 0;
 	var startTime = 0;
 	var bad_rows = [];
+	var duplicate_input_text = [];
 	
 	let Cite = require('citation-js');
 	
@@ -128,6 +131,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 					// create new reference
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(inputString, myJSON.data[0], bibliography);
 					parse_JSON_for_authors(myJSON.data[0]); 
+				} else if (reference_obj[temp_doi].score < 90) {
+					investigate_bad_rows(reference_obj[temp_doi].user_input);
 				} else { 
 					// if it finds a doi that's been found before
 					combine_rows(inputString, reference_obj[myJSON.data[0].DOI]);
@@ -135,9 +140,6 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				temp_doi = myJSON.data[0].DOI;
 				reference_obj[temp_doi].update_html();
 				
-				if (reference_obj[temp_doi].score < 90) {
-					investigate_bad_rows(reference_obj[temp_doi].user_input);
-				}
 			}
 						
 			showAuthors();
@@ -158,6 +160,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	
 	function investigate_bad_rows(input_string) {
 		// dfd
+		// to do: make it check for duplicate rows by also looking for rows that match duplicate_input_text
+		// make it look for rows that should be combined
 		var i = 0;
 		var tempScore = 0;
 		
@@ -166,33 +170,45 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		for (i = 0; i < bad_rows.length; i++) {
 			tempScore = parseInt(Math.ceil(100*similarity(input_string, bad_rows[i])));
 // 			console.log('tempScore ' + tempScore)
-if (tempScore > 50) { console.log( tempScore);}
-			if (tempScore > 90) {
-				console.log( "bad row found="+input_string);
+			if (tempScore > 90) { // see if it's the same as a previous row
+				duplicate_input_text.push(input_string);
+				remove_row(input_string);
+				console.log( "repeat row found="+input_string);			
 			}
 		}
 		
 		bad_rows.push(input_string);
 	
 // https://github.com/burgaard/string-algorithms/blob/master/README.md	
-import { longestCommonSubstring } from 'string-algorithms';
-
-const strings = [
-  '12apple',
-  '3apple4',
-  'apple56'
-];
-
-console.log(longestCommonSubstring(strings));
+// import { longestCommonSubstring } from 'string-algorithms';
+// 
+// const strings = [
+//   '12apple',
+//   '3apple4',
+//   'apple56'
+// ];
+// console.log(longestCommonSubstring(strings));
 	}
-	
+
+// dfd remember to test a bad doi	
+
 	function combine_rows(input_string, input_reference_obj) {
 		var bestcombo = best_combination(input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
-				
+		
+		i should check for duplciates here and then get rid of them before combining anything
+		
+		console.log( 'bestcombo: ' + bestcombo)
+		
 		if (input_reference_obj.user_input !== bestcombo) {
 			change_elementIDs(input_reference_obj.user_input, bestcombo);
 			input_reference_obj.user_input = bestcombo;
 		}
+		remove_row(input_string);
+	  	// if this function ends up being used to remove rows that both already have an object, the next step here would be to get rid of the bad object. 
+	}
+	
+	function remove_row(input_string) {
+		console.log( "removing: " + input_string);
 		// remove row that is no longer needed
 		var row_to_remove = document.getElementById(input_string).rowIndex;
 	  	document.getElementById("article_table").deleteRow(row_to_remove);
@@ -201,26 +217,41 @@ console.log(longestCommonSubstring(strings));
 	  	const index = urlSuffix.indexOf(input_string);
 		if (index > -1) {
 		  urlSuffix.splice(index, 1);
+		  DOIarray.splice(index, 1);
 		} else {
 			console.log( "whoa")
 		}
-		numCompleted--;
+		numCompleted--;	
+		
+// this seems to be messing up things. try it with this input:
+// 10.1007/978-1-4419-5716-0_6
+// 10.1007/978-1-4419-5716-0_6
 
-	  	// if this function ends up being used to remove rows that both already have an object, the next step here would be to get rid of the bad object. 
 	}
 	
 	function best_combination(user_input_current, user_input_older, apa_goal) {
+		// Note, there is a problem here. Using the following input,
+		// 10.1007/978-1-4419-5716-0_6
+		// 10.1007/978-1-4419-5716-0_6
+		// the apa goal will be = "Finley, J. R., Tullis, J. G., & Benjamin, A. S. (2010). Metacognitive Control of Learning and Remembering. In New Science of Learning (pp. 109–131). Springer New York. https://doi.org/10.1007/978-1-4419-5716-0_6"
+		// According to the similarity function, which uses Levenshtein distance, 
+		// the combination is the best match, (i.e., 10.1007/978-1-4419-5716-0_6 10.1007/978-1-4419-5716-0_6)
+		
 		aText = user_input_older;
 		bText = user_input_current;
 		comboText = aText + " " + bText;
 		reverse_comboText = bText + " " + aText;
 		
+		console.log( 'combining')
+		console.log( aText, bText,apa_goal)
+
 		aScore = parseInt(Math.ceil(100*similarity(aText, apa_goal)));
 		bScore = parseInt(Math.ceil(100*similarity(bText, apa_goal)));
 		comboScore = parseInt(Math.ceil(100*similarity(comboText, apa_goal)));
 		reverse_comboScore = parseInt(Math.ceil(100*similarity(reverse_comboText, apa_goal)));
 		
-		
+		console.log( aScore, bScore, comboScore, reverse_comboScore)
+
 		maxScore = Math.max(aScore,bScore,comboScore,reverse_comboScore);
 		if (maxScore == comboScore) {
 			return comboText;
@@ -455,6 +486,7 @@ console.log(longestCommonSubstring(strings));
 		numCompleted = 0;
 		startTime = Date.now();
 		bad_rows = [];
+		duplicate_input_text = [];
     
 		showBoxes();
 		parse_user_input();

@@ -17,7 +17,8 @@ function Sum(input) {
 	return total;
 }
 
-// two fucntions from https://stackoverflow.com/questions/10473745/compare-strings-javascript-return-of-likely
+
+// two functions from https://stackoverflow.com/questions/10473745/compare-strings-javascript-return-of-likely
 function similarity(s1, s2) {
   var longer = s1;
   var shorter = s2;
