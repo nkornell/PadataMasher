@@ -55,15 +55,13 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		this.notes = "";
 		this.score = 0;
 		
-// 		console.log( "created " + this.apa_no_html)
-
 		this.update_html = function() {
 			// update score and coloring
 			this.score = compute_score(this.apa_no_html, this.user_input); // order has to be database version, user version 	
 			if (this.score < 60) {
 				this.notes = '<div style="background-color:tomato;">Match strength: ' + this.score + '</div>';
 			} else if (this.score >= 90) {
-				this.notes = '<div style="background-color:white;">' + 'perf ' +this.score + '</div>';
+				this.notes = '<div style="background-color:white;">' +this.score + '</div>';
 			} else {
 				this.notes = '<div style="background-color:white;">Match strength: ' + this.score + '</div>';
 			}
@@ -103,6 +101,12 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	
 	async function getOneURL(inputString, inputDOI) {
 		// inputString is equal to urlSuffix for the current item, and urlSuffix is the first column in the table (i.e., user input)
+		
+// 		Be careful here! This calls everything async, which means that some of this code might 
+// 		execute for item 12 before it gets to item 8, etc. Things can get out of order. Which means, 
+// 		for example, that by the time it arrives at item x (e.g., 2), item x + y (e.g., 5) might have 
+// 		already decided that x shouldn't be shown. And stuff. 
+
 		var stringToSend = '';
 		var temp_doi = "";
 		
@@ -120,10 +124,12 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputString.replaceAll(' ', '+');
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
 				if (typeof myJSON.message.items[0] === 'undefined') {
-dfd if and only if it's not alreaedy in duplicaterowtext, do the stuff that follows
-					document.getElementById('notes_' + inputString).innerHTML = "not found";
-					document.getElementById('reference_' + inputString).innerHTML = "";
-// 		dfd	check whether it should be combined;
+					if (duplicate_input_text.indexOf(inputString) < 0) {			
+						// only show it if it's not a duplicate row
+						document.getElementById('notes_' + inputString).innerHTML = "not found";
+						document.getElementById('reference_' + inputString).innerHTML = "";
+					}
+			// 		dfd	check whether it should be combined;
 				} else {
 					// if a doi was found, run this thing again but with the doi in the parameter, so Cite will work.
 					temp_doi = myJSON.message.items[0].DOI;
@@ -150,16 +156,18 @@ dfd if and only if it's not alreaedy in duplicaterowtext, do the stuff that foll
 				temp_doi = myJSON.data[0].DOI;
 				reference_obj[temp_doi].update_html();
 			}
-						
+
 			showAuthors();
 			numRowsCompleted++;
 			updateProgress();
 		}
 		catch(err) {
 			if (err == "Error: Server responded with status code 404") { //if it tried a doi that isn't in the database... 
-				console.log( "failed to find DOI (below), searching again"); 
+				console.log( "failed to find DOI (below)"); 
 				console.log(inputDOI); 
-				document.getElementById(inputString).innerHTML = 'doi not found; searching again...';
+				console.log( "searching again for")
+				console.log( inputString) dfd
+				document.getElementById('notes_'+inputString).innerHTML = 'doi not found; searching again...';
 				getOneURL(inputString, '');
 			} else {
 				console.log(err);
@@ -169,10 +177,6 @@ dfd if and only if it's not alreaedy in duplicaterowtext, do the stuff that foll
 	
 	function check_for_duplicate_rows(input_string) {
 		// this is only called on rows where a doi wasn't found. 
-		// dfd
-		// to do: make it check for duplicate rows by also looking for rows that match duplicate_input_text
-		// and get rid of the first of the duplicates as well (assuming it doesn't have a high score)
-		// also, make another function to look for rows that should be combined
 		var i = 0;
 		var tempScore = 0;
 		
@@ -199,18 +203,18 @@ dfd if and only if it's not alreaedy in duplicaterowtext, do the stuff that foll
 		return false;
 	}
 
+// dfd make another function to look for rows that should be combined
 // dfd remember to test a bad doi and see if hte program still works
 
 	function combine_rows(input_string, input_reference_obj) {
 		var bestcombo = best_combination(input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
-				
-// 		console.log( 'bestcombo: ' + bestcombo)
-		
+						
 		if (input_reference_obj.user_input !== bestcombo) {
 			change_elementIDs(input_reference_obj.user_input, bestcombo);
 			input_reference_obj.user_input = bestcombo;
 		}
 		remove_row(input_string);
+		
 	  	// if this function ends up being used to remove rows that both already have an object, the next step here would be to get rid of the bad object. 
 	}
 	
@@ -284,6 +288,8 @@ dfd if and only if it's not alreaedy in duplicaterowtext, do the stuff that foll
 		// return a score
 		if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	
 			// if there was a valid DOI in the user input, return a score of 100
+			// dfd: invalid DOIs are also possible and they'll fool this thing!! 
+			// the example below returns 100 when it shouldn't for example. 
 			return 100; 
 		} else {
 			// if there's no doi in the user input, remove the doi from the database string for the sake of comparison. 
@@ -589,7 +595,7 @@ Finn, B., & Metcalfe, J. (2008). Judgments of learning are influenced by memory 
 <p>Besken, M., & Mulligan, N. W. (2013). Easily perceived, easily remembered? Perceptual interference produces a double dissociation between metamemory and memory performance. Memory & Cognition, 41, 897–903. https://doi.org/10.3758/s13421-013-0307-8
 <p>Besken, M., & Mulligan, N. W. (2014). Perceptual fluency, auditory generation, and
 metamemory: Analyzing the perceptual fluency hypothesis in the auditory modality. Journal of Experimental Psychology: Learning, Memory, and Cognition, 40, 429–440. https://doi.org/10.1037/a0034407
-<!-- 
+
 
 <p>Bröder, A., & Meiser, T. (2007). Measuring source memory. Zeitschrift für Psychologie/Journal of Psychology, 215, 52–60. https://doi.org/10.1027/0044- 3409.215.1.52
 <p>Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL effect”. Memory, 26, 771–783. https://doi.org/10.1080/09658211.2017.1406523
