@@ -38,7 +38,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	var author_obj = [];
 	var reference_obj = [];
 	var DOIarray = [];
-	var numCompleted = 0;
+	var numRowsCompleted = 0;
+	var numRowsTotal = 0;
 	var startTime = 0;
 	var bad_rows = [];
 	var duplicate_input_text = [];
@@ -53,6 +54,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		this.doi = this.json.DOI;
 		this.notes = "";
 		this.score = 0;
+		
+// 		console.log( "created " + this.apa_no_html)
 
 		this.update_html = function() {
 			// update score and coloring
@@ -103,18 +106,24 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		var stringToSend = '';
 		var temp_doi = "";
 		
-		try {
+		aName: try {
 			if (inputDOI === "") {
 				// If this function finds a doi in crossref, it recursively calls itself and returns. 
 				// This is wasteful because it means going to a server to find JSON that's already 
 				// been found, but I need the JSON in the format Cite uses, which is called Citation 
 				// Style Language (CSL). And I couldn't figure out any other way. 
+
+				if (check_for_duplicate_rows(inputString) == true) {
+					numRowsCompleted++;
+					break aName; // this goes to the end of the try statement. aName is just an arbitrary name I gave the try statement so I could break it. 
+				}
 				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputString.replaceAll(' ', '+');
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
-				if (typeof myJSON.message.items[0] === 'undefined') {	
+				if (typeof myJSON.message.items[0] === 'undefined') {
+dfd if and only if it's not alreaedy in duplicaterowtext, do the stuff that follows
 					document.getElementById('notes_' + inputString).innerHTML = "not found";
 					document.getElementById('reference_' + inputString).innerHTML = "";
-					investigate_bad_rows(inputString);
+// 		dfd	check whether it should be combined;
 				} else {
 					// if a doi was found, run this thing again but with the doi in the parameter, so Cite will work.
 					temp_doi = myJSON.message.items[0].DOI;
@@ -132,18 +141,18 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(inputString, myJSON.data[0], bibliography);
 					parse_JSON_for_authors(myJSON.data[0]); 
 				} else if (reference_obj[temp_doi].score < 90) {
-					investigate_bad_rows(reference_obj[temp_doi].user_input);
+					// check to see whether it's bad
+					console.log( "I think (?) this is impossible. If it happens, this would be a good place to check whether this row should be combined.");
 				} else { 
 					// if it finds a doi that's been found before
 					combine_rows(inputString, reference_obj[myJSON.data[0].DOI]);
 				}
 				temp_doi = myJSON.data[0].DOI;
 				reference_obj[temp_doi].update_html();
-				
 			}
 						
 			showAuthors();
-			numCompleted++;
+			numRowsCompleted++;
 			updateProgress();
 		}
 		catch(err) {
@@ -158,46 +167,44 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		}
 	}
 	
-	function investigate_bad_rows(input_string) {
+	function check_for_duplicate_rows(input_string) {
+		// this is only called on rows where a doi wasn't found. 
 		// dfd
 		// to do: make it check for duplicate rows by also looking for rows that match duplicate_input_text
-		// make it look for rows that should be combined
+		// and get rid of the first of the duplicates as well (assuming it doesn't have a high score)
+		// also, make another function to look for rows that should be combined
 		var i = 0;
 		var tempScore = 0;
 		
-// 		console.log('investigate_bad_rows ' + input_string)
-		
-		for (i = 0; i < bad_rows.length; i++) {
-			tempScore = parseInt(Math.ceil(100*similarity(input_string, bad_rows[i])));
-// 			console.log('tempScore ' + tempScore)
-			if (tempScore > 90) { // see if it's the same as a previous row
-				duplicate_input_text.push(input_string);
-				remove_row(input_string);
-				console.log( "repeat row found="+input_string);			
-			}
-		}
-		
 		bad_rows.push(input_string);
 	
-// https://github.com/burgaard/string-algorithms/blob/master/README.md	
-// import { longestCommonSubstring } from 'string-algorithms';
-// 
-// const strings = [
-//   '12apple',
-//   '3apple4',
-//   'apple56'
-// ];
-// console.log(longestCommonSubstring(strings));
+		for (i = 0; i < duplicate_input_text.length-1; i++) {
+			tempScore = parseInt(Math.ceil(100*similarity(input_string, duplicate_input_text[i])));
+			if (tempScore > 90) { // if it's the same as a previous row
+				duplicate_input_text.push(input_string);
+				remove_row(input_string);
+				return true;		
+			}
+		}
+		for (i = 0; i < bad_rows.length-1; i++) {
+			tempScore = parseInt(Math.ceil(100*similarity(input_string, bad_rows[i])));
+			if (tempScore > 90) { // if it's the same as a previous row
+				duplicate_input_text.push(bad_rows[i]);
+				remove_row(bad_rows[i]);
+				duplicate_input_text.push(input_string);
+				remove_row(input_string);
+				return true;		
+			}
+		}
+		return false;
 	}
 
-// dfd remember to test a bad doi	
+// dfd remember to test a bad doi and see if hte program still works
 
 	function combine_rows(input_string, input_reference_obj) {
 		var bestcombo = best_combination(input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
-		
-		i should check for duplciates here and then get rid of them before combining anything
-		
-		console.log( 'bestcombo: ' + bestcombo)
+				
+// 		console.log( 'bestcombo: ' + bestcombo)
 		
 		if (input_reference_obj.user_input !== bestcombo) {
 			change_elementIDs(input_reference_obj.user_input, bestcombo);
@@ -207,26 +214,22 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	  	// if this function ends up being used to remove rows that both already have an object, the next step here would be to get rid of the bad object. 
 	}
 	
+	
 	function remove_row(input_string) {
 		console.log( "removing: " + input_string);
+		
 		// remove row that is no longer needed
 		var row_to_remove = document.getElementById(input_string).rowIndex;
 	  	document.getElementById("article_table").deleteRow(row_to_remove);
 
-		// remove it from urlSuffix (which is used to keep track of how many there are)
 	  	const index = urlSuffix.indexOf(input_string);
-		if (index > -1) {
-		  urlSuffix.splice(index, 1);
-		  DOIarray.splice(index, 1);
+		if (index > -1) {			
+			numRowsCompleted--;
+			numRowsTotal--;
+			updateProgress();
 		} else {
 			console.log( "whoa")
 		}
-		numCompleted--;	
-		
-// this seems to be messing up things. try it with this input:
-// 10.1007/978-1-4419-5716-0_6
-// 10.1007/978-1-4419-5716-0_6
-
 	}
 	
 	function best_combination(user_input_current, user_input_older, apa_goal) {
@@ -395,9 +398,11 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			articleTableText += "</tr>";
 		}
 		articleTableText += "</table>";
-		document.getElementById('articleTable').innerHTML = articleTableText;
 		
+		document.getElementById('articleTable').innerHTML = articleTableText;
 		document.getElementById('authorTable').innerHTML = "<table><tr><td>searching...</td></tr></table>";
+
+		numRowsTotal = urlSuffix.length;
 	}
 
 	function first_letters(inputString) {
@@ -483,7 +488,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		author_obj = [];
 		reference_obj = [];
 		DOIarray = [];
-		numCompleted = 0;
+		numRowsCompleted = 0;
 		startTime = Date.now();
 		bad_rows = [];
 		duplicate_input_text = [];
@@ -496,8 +501,8 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	}
 	
 	function updateProgress() {
-		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numCompleted + ' of ' + urlSuffix.length + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
-		if (numCompleted == urlSuffix.length) {
+		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numRowsCompleted + ' of ' + numRowsTotal + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
+		if (numRowsCompleted == numRowsTotal) {
 			console.log( 'done');
 			document.getElementById('progressHeader').innerHTML = "Done";
 		}
