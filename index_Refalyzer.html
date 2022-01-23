@@ -1,8 +1,14 @@
 <!--
 To do: 
+					
+Go through urlSuffix 2x. First, find DOIs. For each one, check the row above it (recursively). 
+Then, when they're done (and you have to wait until they really finish by checking a modified 
+version of numRowsCompleted) go through again and, with the stuff that's left, keep trying. 
 
-Find duplicate lines with low scores and get rid of them (headers, running heads, etc)
-
+It would faster, though, if whenever if found a doi, it checked the rows above and called getoneurl
+for all of them going back to either the start or the previous one that had a doi. That way as it
+conintues searching dois below, it's already searching for the ones above. (The current plan has
+it search all the doi rows before returning to the noners.) Not sure if this would save much time, though.
 --
 If the score is low or it returns not found, 
 Check if it's a repeated line
@@ -11,7 +17,8 @@ Check whether it should be combined
 
 --
 Look for cases where it's the same author but the name is different (e.g., Bjork, E. L. and Bjork, 
-Elizabeth Ligon). Put both names in the same row of the author table, and add up the citations. 
+Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring case
+
 
 -->
 
@@ -33,18 +40,43 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 <!-- 	<script src="https://cdn.jsdelivr.net/npm/string-similarity"></script> -->
 <!-- 	<script src="https://cdn.jsdelivr.net/npm/string-algorithms"></script> -->
 <!-- <script src="https://cdn.jsdelivr.net/npm/string-similarity@4/package.json"></script> -->
+
 <script>
 	var urlSuffix = [];
 	var author_obj = [];
 	var reference_obj = [];
+	var input_text_obj = [];
 	var DOIarray = [];
+	var startTime = 0;
 	var numRowsCompleted = 0;
 	var numRowsTotal = 0;
-	var startTime = 0;
+	var numRowsWithDOIsTotal = 0;
 	var bad_rows = [];
 	var duplicate_input_text = [];
-	
+	var doi_pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/gi; // doi_pattern is used to find a DOI within the input string. note: I added in the g, which makes it return all of the DOIs instead of just 1 (i.e., tempDOIArray can have more than one value)
+ 
+// 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
+// 	var doi_pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
+// 	var doi_pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
+
 	let Cite = require('citation-js');
+
+	function Input_text_object(input_userInput) { 
+	// note, not using this and havne't tested it
+		
+		this.user_input = input_userInput;
+		
+		var tempDOIArray = [];
+		tempDOIArray = input_userInput.match(doi_pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
+		if (typeof tempDOIArray !== 'undefined' && tempDOIArray !== null && tempDOIArray.length > 0) {
+			tempDOIArray[0] = tempDOIArray[0].replaceAll('//','/'); // dfd i don't understand this, remove it?
+			this.doi = tempDOIArray[0]
+			this.valid_doi = true;
+		} else {
+			this.doi = "";
+			this.valid_doi = false;
+		}
+	}
 	
 	function Reference_object(input_userInput, input_json, input_apa) {
 		this.user_input = input_userInput;
@@ -53,17 +85,19 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		this.apa_no_html = jQuery(input_apa).text().trim(); // apa without the html tags
 		this.doi = this.json.DOI;
 		this.notes = "";
-		this.score = 0;
+		this.letter_match = compute_letter_match(this.apa_no_html, this.user_input);
+		this.score = compute_score(this.apa_no_html, this.user_input); // order has to be database version, user version
 		
 		this.update_html = function() {
 			// update score and coloring
+			this.letter_match = compute_letter_match(this.apa_no_html, this.user_input);
 			this.score = compute_score(this.apa_no_html, this.user_input); // order has to be database version, user version 	
 			if (this.score < 60) {
-				this.notes = '<div style="background-color:tomato;">Match strength: ' + this.score + '</div>';
+				this.notes = '<div style="background-color:tomato;">Match strength: ' + this.score + ' (' + this.letter_match + ')' + '</div>';
 			} else if (this.score >= 90) {
-				this.notes = '<div style="background-color:white;">' +this.score + '</div>';
+				this.notes = '<div style="background-color:white;">' +this.score + ' (' + this.letter_match + ')' + '</div>';
 			} else {
-				this.notes = '<div style="background-color:white;">Match strength: ' + this.score + '</div>';
+				this.notes = '<div style="background-color:white;">Match strength: ' + this.score + ' (' + this.letter_match + ')' + '</div>';
 			}
 
 			// update values
@@ -93,10 +127,14 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		};
 	}
 	
-	async function getAllUrls() {
+	async function getAllUrls(there_is_a_doi) {
+	    // this gets called twice. First, for rows that have a doi. Then, when they're done, for rows that don't. 
 		for (i = 0; i < urlSuffix.length; i++) {
-			getOneURL(urlSuffix[i], DOIarray[i]);
+            if (there_is_a_doi == DOIarray[i].length > 0) { // if both are true, there's a doi so process this line. if both are false, there isn't, so process this line. 
+    			getOneURL(urlSuffix[i], DOIarray[i]);
+    		}
 		}
+// 		console.log( compute_letter_match_percentage('horse', 'dog and ct and rat and mouse'))
 	}
 	
 	async function getOneURL(inputString, inputDOI) {
@@ -128,8 +166,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 						// only show it if it's not a duplicate row
 						document.getElementById('notes_' + inputString).innerHTML = "not found";
 						document.getElementById('reference_' + inputString).innerHTML = "";
-					}
-			// 		dfd	check whether it should be combined;
+					}					
 				} else {
 					// if a doi was found, run this thing again but with the doi in the parameter, so Cite will work.
 					temp_doi = myJSON.message.items[0].DOI;
@@ -146,12 +183,9 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 					// create new reference
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(inputString, myJSON.data[0], bibliography);
 					parse_JSON_for_authors(myJSON.data[0]); 
-				} else if (reference_obj[temp_doi].score < 90) {
-					// check to see whether it's bad
-					console.log( "I think (?) this is impossible. If it happens, this would be a good place to check whether this row should be combined.");
 				} else { 
 					// if it finds a doi that's been found before
-					combine_rows(inputString, reference_obj[myJSON.data[0].DOI]);
+					maybe_combine_rows(inputString, reference_obj[myJSON.data[0].DOI], true);
 				}
 				temp_doi = myJSON.data[0].DOI;
 				reference_obj[temp_doi].update_html();
@@ -166,7 +200,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 				console.log( "failed to find DOI (below)"); 
 				console.log(inputDOI); 
 				console.log( "searching again for")
-				console.log( inputString) dfd
+				console.log( inputString)
 				document.getElementById('notes_'+inputString).innerHTML = 'doi not found; searching again...';
 				getOneURL(inputString, '');
 			} else {
@@ -203,38 +237,39 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		return false;
 	}
 
-// dfd make another function to look for rows that should be combined
-// dfd remember to test a bad doi and see if hte program still works
-
-	function combine_rows(input_string, input_reference_obj) {
+	function maybe_combine_rows(input_string, input_reference_obj, removeNoMatterWhat) {
 		var bestcombo = best_combination(input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
 						
 		if (input_reference_obj.user_input !== bestcombo) {
 			change_elementIDs(input_reference_obj.user_input, bestcombo);
 			input_reference_obj.user_input = bestcombo;
-		}
-		remove_row(input_string);
-		
+    		remove_row(input_string);
+		} else if (removeNoMatterWhat == true) {
+    		remove_row(input_string);
+	    }	
 	  	// if this function ends up being used to remove rows that both already have an object, the next step here would be to get rid of the bad object. 
 	}
 	
 	
 	function remove_row(input_string) {
-		console.log( "removing: " + input_string);
+		// note, do one or the other of the next two things (remove or hide, but not both). 
 		
 		// remove row that is no longer needed
-		var row_to_remove = document.getElementById(input_string).rowIndex;
-	  	document.getElementById("article_table").deleteRow(row_to_remove);
+		//var row_to_remove = document.getElementById(input_string).rowIndex;
+	  	//document.getElementById("article_table").deleteRow(row_to_remove);
 
-	  	const index = urlSuffix.indexOf(input_string);
-		if (index > -1) {			
-			numRowsCompleted--;
-			numRowsTotal--;
-			updateProgress();
-		} else {
-			console.log( "whoa")
-		}
+        // hide the row that is no longer needed
+        document.getElementById(input_string).style.display = "none";
+	  	
+        numRowsCompleted--;
+        numRowsTotal--;
+        // dfd: if this row has a doi, this should do numRowsWithDOIsTotal--
+        updateProgress();
+        
+		console.log( "removing ")
 	}
+
+// 	use later?	urlSuffix.indexOf(input_string) > -1) 
 	
 	function best_combination(user_input_current, user_input_older, apa_goal) {
 		// Note, there is a problem here. Using the following input,
@@ -249,15 +284,14 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		comboText = aText + " " + bText;
 		reverse_comboText = bText + " " + aText;
 		
-		console.log( 'combining')
-		console.log( aText, bText,apa_goal)
-
 		aScore = parseInt(Math.ceil(100*similarity(aText, apa_goal)));
 		bScore = parseInt(Math.ceil(100*similarity(bText, apa_goal)));
 		comboScore = parseInt(Math.ceil(100*similarity(comboText, apa_goal)));
 		reverse_comboScore = parseInt(Math.ceil(100*similarity(reverse_comboText, apa_goal)));
 		
-		console.log( aScore, bScore, comboScore, reverse_comboScore)
+		console.log( 'combining')
+// 		console.log( aText, bText, apa_goal)
+// 		console.log( aScore, bScore, comboScore, reverse_comboScore)
 
 		maxScore = Math.max(aScore,bScore,comboScore,reverse_comboScore);
 		if (maxScore == comboScore) {
@@ -281,23 +315,44 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	
 	function compute_score(databaseString,userString) {
 		// figure out whether a DOI was found in the user input
-		var pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/gi; // the same pattern as elsewhere
-		var userDOI = userString.match(pattern); 
-		var databaseDOI = databaseString.match(pattern); 
-
+		var userDOI = userString.match(doi_pattern); 
+		var databaseDOI = databaseString.match(doi_pattern); 
+		
 		// return a score
 		if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	
 			// if there was a valid DOI in the user input, return a score of 100
-			// dfd: invalid DOIs are also possible and they'll fool this thing!! 
-			// the example below returns 100 when it shouldn't for example. 
-			return 100; 
+			if (userDOI[0] == databaseDOI[0]) { // if the user doi was correct
+				return 100; 
+			} else {
+				// if the user doi wasn't correct return the match strength without removing the doi (which is what would happen below)
+				return Math.ceil(100*similarity(databaseString,userString));
+			}
 		} else {
-			// if there's no doi in the user input, remove the doi from the database string for the sake of comparison. 
+			// if there's not a valid doi in the user input, remove the doi from the database string for the sake of comparison. 
 			databaseString = databaseString.replace("https://doi.org/"+databaseDOI,""); // assuming what seems like the standard format from the database
 			databaseString = databaseString.replace(databaseDOI,""); // in case that wasn't found, remove just the doi
 			return Math.ceil(100*similarity(databaseString,userString));
 		}
 	}
+	
+	function compute_letter_match(a, b) {
+		return Math.ceil(100*similarity(a,b));
+	}
+	
+	function compute_letter_match_percentage(a, b) {
+// 		var a = 'tui hrei as'
+// 		var b = 'dog and cat'
+		var tempMatch = compute_letter_match(a, b);
+		var maxPossible = 100*(a.length / b.length)
+		if (maxPossible > 100) {
+			maxPossible = 1/maxPossible;
+		}
+		
+		console.log('match: ' + tempMatch + '/' + maxPossible + ' = '+ 100*tempMatch/maxPossible);
+		
+		return 100*tempMatch/maxPossible;
+	}
+
 	
 	function parse_JSON_for_authors(input_json) {
 		var tempAuthor_full = "";
@@ -355,8 +410,11 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 			urlSuffix[i] = urlSuffix[i].trim();
 			if (urlSuffix[i].length < 5) {
 				urlSuffix.splice(i, 1);
+			} else {
+				input_text_obj[urlSuffix[i]] = new Input_text_object(urlSuffix[i]); // not actually using this as of now, and haven't tested it
 			}
 		}
+
 		
 		// get rid of duplicate lines (this works but I don't want to use it anymore because i'm checking for bad rows now)
 // 		urlSuffix = urlSuffix.filter(function(item, pos, self) {
@@ -369,31 +427,26 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
     	articleTableText += '<th style="width:40%">Article found</th>';
     	articleTableText += '<th style="width:20%">Notes</th></tr>';
     	
-    	// pattern is used to find a DOI within the input string
-// 		var pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
-// 		var pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
-// 		var pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
-		var pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/gi; // works. note: I added in the g, which makes it return all of the DOIs instead of just 1 (i.e., tempDOIArray can have more than one value)
 		
 		var tempDOIArray = [];
 		for (i = 0; i < urlSuffix.length; i++) {
-			tempDOIArray = urlSuffix[i].match(pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
+			tempDOIArray = urlSuffix[i].match(doi_pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
 			if (typeof tempDOIArray !== 'undefined' && tempDOIArray !== null && tempDOIArray.length > 0) {
-				if (tempDOIArray.length > 1) { // if this row has more than one DOI in it
-					// split it into two strings, using the first doi as the delimiter
-					tempArraySplit = urlSuffix[i].split(tempDOIArray[0]);
-					var a = tempArraySplit[0]+tempDOIArray[0];
-					var b = tempArraySplit[1];
+				// create two strings, using the first doi in this string as the delimiter
+				tempArraySplit = urlSuffix[i].split(tempDOIArray[0]);
+				var a = tempArraySplit[0]+tempDOIArray[0];
+				var b = tempArraySplit[1].trim();
+				// if the string after the delimiter has something in it, split that stuff (everything after the 1st doi) into a different string
+				if (b.length > 0) {
 					console.log( 'Splitting:');
 					console.log( a);
 					console.log( b);
 					urlSuffix[i] = a; // change suffix to be equal to the first part
 					urlSuffix.splice(i+1, 0, b); // add an item to the suffix array that's got the second part in it
 				}
-				
 				tempDOIArray[0] = tempDOIArray[0].replaceAll('//','/'); // i don't understand this
 				DOIarray.push(tempDOIArray[0]); 
-
+				numRowsWithDOIsTotal++;
 			} else {
 				DOIarray.push("");
 			}
@@ -409,6 +462,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		document.getElementById('authorTable').innerHTML = "<table><tr><td>searching...</td></tr></table>";
 
 		numRowsTotal = urlSuffix.length;
+		console.log( 'numRowsWithDOIsTotal='+numRowsWithDOIsTotal)
 	}
 
 	function first_letters(inputString) {
@@ -493,6 +547,7 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 		urlSuffix = [];
 		author_obj = [];
 		reference_obj = [];
+		input_text_obj = [];
 		DOIarray = [];
 		numRowsCompleted = 0;
 		startTime = Date.now();
@@ -501,13 +556,19 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
     
 		showBoxes();
 		parse_user_input();
-		getAllUrls();
+		getAllUrls(true);
 		document.getElementById('progressHeader').innerHTML = "Working...";
 		updateProgress();
 	}
 	
 	function updateProgress() {
 		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numRowsCompleted + ' of ' + numRowsTotal + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
+        if (numRowsCompleted == numRowsWithDOIsTotal) {
+			console.log( 'done with doi rows, there were ' + numRowsWithDOIsTotal);
+			numRowsWithDOIsTotal = -1;
+			console.log( 'startin on non-doi rows')
+     		getAllUrls(false);
+        }
 		if (numRowsCompleted == numRowsTotal) {
 			console.log( 'done');
 			document.getElementById('progressHeader').innerHTML = "Done";
@@ -531,13 +592,29 @@ Elizabeth Ligon). Put both names in the same row of the author table, and add up
 	</nav>
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
+Johnson, M. K., Kounios, J., Reeder, J. A. (1994). Time-course studies of reality	
+monitoring and recognition. Journal of Experimental Psychology: Learning, Memory,	
+and Cognition, 20, 1409–1419. https://doi.org/10.1037/0278-7393.20.6.1409
+
+Meiser, T., Sattler, C., & Von Hecker, U. (2007). Metacognitive inferences in source memory
+
+judgements: The role of perceived differences in item recognition. Quarterly Journal of
+
+Experimental Psychology, 60, 1015–1040. https://doi.org/10.1080/17470210600875215 Metcalfe, J. (2009). Metacognitive judgments and control of study. Current Directions in
+
+Psychological Science, 18, 159-163. https://doi.org/10.1111/j.1467-8721.2009.01628.x Metcalfe, J., & Finn, B. (2008). Evidence that judgments of learning are causally related to
+
+
+study choice. Psychonomic Bulletin & Review, 15, 174–179.
+
+https://doi.org/10.3758/PBR.15.1.174
+
+</textarea>
+<!-- 
 asdddksflsd
 10.1007/978-1-4419-5716-0_6
 asdddksflsd
 Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely 
-
-</textarea>
-<!-- 
 Kornell, N. (2014b). Where is the “meta” in animal metacognition? Journal of Comparative Psychology, 128, 143-149. doi:10.1037/a0033444
 Finn, B., & Metcalfe, J. (2007). The role of memory for past test in the underconfidence with practice effect. Journal of Experimental Psychology: Learning, Memory, and Cognition, 33, 238–244. https://doi.org/10.1037/0278-7393.33.1.238
 Finn, B., & Metcalfe, J. (2008). Judgments of learning are influenced by memory for past test. Journal of Memory and Language, 58, 19–34. https://doi.org/10.1016/j.jml.2007.03.006
