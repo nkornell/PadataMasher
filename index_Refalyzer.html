@@ -1,7 +1,7 @@
 <!--
 To do: 
 					
-Go through urlSuffix 2x. First, find DOIs. For each one, check the row above it (recursively). 
+Go through everything 2x. First, find DOIs. For each one, check the row above it (recursively). 
 Then, when they're done (and you have to wait until they really finish by checking a modified 
 version of numRowsCompleted) go through again and, with the stuff that's left, keep trying. 
 
@@ -61,22 +61,22 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 
 	let Cite = require('citation-js');
 
-	function Input_text_object(input_userInput) { 
-	// note, not using this and havne't tested it
-		
-		this.user_input = input_userInput;
-		
-		var tempDOIArray = [];
-		tempDOIArray = input_userInput.match(doi_pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
-		if (typeof tempDOIArray !== 'undefined' && tempDOIArray !== null && tempDOIArray.length > 0) {
-			tempDOIArray[0] = tempDOIArray[0].replaceAll('//','/'); // dfd i don't understand this, remove it?
-			this.doi = tempDOIArray[0]
-			this.valid_doi = true;
-		} else {
-			this.doi = "";
-			this.valid_doi = false;
-		}
-	}
+// 	function Input_text_object(input_userInput) { 
+// 	// note, not using this and havne't tested it
+// 		
+// 		this.user_input = input_userInput;
+// 		
+// 		var tempDOIArray = [];
+// 		tempDOIArray = input_userInput.match(doi_pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
+// 		if (typeof tempDOIArray !== 'undefined' && tempDOIArray !== null && tempDOIArray.length > 0) {
+// 			tempDOIArray[0] = tempDOIArray[0].replaceAll('//','/'); // dfd i don't understand this, remove it?
+// 			this.doi = tempDOIArray[0]
+// 			this.valid_doi = true;
+// 		} else {
+// 			this.doi = "";
+// 			this.valid_doi = false;
+// 		}
+// 	}
 	
 	function Reference_object(input_userInput, input_json, input_apa) {
 		this.user_input = input_userInput;
@@ -130,21 +130,29 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 	
 	async function getAllUrls(there_is_a_doi) {
 	    // this gets called twice. First, for rows that have a doi. Then, when they're done, for rows that don't. 
+// 	    if (there_is_a_doi == false) {return;} // dfd remove
 		for (i = 0; i < urlSuffix.length; i++) {
-            if (there_is_a_doi == DOIarray[i].length > 0) { // if both are true, there's a doi so process this line. if both are false, there isn't, so process this line. 
-    			getOneURL(urlSuffix[i], DOIarray[i]);
+            if (there_is_a_doi == (DOIarray[i].length > 0)) { // if both are true, there's a doi so process this line. if both are false, there isn't, so process this line. 
+    			getOneURL(urlSuffix[i], DOIarray[i]); 
+    			// dfd i think the problem is, urlSuffix and DOIarray still include all that old crap that got combined and stuff. 
+    			// i should stop using urlSuffix and DOIarray here. 
+    			// Both are only used here and in parse_user_input and I could just use the text in the table instead
+    			// They should be local variables down below. 
     		}
 		}
 // 		console.log( compute_letter_match_percentage('horse', 'dog and ct and rat and mouse'))
 	}
 	
 	async function getOneURL(inputString, inputDOI) {
-		// inputString is equal to urlSuffix for the current item, and urlSuffix is the first column in the table (i.e., user input)
+		console.log( 'getOneURL---')
+		console.log( inputString)
+		console.log( inputDOI)
 		
 // 		Be careful here! This calls everything async, which means that some of this code might 
 // 		execute for item 12 before it gets to item 8, etc. Things can get out of order. Which means, 
 // 		for example, that by the time it arrives at item x (e.g., 2), item x + y (e.g., 5) might have 
-// 		already decided that x shouldn't be shown. And stuff. 
+// 		already decided that x shouldn't be shown. And stuff. This is why the program does all the  
+//		rows that have dois before starting on the ones that don't. 
 
 		var stringToSend = '';
 		var temp_doi = "";
@@ -157,17 +165,19 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 				// Style Language (CSL). And I couldn't figure out any other way. 
 
 				if (check_for_duplicate_rows(inputString) == true) {
-					numRowsCompleted++;
+// 					numRowsCompleted++;
 					break aName; // this goes to the end of the try statement. aName is just an arbitrary name I gave the try statement so I could break it. 
 				}
 				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputString.replaceAll(' ', '+');
+				document.getElementById('reference_' + inputString).innerHTML = "searching..."; 
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
 				if (typeof myJSON.message.items[0] === 'undefined') {
 					if (duplicate_input_text.indexOf(inputString) < 0) {			
 						// only show it if it's not a duplicate row
 						document.getElementById('notes_' + inputString).innerHTML = "not found";
 						document.getElementById('reference_' + inputString).innerHTML = "";
-					}					
+					}
+					numRowsCompleted++;
 				} else {
 					// if a doi was found, run this thing again but with the doi in the parameter, so Cite will work.
 					temp_doi = myJSON.message.items[0].DOI;
@@ -175,6 +185,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 					return;
 				}
 			} else { // if a doi was found
+				// dfd give this its own try so I can figure out what's causing the problem? 
 				let myJSON = await Cite.async(inputDOI);
 				let bibliography = myJSON.format ('bibliography', {
 					format: 'html'
@@ -185,6 +196,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(inputString, myJSON.data[0], bibliography);
 					parse_JSON_for_authors(myJSON.data[0]); 
 					try_to_combine_with_previous_rows(reference_obj[myJSON.data[0].DOI]);
+					numRowsCompleted++; 
 				} else { 
 					// if it finds a doi that's been found before
 					maybe_combine_rows(inputString, reference_obj[myJSON.data[0].DOI], true);
@@ -193,8 +205,8 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 				reference_obj[temp_doi].update_html();
 			}
 
-			showAuthors();
-			numRowsCompleted++; 'dfd this needs to be called multiple times when combining with recursion. so just move it outy of here and into the specific functions
+			showAuthors(); // dfd make this so it doesn't redraw the table every time. 
+			//numRowsCompleted++; //dfd this needs to be called multiple times when combining with recursion. so just move it outy of here and into the specific functions
 			updateProgress();
 		}
 		catch(err) {
@@ -253,6 +265,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
     	}
         var previousRow_input_string = document.getElementById("article_table").rows[previousRow_index].cells[0].innerHTML;
 
+// dfd add to bad_rows? can it still find duplicates?
         if (maybe_combine_rows(previousRow_input_string, input_reference_obj, false) == true) {
             input_reference_obj.update_html();
 //             console.log(document.getElementById('inputText_'+input_reference_obj.user_input).innerHTML ); 
@@ -264,40 +277,48 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 
 	function maybe_combine_rows(input_string, input_reference_obj, removeNoMatterWhat) {
 		var bestcombo = best_combination(input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
-						
+		var shouldRemove = removeNoMatterWhat;
+		
+		// if the best match is the combo, combine them. 
 		if (input_reference_obj.user_input !== bestcombo) {
 			change_elementIDs(input_reference_obj.user_input, bestcombo);
 			input_reference_obj.user_input = bestcombo;
+			shouldRemove = true;
+		}
+		
+		// if appropriate, remove the row
+		if (shouldRemove == true) {
     		remove_row(input_string);
     		return true;
-		} else if (removeNoMatterWhat == true) {
-    		remove_row(input_string);
-    		return true;
+	    } else {
+        	return false;
 	    }	
-    	return false;
-	  	// if this function ends up being used to remove rows that both already have an object, the next step here would be to get rid of the bad object. 
 	}
 	
 	
 	function remove_row(input_string) {
-		// note, do one or the other of the next two things (remove or hide, but not both). 
+		// remove a row that is no longer needed
 		
-		// remove row that is no longer needed
-		var row_to_remove = document.getElementById(input_string).rowIndex;
-	  	document.getElementById("article_table").deleteRow(row_to_remove);
+		try {		
+			var row_to_remove = document.getElementById(input_string).rowIndex;
+			document.getElementById("article_table").deleteRow(row_to_remove);
 
-        // hide the row that is no longer needed
-//      document.getElementById(input_string).style.display = "none";
-	  	
-        numRowsCompleted--;
-        numRowsTotal--;
-        // dfd: if this row has a doi, this should also do numRowsWithDOIsTotal--
-        updateProgress();
-        
-// 		console.log( "removing ")
+			// hide the row that is no longer needed (note, this works but the program doesn't work if you do this)
+			// document.getElementById(input_string).style.display = "none";
+		
+	//         numRowsCompleted--;
+			numRowsTotal--;
+			// dfd: if this row has a doi, this should also do numRowsWithDOIsTotal--
+			updateProgress();
+		
+	// 		console.log( "removing ")
+
+		}
+		catch(err) {
+			console.log( err)
+			console.log('input_string='+ input_string);
+		}
 	}
-
-// 	use later?	urlSuffix.indexOf(input_string) > -1) 
 	
 	function best_combination(user_input_current, user_input_older, apa_goal) {
 		// Note, there is a problem here. Using the following input,
@@ -444,19 +465,13 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 			}
 		}
 
-		
-		// get rid of duplicate lines (this works but I don't want to use it anymore because i'm checking for bad rows now)
-// 		urlSuffix = urlSuffix.filter(function(item, pos, self) {
-//    			return self.indexOf(item) == pos;
-// 		})
-				
+						
 		// Build article table
 		var articleTableText = "<table id='article_table'>";
 		articleTableText += '<tr><th style="width:40%">Input text</th>';
     	articleTableText += '<th style="width:40%">Article found</th>';
     	articleTableText += '<th style="width:20%">Notes</th></tr>';
     	
-		
 		var tempDOIArray = [];
 		for (i = 0; i < urlSuffix.length; i++) {
 			tempDOIArray = urlSuffix[i].match(doi_pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
@@ -481,8 +496,8 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 			}
 			articleTableText += "<tr id='"+urlSuffix[i]+"'>";
 			articleTableText += "<td id='inputText_"+ urlSuffix[i]+"'>"+urlSuffix[i]+"</td>";
-			articleTableText += "<td id='reference_"+urlSuffix[i]+"'>searching...</td>";
-			articleTableText += "<td id='notes_" + urlSuffix[i] + "'>" + DOIarray[i] + "</td>";
+			articleTableText += "<td id='reference_"+urlSuffix[i]+"'>hang on</td>";
+			articleTableText += "<td id='notes_" + urlSuffix[i] + "'>" + "</td>"; //DOIarray[i] + "</td>";
 			articleTableText += "</tr>";
 		}
 		articleTableText += "</table>";
@@ -579,9 +594,12 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		input_text_obj = [];
 		DOIarray = [];
 		numRowsCompleted = 0;
+		numRowsTotal = 0;
+		numRowsWithDOIsTotal = 0;
 		startTime = Date.now();
 		bad_rows = [];
 		duplicate_input_text = [];
+
     
 		showBoxes();
 		parse_user_input();
@@ -592,16 +610,16 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 	
 	function updateProgress() {
 		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numRowsCompleted + ' of ' + numRowsTotal + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
-        if (numRowsCompleted == numRowsWithDOIsTotal) {
-			console.log( 'done with doi rows, there were ' + numRowsWithDOIsTotal);
-			numRowsWithDOIsTotal = -1;
-			console.log( 'startin on non-doi rows')
-     		getAllUrls(false);
-        }
 		if (numRowsCompleted == numRowsTotal) {
 			console.log( 'done');
 			document.getElementById('progressHeader').innerHTML = "Done";
-		}
+		} else if (numRowsCompleted == numRowsWithDOIsTotal) {
+			console.log( 'done with doi rows, there were ' + numRowsWithDOIsTotal);
+			numRowsWithDOIsTotal = -1;
+			console.log( 'startin on non-doi rows. completed: ' + numRowsCompleted + ' of ' + numRowsTotal)
+			console.log( 'numRowsWithDOIsTotal='+numRowsWithDOIsTotal);
+     		getAllUrls(false);
+        }
 	}
 
 </script>
@@ -621,6 +639,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 	</nav>
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
+muddy waters
 Johnson, M. K., Kounios, J., Reeder, J. A. (1994). Time-course studies of reality	
 monitoring and recognition. Journal of Experimental Psychology: Learning, Memory,	
 and Cognition, 20, 1409–1419. https://doi.org/10.1037/0278-7393.20.6.1409
