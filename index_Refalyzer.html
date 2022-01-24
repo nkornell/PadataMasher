@@ -101,6 +101,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 			}
 
 			// update values
+// 			document.getElementById(this.user_input).innerHTML = this.user_input; 
 			document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
 			document.getElementById('reference_'+this.user_input).innerHTML = this.apa; 
 			document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
@@ -183,6 +184,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 					// create new reference
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(inputString, myJSON.data[0], bibliography);
 					parse_JSON_for_authors(myJSON.data[0]); 
+					try_to_combine_with_previous_rows(reference_obj[myJSON.data[0].DOI]);
 				} else { 
 					// if it finds a doi that's been found before
 					maybe_combine_rows(inputString, reference_obj[myJSON.data[0].DOI], true);
@@ -192,7 +194,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 			}
 
 			showAuthors();
-			numRowsCompleted++;
+			numRowsCompleted++; 'dfd this needs to be called multiple times when combining with recursion. so just move it outy of here and into the specific functions
 			updateProgress();
 		}
 		catch(err) {
@@ -207,8 +209,8 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 				console.log(err);
 			}
 		}
-	}
-	
+	}	
+
 	function check_for_duplicate_rows(input_string) {
 		// this is only called on rows where a doi wasn't found. 
 		var i = 0;
@@ -237,6 +239,29 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		return false;
 	}
 
+	function try_to_combine_with_previous_rows(input_reference_obj) {
+	// dfd  write notes about this
+// 	    console.log( 'tyring to find: ' + input_reference_obj.user_input);
+	    if (document.getElementById(input_reference_obj.user_input) == null) {
+	        console.log( 'null found :(');
+	        return;
+	    } else {
+        	var previousRow_index = document.getElementById(input_reference_obj.user_input).rowIndex - 1;
+        }
+    	if (previousRow_index < 0) {
+    	    return;
+    	}
+        var previousRow_input_string = document.getElementById("article_table").rows[previousRow_index].cells[0].innerHTML;
+
+        if (maybe_combine_rows(previousRow_input_string, input_reference_obj, false) == true) {
+            input_reference_obj.update_html();
+//             console.log(document.getElementById('inputText_'+input_reference_obj.user_input).innerHTML ); 
+//             console.log( "do it again with " + input_reference_obj.user_input);
+            try_to_combine_with_previous_rows(input_reference_obj); // do it again recursively
+        }
+        
+	}
+
 	function maybe_combine_rows(input_string, input_reference_obj, removeNoMatterWhat) {
 		var bestcombo = best_combination(input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
 						
@@ -244,9 +269,12 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 			change_elementIDs(input_reference_obj.user_input, bestcombo);
 			input_reference_obj.user_input = bestcombo;
     		remove_row(input_string);
+    		return true;
 		} else if (removeNoMatterWhat == true) {
     		remove_row(input_string);
+    		return true;
 	    }	
+    	return false;
 	  	// if this function ends up being used to remove rows that both already have an object, the next step here would be to get rid of the bad object. 
 	}
 	
@@ -255,18 +283,18 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		// note, do one or the other of the next two things (remove or hide, but not both). 
 		
 		// remove row that is no longer needed
-		//var row_to_remove = document.getElementById(input_string).rowIndex;
-	  	//document.getElementById("article_table").deleteRow(row_to_remove);
+		var row_to_remove = document.getElementById(input_string).rowIndex;
+	  	document.getElementById("article_table").deleteRow(row_to_remove);
 
         // hide the row that is no longer needed
-        document.getElementById(input_string).style.display = "none";
+//      document.getElementById(input_string).style.display = "none";
 	  	
         numRowsCompleted--;
         numRowsTotal--;
-        // dfd: if this row has a doi, this should do numRowsWithDOIsTotal--
+        // dfd: if this row has a doi, this should also do numRowsWithDOIsTotal--
         updateProgress();
         
-		console.log( "removing ")
+// 		console.log( "removing ")
 	}
 
 // 	use later?	urlSuffix.indexOf(input_string) > -1) 
@@ -289,7 +317,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		comboScore = parseInt(Math.ceil(100*similarity(comboText, apa_goal)));
 		reverse_comboScore = parseInt(Math.ceil(100*similarity(reverse_comboText, apa_goal)));
 		
-		console.log( 'combining')
+// 		console.log( 'combining')
 // 		console.log( aText, bText, apa_goal)
 // 		console.log( aScore, bScore, comboScore, reverse_comboScore)
 
@@ -308,6 +336,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 	}
 	
 	function change_elementIDs(from, to) {
+		document.getElementById(from).id = to;
 		document.getElementById('reference_'+from).id = 'reference_'+to;
 		document.getElementById('inputText_'+from).id = 'inputText_'+to;
 		document.getElementById('notes_'+from).id = 'notes_'+to;			
@@ -438,9 +467,9 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 				var b = tempArraySplit[1].trim();
 				// if the string after the delimiter has something in it, split that stuff (everything after the 1st doi) into a different string
 				if (b.length > 0) {
-					console.log( 'Splitting:');
-					console.log( a);
-					console.log( b);
+// 					console.log( 'Splitting:');
+// 					console.log( a);
+// 					console.log( b);
 					urlSuffix[i] = a; // change suffix to be equal to the first part
 					urlSuffix.splice(i+1, 0, b); // add an item to the suffix array that's got the second part in it
 				}
