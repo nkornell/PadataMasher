@@ -54,6 +54,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 	var author_obj = [];
 	var reference_obj = [];
 	var input_text_obj = [];
+	var articleTableText = "";
 // 	var DOIarray = [];
 	var startTime = 0;
 	var numRowsCompleted = 0;
@@ -151,9 +152,8 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 // 	}
 
 	function startGettingURLs(doi_type_to_handle) {
-        var first_row_input_string = document.getElementById("article_table").rows[0].cells[0].innerHTML;
+        var first_row_input_string = document.getElementById("article_table").rows[1].cells[0].innerHTML;
 	    getOneURL(first_row_input_string);
-
 	}
 
 	
@@ -170,6 +170,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 
 		var stringToSend = '';
 		var temp_doi = "";
+		var inputDOI = input_text_obj[inputString].doi;
 		
 		aName: try {
 			if (inputDOI === "") {
@@ -494,35 +495,50 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
                         urlSuffix[i] = a; // change suffix to be equal to the first part
                         urlSuffix.splice(i+1, 0, b); // add an item to the suffix array that's got the second part in it. 
                     }
-                    console.log( urlSuffix[i], tempDOIArray[0], "from_user")
+//                     console.log( urlSuffix[i], tempDOIArray[0], "from_user")
                     input_text_obj[urlSuffix[i]] = new Input_text_object(urlSuffix[i], tempDOIArray[0], "from_user");
                 } else {
                     input_text_obj[urlSuffix[i]] = new Input_text_object(urlSuffix[i], "", "");
                 }
             }
 		}
-
+		build_article_table();
+	}
+	
+	function build_article_table() {
 		// Build article table
-		var articleTableText = "<table id='article_table'>";
+		articleTableText = "<table id='article_table'>";
 		articleTableText += '<tr><th style="width:40%">Input text</th>';
     	articleTableText += '<th style="width:40%">Article found</th>';
     	articleTableText += '<th style="width:20%">Notes</th></tr>';
     	
-		for (i = 0; i < urlSuffix.length; i++) { // dfd get rid of urlSuffix below
-			articleTableText += "<tr id='"+urlSuffix[i]+"'>";
-			articleTableText += "<td id='inputText_"+ urlSuffix[i]+"'>"+urlSuffix[i]+"</td>";
-			articleTableText += "<td id='reference_"+urlSuffix[i]+"'>hang on</td>";
-			articleTableText += "<td id='notes_" + urlSuffix[i] + "'>" + "</td>"; //DOIarray[i] + "</td>";
+		for (let key in input_text_obj) {
+		// this loops through all of input_text_obj
+			var s = input_text_obj[key].user_input;
+			articleTableText += "<tr id='"+s+"'>";
+			articleTableText += "<td id='inputText_"+ s +"'>"+ s +"</td>";
+			articleTableText += "<td id='reference_" + s + "'>hang on</td>";
+			articleTableText += "<td id='notes_" + s + "'>" + "</td>";
 			articleTableText += "</tr>";
+			numRowsTotal++;
 		}
+
 		articleTableText += "</table>";
 		
 		document.getElementById('articleTable').innerHTML = articleTableText;
 		document.getElementById('authorTable').innerHTML = "<table><tr><td>searching...</td></tr></table>";
 
-		numRowsTotal = urlSuffix.length;
 		console.log( 'numRowsWithDOIsTotal='+numRowsWithDOIsTotal)
 	}
+
+// 	function add_article_table_row_string(input) {
+// 		var s = input.user_input;
+// 		articleTableText += "<tr id='"+s+"'>";
+// 		articleTableText += "<td id='inputText_"+ s +"'>"+ s +"</td>";
+// 		articleTableText += "<td id='reference_" + s + "'>hang on</td>";
+// 		articleTableText += "<td id='notes_" + s + "'>" + "</td>";
+// 		articleTableText += "</tr>";
+// 	}
 
 	function first_letters(inputString) {
 		var foof = "";
