@@ -53,7 +53,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 // 	var urlSuffix = [];
 	var author_obj = [];
 	var reference_obj = [];
-	var input_text_obj = [];
+	var to_do_list_input_text_obj = [];
 	var articleTableText = "";
 // 	var DOIarray = [];
 	var startTime = 0;
@@ -151,15 +151,63 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 // 		}
 // 	}
 
-	function startGettingURLs(doi_type_to_handle) {
-        var first_row_input_string = document.getElementById("article_table").rows[1].cells[0].innerHTML;
-	    getOneURL(first_row_input_string);
+ 	async function getAllUrls(doi_type_to_handle) {
+	    // this gets called twice. First, for rows that have a doi. Then, when they're done, for rows that don't. 
+        
+        var row_queue = [];
+        var i = 0;
+
+var t = document.getElementById("article_table");
+var temp_row_text = '';
+ 
+console.log( 'working on doi_type_to_handle = ' +doi_type_to_handle)
+       
+ 		for (let key in to_do_list_input_text_obj) {
+            if (to_do_list_input_text_obj[key].doi_type === doi_type_to_handle) {
+    			row_queue.push(to_do_list_input_text_obj[key].user_input); 
+            }
+		}
+
+
+
+// 		for (i = 1; i < t.rows.length; i++) { // start with 1 to avoid the table header
+//             // dfd i'm going to skip it if it doesn't exist. 
+//             if (typeof t.rows[i].cells[0].innerHTML !== 'undefined' && t.rows[i].cells[0].innerHTML) {	
+//                 try {
+//                         temp_row_text = t.rows[i].cells[0].innerHTML;
+//                     if (reference_obj[temp_row_text] === undefined) { 
+//                         if (to_do_list_input_text_obj[temp_row_text].doi_type === doi_type_to_handle) {
+//                             row_queue.push(temp_row_text); 
+//                         }
+//                     }
+//                 }
+//                 catch(err) {
+//                     console.log( '-------');
+//                     console.log( 'error in row_queue push, temp_row_text = ' + temp_row_text);
+//                     console.log( 'error  = ' + err);
+//                     console.log( '-------');
+//                 }
+//             }
+//         }
+
+//         console.log( row_queue);
+        
+        
+		for (i = 0; i < row_queue.length; i++) {
+   			getOneURL(row_queue[i]); 
+		}
 	}
 
+// 	function startGettingURLs(doi_type_to_handle) {
+//         var first_row_input_string = document.getElementById("article_table").rows[1].cells[0].innerHTML;
+//         console.log('first_row_input_string=' + first_row_input_string)
+// 	    getOneURL(first_row_input_string);
+// 	}
+
 	
-	async function getOneURL(inputString) {
-		console.log( 'getOneURL---')
-		console.log( inputString)
+	async function getOneURL(input_string) {
+// 		console.log( 'getOneURL---')
+// 		console.log( input_string)
 // 		console.log( inputDOI)
 		
 // 		Be careful here! This calls everything async, which means that some of this code might 
@@ -170,7 +218,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 
 		var stringToSend = '';
 		var temp_doi = "";
-		var inputDOI = input_text_obj[inputString].doi;
+		var inputDOI = to_do_list_input_text_obj[input_string].doi;
 		
 		aName: try {
 			if (inputDOI === "") {
@@ -179,24 +227,26 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 				// been found, but I need the JSON in the format Cite uses, which is called Citation 
 				// Style Language (CSL). And I couldn't figure out any other way. 
 
-				if (check_for_duplicate_rows(inputString) == true) {
+				if (check_for_duplicate_rows(input_string) == true) {
 // 					numRowsCompleted++;
+		            console.log("removed duplicate row(s)");
 					break aName; // this goes to the end of the try statement. aName is just an arbitrary name I gave the try statement so I could break it. 
 				}
-				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + inputString.replaceAll(' ', '+');
-				document.getElementById('reference_' + inputString).innerHTML = "searching..."; 
+				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + input_string.replaceAll(' ', '+');
+console.log( 'pb = '+input_string)
+				document.getElementById('reference_' + input_string).innerHTML = "searching..."; 
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
 				if (typeof myJSON.message.items[0] === 'undefined') {
-					if (duplicate_input_text.indexOf(inputString) < 0) {			
+					if (duplicate_input_text.indexOf(input_string) < 0) {			
 						// only show it if it's not a duplicate row
-						document.getElementById('notes_' + inputString).innerHTML = "not found";
-						document.getElementById('reference_' + inputString).innerHTML = "";
+						document.getElementById('notes_' + input_string).innerHTML = "not found";
+						document.getElementById('reference_' + input_string).innerHTML = "";
 					}
 					numRowsCompleted++;
 				} else {
 					// if a doi was found, run this thing again but with the doi in the parameter, so Cite will work.
 					temp_doi = myJSON.message.items[0].DOI;
-					getOneURL(inputString, temp_doi);
+					getOneURL(input_string, temp_doi);
 					return;
 				}
 			} else { // if a doi was found
@@ -208,13 +258,14 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 				
 				if (reference_obj[myJSON.data[0].DOI] === undefined) { 
 					// create new reference
-					reference_obj[myJSON.data[0].DOI] = new Reference_object(inputString, myJSON.data[0], bibliography);
+					reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
 					parse_JSON_for_authors(myJSON.data[0]); 
 					try_to_combine_with_previous_rows(reference_obj[myJSON.data[0].DOI]);
+                    to_do_list_input_text_obj.splice(input_string, 1); // dfd if splice needs numbers, change this
 					numRowsCompleted++; 
 				} else { 
 					// if it finds a doi that's been found before
-					maybe_combine_rows(inputString, reference_obj[myJSON.data[0].DOI], true);
+					maybe_combine_rows(input_string, reference_obj[myJSON.data[0].DOI], true);
 				}
 				temp_doi = myJSON.data[0].DOI;
 				reference_obj[temp_doi].update_html();
@@ -229,9 +280,9 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 				console.log( "failed to find DOI (below)"); 
 				console.log(inputDOI); 
 				console.log( "searching again for")
-				console.log( inputString)
-				document.getElementById('notes_'+inputString).innerHTML = 'doi not found; searching again...';
-				getOneURL(inputString, '');
+				console.log( input_string)
+				document.getElementById('notes_'+input_string).innerHTML = 'doi not found; searching again...';
+				getOneURL(input_string, '');
 			} else {
 				console.log(err);
 			}
@@ -245,6 +296,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		
 		bad_rows.push(input_string);
 	
+	    // remove it if it's been found and removed before
 		for (i = 0; i < duplicate_input_text.length-1; i++) {
 			tempScore = parseInt(Math.ceil(100*similarity(input_string, duplicate_input_text[i])));
 			if (tempScore > 90) { // if it's the same as a previous row
@@ -253,6 +305,8 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 				return true;		
 			}
 		}
+		
+		// remove it if it's been identified as a duplicate for the first time (remove both)
 		for (i = 0; i < bad_rows.length-1; i++) {
 			tempScore = parseInt(Math.ceil(100*similarity(input_string, bad_rows[i])));
 			if (tempScore > 90) { // if it's the same as a previous row
@@ -275,7 +329,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 	    } else {
         	var previousRow_index = document.getElementById(input_reference_obj.user_input).rowIndex - 1;
         }
-    	if (previousRow_index < 0) {
+    	if (previousRow_index < 1) { // it's 1 because row 0 is the table header
     	    return;
     	}
         var previousRow_input_string = document.getElementById("article_table").rows[previousRow_index].cells[0].innerHTML;
@@ -299,8 +353,13 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		
 		// if the best match is the combo, combine them. 
 		if (input_reference_obj.user_input !== bestcombo) {
+			
+// dfd the line below creates a new object for the combo... but it sux because the doi_type is based on the first line, which ain't right
+//             input_text_obj[input_string] = new Input_text_object(input_string, input_text_obj[input_string].doi, input_text_obj[input_string].doi_type);
+
 			change_elementIDs(input_reference_obj.user_input, bestcombo);
 			input_reference_obj.user_input = bestcombo;
+
 			shouldRemove = true;
 		}
 		
@@ -312,7 +371,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
         	return false;
 	    }	
 	}
-	
+//	dfd  note that if it doesn't find something twice, it thinks it's a duplicate. at least rn it does.
 	
 	function remove_row(input_string) {
 		// remove a row that is no longer needed
@@ -321,20 +380,15 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 			var row_to_remove = document.getElementById(input_string).rowIndex;
 			document.getElementById("article_table").deleteRow(row_to_remove);
 
-			// hide the row that is no longer needed (note, this works but the program doesn't work if you do this)
-			// document.getElementById(input_string).style.display = "none";
-		
-	//         numRowsCompleted--;
-			numRowsTotal--;
-			// dfd: if this row has a doi, this should also do numRowsWithDOIsTotal--
-			updateProgress();
-		
-	// 		console.log( "removing ")
+console.log( to_do_list_input_text_obj)
+            to_do_list_input_text_obj.splice(input_string, 1);
+console.log( to_do_list_input_text_obj)
 
+			numRowsTotal--;
+			updateProgress();
 		}
 		catch(err) {
-			console.log( err)
-			console.log('input_string='+ input_string);
+			console.log( 'error in remove_row, input_string='+ input_string);
 		}
 	}
 	
@@ -476,32 +530,33 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		var tempDOIArray = [];
 
 		// get rid of rows with too few characters
-		for (i = urlSuffix.length - 1; i >= 0; i--) {
+		for (i = urlSuffix.length - 1; i >= 0; i--) { 
 			urlSuffix[i] = urlSuffix[i].trim();
 			if (urlSuffix[i].length < 5) {
 				urlSuffix.splice(i, 1);
-			} else {
-                tempDOIArray = [];
-                tempDOIArray = urlSuffix[i].match(doi_pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
-                if (typeof tempDOIArray !== 'undefined' && tempDOIArray !== null && tempDOIArray.length > 0) {
-                    var tempArraySplit = urlSuffix[i].split(tempDOIArray[0]);
-                    var a = tempArraySplit[0]+tempDOIArray[0];
-                    var b = tempArraySplit[1].trim();
-                    // if the string after the delimiter has something in it, split that stuff (everything after the 1st doi) into a different string
-                    if (b.length > 0) {
-    // 					console.log( 'Splitting:');
-    // 					console.log( a);
-    // 					console.log( b);
-                        urlSuffix[i] = a; // change suffix to be equal to the first part
-                        urlSuffix.splice(i+1, 0, b); // add an item to the suffix array that's got the second part in it. 
-                    }
-//                     console.log( urlSuffix[i], tempDOIArray[0], "from_user")
-                    input_text_obj[urlSuffix[i]] = new Input_text_object(urlSuffix[i], tempDOIArray[0], "from_user");
-                } else {
-                    input_text_obj[urlSuffix[i]] = new Input_text_object(urlSuffix[i], "", "");
-                }
-            }
+			}
 		}
+			
+		for (i = 0; i < urlSuffix.length; i++) {
+            tempDOIArray = [];
+            tempDOIArray = urlSuffix[i].match(doi_pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
+            if (typeof tempDOIArray !== 'undefined' && tempDOIArray !== null && tempDOIArray.length > 0) {
+                var tempArraySplit = urlSuffix[i].split(tempDOIArray[0]);
+                var a = tempArraySplit[0]+tempDOIArray[0];
+                var b = tempArraySplit[1].trim();
+                // if the string after the delimiter has something in it, split that stuff (everything after the 1st doi) into a different string
+                if (b.length > 0) {
+// 					console.log( 'Splitting:');
+// 					console.log( a);
+// 					console.log( b);
+                    urlSuffix[i] = a; // change suffix to be equal to the first part
+                    urlSuffix.splice(i+1, 0, b); // add an item to the suffix array that's got the second part in it. 
+                }
+                to_do_list_input_text_obj[urlSuffix[i]] = new Input_text_object(urlSuffix[i], tempDOIArray[0], "from_user");
+            } else {
+                to_do_list_input_text_obj[urlSuffix[i]] = new Input_text_object(urlSuffix[i], "", "from_crossref");
+            }
+        }
 		build_article_table();
 	}
 	
@@ -512,9 +567,9 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
     	articleTableText += '<th style="width:40%">Article found</th>';
     	articleTableText += '<th style="width:20%">Notes</th></tr>';
     	
-		for (let key in input_text_obj) {
-		// this loops through all of input_text_obj
-			var s = input_text_obj[key].user_input;
+		for (let key in to_do_list_input_text_obj) {
+		// this loops through all of to_do_list_input_text_obj
+			var s = to_do_list_input_text_obj[key].user_input;
 			articleTableText += "<tr id='"+s+"'>";
 			articleTableText += "<td id='inputText_"+ s +"'>"+ s +"</td>";
 			articleTableText += "<td id='reference_" + s + "'>hang on</td>";
@@ -540,11 +595,11 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 // 		articleTableText += "</tr>";
 // 	}
 
-	function first_letters(inputString) {
+	function first_letters(input_string) {
 		var foof = "";
 		
-		for (i = 0; i < inputString.length; i++) {
-			foof += inputString[i].slice(0,1)+". "; 
+		for (i = 0; i < input_string.length; i++) {
+			foof += input_string[i].slice(0,1)+". "; 
 		}
 		return foof.trim();
 	}
@@ -622,7 +677,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 // 		urlSuffix = [];
 		author_obj = [];
 		reference_obj = [];
-		input_text_obj = [];
+		to_do_list_input_text_obj = [];
 // 		DOIarray = [];
 		numRowsCompleted = 0;
 		numRowsTotal = 0;
@@ -634,7 +689,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
     
 		showBoxes();
 		parse_user_input();
-		startGettingURLs('from_user');
+		getAllUrls('from_user');
 		document.getElementById('progressHeader').innerHTML = "Working...";
 		updateProgress();
 	}
@@ -645,11 +700,9 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 			console.log( 'done');
 			document.getElementById('progressHeader').innerHTML = "Done";
 		} else if (numRowsCompleted == numRowsWithDOIsTotal) {
-			console.log( 'done with doi rows, there were ' + numRowsWithDOIsTotal);
+			console.log( 'completed ' + numRowsWithDOIsTotal + 'doi rows. Starting on non-doi rows, completed: ' + numRowsCompleted + ' of ' + numRowsTotal)
 			numRowsWithDOIsTotal = -1;
-			console.log( 'startin on non-doi rows. completed: ' + numRowsCompleted + ' of ' + numRowsTotal)
-			console.log( 'numRowsWithDOIsTotal='+numRowsWithDOIsTotal);
-//      		getAllUrls(false); dfd
+         	getAllUrls('from_crossref');
         }
 	}
 
@@ -670,7 +723,8 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 	</nav>
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-muddy waters
+Importance of the kind of cue for judgments of learning (JOL) and the delayed-JOL effect.
+
 Johnson, M. K., Kounios, J., Reeder, J. A. (1994). Time-course studies of reality	
 monitoring and recognition. Journal of Experimental Psychology: Learning, Memory,	
 and Cognition, 20, 1409–1419. https://doi.org/10.1037/0278-7393.20.6.1409
@@ -681,15 +735,10 @@ judgements: The role of perceived differences in item recognition. Quarterly Jou
 
 Experimental Psychology, 60, 1015–1040. https://doi.org/10.1080/17470210600875215 Metcalfe, J. (2009). Metacognitive judgments and control of study. Current Directions in
 
-Psychological Science, 18, 159-163. https://doi.org/10.1111/j.1467-8721.2009.01628.x Metcalfe, J., & Finn, B. (2008). Evidence that judgments of learning are causally related to
-
-
-study choice. Psychonomic Bulletin & Review, 15, 174–179.
-
-https://doi.org/10.3758/PBR.15.1.174
-
+Psychological Science, 18, 159-163. https://doi.org/10.1111/j.1467-8721.2009.01628.x 
 </textarea>
 <!-- 
+muddy waters dfd test it with something it can't find
 asdddksflsd
 10.1007/978-1-4419-5716-0_6
 asdddksflsd
