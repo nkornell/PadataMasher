@@ -167,6 +167,7 @@ console.log( 'working on doi_type_to_handle = ' +doi_type_to_handle)
     			row_queue.push(to_do_list_input_text_obj[key].user_input); 
             }
 		}
+		console.log( row_queue);
 
 
 
@@ -233,7 +234,6 @@ console.log( 'working on doi_type_to_handle = ' +doi_type_to_handle)
 					break aName; // this goes to the end of the try statement. aName is just an arbitrary name I gave the try statement so I could break it. 
 				}
 				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + input_string.replaceAll(' ', '+');
-console.log( 'pb = '+input_string)
 				document.getElementById('reference_' + input_string).innerHTML = "searching..."; 
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
 				if (typeof myJSON.message.items[0] === 'undefined') {
@@ -261,7 +261,7 @@ console.log( 'pb = '+input_string)
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
 					parse_JSON_for_authors(myJSON.data[0]); 
 					try_to_combine_with_previous_rows(reference_obj[myJSON.data[0].DOI]);
-                    to_do_list_input_text_obj.splice(input_string, 1); // dfd if splice needs numbers, change this
+					delete to_do_list_input_text_obj[input_string]; // remove it from to do list because it's done
 					numRowsCompleted++; 
 				} else { 
 					// if it finds a doi that's been found before
@@ -272,7 +272,6 @@ console.log( 'pb = '+input_string)
 			}
 
 			showAuthors(); // dfd make this so it doesn't redraw the table every time. 
-			//numRowsCompleted++; //dfd this needs to be called multiple times when combining with recursion. so just move it outy of here and into the specific functions
 			updateProgress();
 		}
 		catch(err) {
@@ -380,15 +379,14 @@ console.log( 'pb = '+input_string)
 			var row_to_remove = document.getElementById(input_string).rowIndex;
 			document.getElementById("article_table").deleteRow(row_to_remove);
 
-console.log( to_do_list_input_text_obj)
-            to_do_list_input_text_obj.splice(input_string, 1);
-console.log( to_do_list_input_text_obj)
+            delete to_do_list_input_text_obj[input_string];
 
 			numRowsTotal--;
 			updateProgress();
 		}
 		catch(err) {
 			console.log( 'error in remove_row, input_string='+ input_string);
+			console.log( err);
 		}
 	}
 	
