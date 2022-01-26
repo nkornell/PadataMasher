@@ -50,12 +50,10 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 // Rewrite getOneURL so that it uses the new object
 // Rewrite the thing that shows the table (and cut that off into its own function)
 
-// 	var urlSuffix = [];
 	var author_obj = [];
 	var reference_obj = [];
 	var to_do_list_input_text_obj = [];
 	var articleTableText = "";
-// 	var DOIarray = [];
 	var startTime = 0;
 	var numRowsCompleted = 0;
 	var numRowsTotal = 0;
@@ -81,7 +79,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
             numRowsWithDOIsTotal++;
         }
     
-// 		this.doi_is_valid = function() { // dfd i don't want to check validity here because that would require going to the database. But it should happen. 
+// 		this.doi_is_valid = function() { // i don't want to check validity here because that would require going to the database. But it should happen. 
 // 		    if (this.doi == this.compute_doi_from_input) {
 // 		        return true;
 // 		    } else {
@@ -157,42 +155,21 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
         var row_queue = [];
         var i = 0;
 
-var t = document.getElementById("article_table");
-var temp_row_text = '';
+		var t = document.getElementById("article_table");
+		var temp_row_text = '';
  
-console.log( 'working on doi_type_to_handle = ' +doi_type_to_handle)
+// console.log( 'working on doi_type_to_handle = ' +doi_type_to_handle)
+
+bad_rows = [];
        
  		for (let key in to_do_list_input_text_obj) {
             if (to_do_list_input_text_obj[key].doi_type === doi_type_to_handle) {
     			row_queue.push(to_do_list_input_text_obj[key].user_input); 
+    			console.log('add to row_queue: ' + to_do_list_input_text_obj[key].user_input)
             }
 		}
-		console.log( row_queue);
-
-
-
-// 		for (i = 1; i < t.rows.length; i++) { // start with 1 to avoid the table header
-//             // dfd i'm going to skip it if it doesn't exist. 
-//             if (typeof t.rows[i].cells[0].innerHTML !== 'undefined' && t.rows[i].cells[0].innerHTML) {	
-//                 try {
-//                         temp_row_text = t.rows[i].cells[0].innerHTML;
-//                     if (reference_obj[temp_row_text] === undefined) { 
-//                         if (to_do_list_input_text_obj[temp_row_text].doi_type === doi_type_to_handle) {
-//                             row_queue.push(temp_row_text); 
-//                         }
-//                     }
-//                 }
-//                 catch(err) {
-//                     console.log( '-------');
-//                     console.log( 'error in row_queue push, temp_row_text = ' + temp_row_text);
-//                     console.log( 'error  = ' + err);
-//                     console.log( '-------');
-//                 }
-//             }
-//         }
-
-//         console.log( row_queue);
         
+        console.log('getting ' + row_queue.length + ' rows')
         
 		for (i = 0; i < row_queue.length; i++) {
    			getOneURL(row_queue[i]); 
@@ -250,7 +227,6 @@ console.log( 'working on doi_type_to_handle = ' +doi_type_to_handle)
 					return;
 				}
 			} else { // if a doi was found
-				// dfd give this its own try so I can figure out what's causing the problem? 
 				let myJSON = await Cite.async(inputDOI);
 				let bibliography = myJSON.format ('bibliography', {
 					format: 'html'
@@ -281,7 +257,7 @@ console.log( 'working on doi_type_to_handle = ' +doi_type_to_handle)
 				console.log( "searching again for")
 				console.log( input_string)
 				document.getElementById('notes_'+input_string).innerHTML = 'doi not found; searching again...';
-				getOneURL(input_string, '');
+// 				getOneURL(input_string, '');
 			} else {
 				console.log(err);
 			}
@@ -294,12 +270,17 @@ console.log( 'working on doi_type_to_handle = ' +doi_type_to_handle)
 		var tempScore = 0;
 		
 		bad_rows.push(input_string);
+
+		console.log('check_for_duplicate_rows ' +input_string)
+		console.log( 'bad rows:')
+		console.log( bad_rows)
 	
 	    // remove it if it's been found and removed before
 		for (i = 0; i < duplicate_input_text.length-1; i++) {
 			tempScore = parseInt(Math.ceil(100*similarity(input_string, duplicate_input_text[i])));
 			if (tempScore > 90) { // if it's the same as a previous row
 				duplicate_input_text.push(input_string);
+				console.log( 'a');
 				remove_row(input_string);
 				return true;		
 			}
@@ -309,6 +290,7 @@ console.log( 'working on doi_type_to_handle = ' +doi_type_to_handle)
 		for (i = 0; i < bad_rows.length-1; i++) {
 			tempScore = parseInt(Math.ceil(100*similarity(input_string, bad_rows[i])));
 			if (tempScore > 90) { // if it's the same as a previous row
+				console.log( 'b');
 				duplicate_input_text.push(bad_rows[i]);
 				remove_row(bad_rows[i]);
 				duplicate_input_text.push(input_string);
@@ -321,7 +303,11 @@ console.log( 'working on doi_type_to_handle = ' +doi_type_to_handle)
 
 	function try_to_combine_with_previous_rows(input_reference_obj) {
 	// dfd  write notes about this. and rename it, as well as maybe_combine_rows
-// 	    console.log( 'tyring to find: ' + input_reference_obj.user_input);
+	// The way this is now, it works if you trust the DOI. But if the doi isn't trustworthy and the score is low,
+	// it will need to be more sophisticated about comparing possible situations (e.g., it found 2 dois
+	// but by combining them it get's a third doi that's better). And it should use:
+	// console.log( compute_letter_match_percentage('horse', 'dog and ct and rat and mouse'))
+	
 	    if (document.getElementById(input_reference_obj.user_input) == null) {
 	        console.log( 'null found :(');
 	        return;
@@ -333,14 +319,8 @@ console.log( 'working on doi_type_to_handle = ' +doi_type_to_handle)
     	}
         var previousRow_input_string = document.getElementById("article_table").rows[previousRow_index].cells[0].innerHTML;
 
-// dfd add to bad_rows? check whether it can still find duplicates, because if it can't bad_rows etc will be needed
-
-//also, should it be using: 		console.log( compute_letter_match_percentage('horse', 'dog and ct and rat and mouse'))
-
         if (maybe_combine_rows(previousRow_input_string, input_reference_obj, false) == true) {
             input_reference_obj.update_html();
-//             console.log(document.getElementById('inputText_'+input_reference_obj.user_input).innerHTML ); 
-//             console.log( "do it again with " + input_reference_obj.user_input);
             try_to_combine_with_previous_rows(input_reference_obj); // do it again recursively
         }
         
@@ -352,18 +332,14 @@ console.log( 'working on doi_type_to_handle = ' +doi_type_to_handle)
 		
 		// if the best match is the combo, combine them. 
 		if (input_reference_obj.user_input !== bestcombo) {
-			
-// dfd the line below creates a new object for the combo... but it sux because the doi_type is based on the first line, which ain't right
-//             input_text_obj[input_string] = new Input_text_object(input_string, input_text_obj[input_string].doi, input_text_obj[input_string].doi_type);
-
 			change_elementIDs(input_reference_obj.user_input, bestcombo);
 			input_reference_obj.user_input = bestcombo;
-
 			shouldRemove = true;
 		}
 		
 		// if appropriate, remove the row
 		if (shouldRemove == true) {
+			console.log( 'c');
     		remove_row(input_string);
     		return true;
 	    } else {
@@ -698,7 +674,7 @@ console.log( 'working on doi_type_to_handle = ' +doi_type_to_handle)
 			console.log( 'done');
 			document.getElementById('progressHeader').innerHTML = "Done";
 		} else if (numRowsCompleted == numRowsWithDOIsTotal) {
-			console.log( 'completed ' + numRowsWithDOIsTotal + 'doi rows. Starting on non-doi rows, completed: ' + numRowsCompleted + ' of ' + numRowsTotal)
+			console.log( 'completed ' + numRowsWithDOIsTotal + ' doi rows. Starting on non-doi rows, completed: ' + numRowsCompleted + ' of ' + numRowsTotal)
 			numRowsWithDOIsTotal = -1;
          	getAllUrls('from_crossref');
         }
