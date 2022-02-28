@@ -318,10 +318,12 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 // 				document.getElementById('reference_' + input_string).innerHTML = "searching"; 
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
 				if (typeof myJSON.message.items[0] === 'undefined') {
+				    // if it's not in the database
 					if (duplicate_input_text.indexOf(input_string) < 0) {			
 						// only show it if it's not a duplicate row
 		                input_text_obj[input_string].update_input('done','bad');
 					}
+					// question: if it is a duplicate row, what gets shown?
 					numRowsCompleted++;
 				} else {
 					// if a doi was found, run this thing again but with the doi in the parameter, so Cite will work.
@@ -353,9 +355,8 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 				reference_obj[myJSON.data[0].DOI].update_ref();
 			}
 
-			showAuthors(); // dfd make this so it doesn't redraw the table every time. 
+			showAuthors(); 
 			updateProgress();
-// 			return // putting a return here makes it explode
 		}
 		catch(err) {
 			if (err == "Error: Server responded with status code 404") {
@@ -394,10 +395,12 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
                     tempScore = compute_letter_match(target_string, to_do_list_input_string[i]);
                     if (tempScore > 90) { // if it's the same as a previous row
                         console.log( 'removing two duplicate rows:');
+                        
                         console.log("remove: "+ to_do_list_input_string[i]);
-                        console.log("remove: "+ target_string);
                         duplicate_input_text.push(to_do_list_input_string[i]);
                         remove_row(to_do_list_input_string[i]);
+                        
+                        console.log("remove: "+ target_string);
                         duplicate_input_text.push(target_string);
                         remove_row(target_string);
                     }
@@ -474,11 +477,14 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
         var previousRow_input_string = document.getElementById("article_table").rows[previousRow_index].cells[0].innerHTML;
         
         try {
-            // don't try to combine with rows that are already settled
+            // don't try to combine with rows that are already settled. 
+            // dfd: I think this should be changed. If the second one has a bad doi, maybe it should still try to combine them. 
             if (typeof input_text_obj[previousRow_input_string] !== 'undefined' && input_text_obj[previousRow_input_string] !== null) {	// this line seems unnecessary, no??
-//                 if (input_text_obj[previousRow_input_string].status == "done" || input_text_obj[previousRow_input_string].status == "not found") {
                 if (input_text_obj[previousRow_input_string].match_status == "good") {
-                    console.log( "palm frond party")
+                    if (verbose) {
+                        console.log( "tried to combine, but this one already had status [good], so returned instead: ");
+                        console.log( previousRow_input_string)
+                    }
                     return;
                 }
             }
@@ -511,7 +517,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
                 }
             }
             if (input_text_obj[input_string].removed) {
-                console.log( 'tried to combine with a row that has already been removed. returning.')
+                if (verbose) {console.log( 'tried to combine with a row that has already been removed. returning.');}
                 return false;
             }
 
@@ -563,10 +569,6 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
             input_text_obj[to_string] = new Input_text_object(to_string, "",""); // not giving it a doi means it won't add 1 to numRows withDOIsTotal
             input_text_obj[to_string] = Object.assign({}, input_text_obj[from_obj.user_input]);
             input_text_obj[to_string].user_input = to_string;
-            // dfd the 3 lines above are replacing the 3 lines below
-//             input_text_obj[from_obj.user_input].delete;
-//             input_text_obj[to_string] = new Input_text_object(to_string, from_obj.doi, temp_doi_type);
-//             numRowsWithDOIsTotal--; // because it's creating one, 1 will be aded to it. 
             
             // change to do list
             to_do_list_input_string[to_do_list_input_string.indexOf(from_string)] = to_string;
@@ -789,7 +791,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
             }
             
             if (tempDOIsFoundSoFar.includes(tempDOI)) { // if the doi has already been found in the user input
-                console.log( 'duplicate doi found in user input. not added.'); 
+                if (verbose) {console.log( 'duplicate doi found in user input. not added.');} 
             } else {
                 // if there's no doi or the doi is new, use it. 
                 input_text_obj[urlSuffix[i]] = new Input_text_object(urlSuffix[i], tempDOI, tempDOItype);
@@ -869,31 +871,42 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 	}
 
 	function showAuthors() {
-		var authorTableText = "";
-
-		// create the html table 
-		authorTableText = "<table><tr>";
-		authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes"'+")' title='Click to Sort'>Highlight</th>";
-		authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Author</th>";
-		authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers"'+")' title='Click to Sort'>Citations</th>";
-		authorTableText += "<th onclick='sortTable(3, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
-		authorTableText += "</tr>";
-
-		for (var key in author_obj) {
-			authorTableText += "<tr>";
-			authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
-			authorTableText += "<td><div id='name_" + author_obj[key].name + "'>" + author_obj[key].name + "</td>";
-			authorTableText += "<td>" + author_obj[key].citation_count + "</td>";
-			authorTableText +=  "<td>" + author_obj[key].all_coauthors_string();
-			authorTableText += "</td></tr>";
-		}
-
-		authorTableText += "</table>"
-		document.getElementById('authorTable').innerHTML = authorTableText;		
-		sortTable(1, "authorTable", "letters");
+	    if (document.getElementById('author_table') == null) {
+	        // if this is the first time the function is called, build the table. 
+	        build_author_table();
+        } else {
+            // if this is not the first time the table is drawn, update it
+	        build_author_table(); 
+	        // dfd instead of re-building the table, have it update the table. 
+	        // it should check whether a row for the author exists. Then either add it, or change the citation count and co-authors
+        }
 	}
 	
+    function build_author_table() {
+        var authorTableText = "";
 
+        // create the html table 
+        authorTableText = "<table id='author_table'><tr>";
+        authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes"'+")' title='Click to Sort'>Highlight</th>";
+        authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Author</th>";
+        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers"'+")' title='Click to Sort'>Citations</th>";
+        authorTableText += "<th onclick='sortTable(3, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
+        authorTableText += "</tr>";
+
+        for (var key in author_obj) {
+            authorTableText += "<tr>";
+            authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
+            authorTableText += "<td><div id='name_" + author_obj[key].name + "'>" + author_obj[key].name + "</td>";
+            authorTableText += "<td>" + author_obj[key].citation_count + "</td>";
+            authorTableText +=  "<td>" + author_obj[key].all_coauthors_string();
+            authorTableText += "</td></tr>";
+        }
+
+        authorTableText += "</table>"
+        document.getElementById('authorTable').innerHTML = authorTableText;		
+        sortTable(1, "authorTable", "letters");
+    }
+    
 	function showBoxes() {
 		var x = document.getElementById("refalyzerArticleListBox");
 		x.style.display = "flex";
@@ -933,7 +946,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		} else if (numRowsCompleted == numRowsWithDOIsTotal) {
             console.log( 'starting non-doi rows')
 			numRowsWithDOIsTotal = -1;
-// 			remove_duplicate_rows(); //dfd put back (when this is included, terrible pbms happen)
+			remove_duplicate_rows(); //dfd put back (when this is included, terrible pbms happen)
             getAllUrls('not_found_yet');
         }
 	}
