@@ -1,5 +1,9 @@
 <!--
 To do: 
+
+If there are two rows without dois, and it finds an incorrect doi for each one, it won't combine them (right?). 
+To fix this, it should try a move where first you combine consecutive bad rows and then look for a doi. 
+
 					
 Go through everything 2x. First, find DOIs. For each one, check the row above it (recursively). 
 Then, when they're done (and you have to wait until they really finish by checking a modified 
@@ -23,7 +27,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 
 <head>
 	<title>Reference Analyzer</title>
-	<meta charset="UTF-8">
+	<meta charset="utf-8" />
 	<meta name="description" content="looking at academic references">
 	<meta name="keywords" content="program">
 	<meta name="author" content="Nate Kornell">
@@ -50,10 +54,13 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 	var startTime = 0;
 	var numRowsCompleted = 0;
 	var numRowsTotal = 0;
-	var numRowsWithDOIsTotal = 0;
+	var numRowsWithUserDOIsTotal = 0;
 	var duplicate_input_text = [];
 	var doi_pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/gi; // doi_pattern is used to find a DOI within the input string. note: I added in the g, which makes it return all of the DOIs instead of just 1
- 
+    const cc = [];
+    cc['probable'] = 'blue';
+    cc['wrong'] = 'red';
+
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
 // 	var doi_pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
 // 	var doi_pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
@@ -71,7 +78,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		this.removed = false;
 
         if (input_doi.length > 0) {
-            numRowsWithDOIsTotal++;
+            numRowsWithUserDOIsTotal++;
         }
         
         to_do_list_input_string.push(input_userInput);
@@ -80,7 +87,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		    // possible search status values:
             //    not started, searching, doi not found; searching again, done		    
 		    // possible match status values
-		    //    unknown, bad, good
+		    //    unknown, wrong, probable, correct
 		    
 		    this.search_status = input_search_status;
 		    this.match_status = input_match_status;
@@ -88,10 +95,18 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		        this.doi = input_new_doi;
 		        console.log( 'updated doi in this.update_input to: '+input_new_doi)
 		    }
-		    var temp_match_status_to_show = ' ('+this.match_status+')';
-		    if (this.match_status == 'unknown') {temp_match_status_to_show = '';}
+		    if (this.match_status == 'unknown') {
+		        var temp_match_status_to_show = '';
+		    } else {
+    		    var temp_match_status_to_show = '<div style="color:' + cc[this.match_status]  + ';">' + this.match_status + '</div>';
+		    }
+		    if (this.search_status != 'done') {
+		        var temp_search_status_to_show = this.search_status;
+		    } else {
+		        var temp_search_status_to_show = '';
+		    }
 		    try {
-    			document.getElementById('notes_'+this.user_input).innerHTML = this.search_status + temp_match_status_to_show; 
+    			document.getElementById('notes_'+this.user_input).innerHTML = temp_search_status_to_show + temp_match_status_to_show; 
     		} catch(err) {
     		    console.log( 'did not update notes for '+this.user_input);
     		}
@@ -108,44 +123,43 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		this.notes = "";
 		this.removed = false;
 		
-		this.score = compute_score(this.apa_no_html, this.user_input); // order has to be database version, user version
-		this.letter_match = compute_letter_match(this.apa_no_html, this.user_input);
-		this.letter_match_percentage = compute_letter_match_percentage(this.apa_no_html, this.user_input);
-		if (this.score > good_match_theshold) {
-		    this.good_match = true;
-		    input_text_obj[this.user_input].update_input('done','good');
-		} else {
-		    this.good_match = false;
-		    input_text_obj[this.user_input].update_input('done','bad');
-		}
-		
-
 		this.update_ref = function() {
 			// update score and coloring
 			if (this.removed) {
-			    console.log( '*UPDAINTNG REMOVED THING: '+this.user_input+' Which is bad because it shouldnt be in the table anymore');
+			    console.log( '*UPDAtING REMOVED THING: '+this.user_input+' Which is bad because it shouldnt be in the table anymore');
 			    return;
 			}
 			this.score = compute_score(this.apa_no_html, this.user_input); // order has to be database version, user version 
 			this.letter_match = compute_letter_match(this.apa_no_html, this.user_input);
-		    this.letter_match_percentage = compute_letter_match_percentage(this.apa_no_html, this.user_input);
+		    this.letter_match_percentage = compute_letter_match_percentage(this.user_input, this.apa_no_html); // order has to be user, database
 		    if (verbose) {console.log( 'update ref: '+this.user_input);}
             if (this.score > good_match_theshold) {
                 this.good_match = true;
-		        input_text_obj[this.user_input].update_input('done','good');
+		        input_text_obj[this.user_input].update_input('done','correct');
             } else {
-                this.good_match = false;
-                input_text_obj[this.user_input].update_input('done','bad');
+                if (this.letter_match_percentage > good_match_theshold) {
+                    this.good_match = true;
+                    input_text_obj[this.user_input].update_input('done','probable');
+                } else {
+                    this.good_match = false;
+                    input_text_obj[this.user_input].update_input('done','wrong');
+                }
             }
 
             try {
                 // update the notes 
-                const c  = ['tomato','black'];
-                var temp_stringToShow = '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
-                temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
-                temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>";
-                temp_stringToShow += 'search status='+input_text_obj[this.user_input].search_status;
-                temp_stringToShow += '<br>match status='+input_text_obj[this.user_input].match_status;
+                const c  = ['tomato','black'];                
+                var temp_stringToShow = "";
+                if (input_text_obj[this.user_input].search_status == "done") {
+                    if (input_text_obj[this.user_input].match_status != 'correct') {
+                        temp_stringToShow += '<div style="color:' + cc[input_text_obj[this.user_input].match_status]  + ';">' + input_text_obj[this.user_input].match_status+'</div>';
+                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
+                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
+                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
+                    }
+                } else {
+                    temp_stringToShow = 'search status='+input_text_obj[this.user_input].search_status;
+                }
                 this.notes = temp_stringToShow;
 
                 // update html
@@ -243,7 +257,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 				    // if it's not in the database
 					if (duplicate_input_text.indexOf(input_string) < 0) {			
 						// only show it if it's not a duplicate row
-		                input_text_obj[input_string].update_input('done','bad');
+		                input_text_obj[input_string].update_input('done','wrong');
 					}
 					// question: if it is a duplicate row, what gets shown?
 					numRowsCompleted++;
@@ -264,6 +278,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 				if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
 					// create new reference
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
+					reference_obj[myJSON.data[0].DOI].update_ref;
 					try_to_combine_with_previous_rows(reference_obj[myJSON.data[0].DOI]);
 					to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
 					parse_JSON_for_authors(myJSON.data[0]); 
@@ -292,7 +307,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 			} else if (err == 'Error: This format is not supported or recognized') { 
 			    // if it found a doi that is correct, but the citation can't be found by Cite, give up.
                 console.log( 'time to give up')
-                input_text_obj[input_string].update_input('done','bad');
+                input_text_obj[input_string].update_input('done','wrong');
                 numRowsCompleted++;
 			} else {
 				console.log(err);
@@ -324,7 +339,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
                     remove_row(to_do_list_input_string[i]);
                     pagelog('removed', to_do_list_input_string[i]);
 
-                    if (input_text_obj[target_string].match_status !== 'good') {
+                    if (input_text_obj[target_string].match_status !== 'correct') {
                         console.log("remove: "+ target_string);
                         if (duplicate_input_text.includes(target_string) == false) {
                             duplicate_input_text.push(target_string);
@@ -367,14 +382,26 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
         }
 	    // dfd (?)
 	    // it should check whether the one that's being removed had a doi. if it did, it should remove that one's reference object (or earlier, I should not create it)
-	    // and should it numRowsWithDOIsTotal--;
+	    // and should it numRowsWithUserDOIsTotal--;
+	    //  actually mabye the thing above is done? I'm not sure this ever happens because maybe it never gets created? I should check whether it happens.
+	    
+	    // dfd the counting still gets out of whack (e.g., 44/43 completed)
+	    
+	    // dfd to test:
+	    // what about references without dois that are split up? 
+	    // should some of the ones marked wrong be marked probable instead? 
+	    // why isn't it finding all of the duplicate rows? 
+	    // maybe if it was really smart it would look for author names and year and page numbers, or something? 
+	    // if it finds two rows that have dois, will it try to combine them? If they're not user-entered dois, it should, bc two substrings could both return the wrong dois
 
-//         console.log('removing arrow='+input_string);
+	    
+
+//         console.log('removing a row='+input_string);
 //         console.log('already removed='+ input_text_obj[input_string].removed);
 
 		try {
-            if (input_text_obj[input_string].match_status == "good") {
-                console.log('removing a "good" row');
+            if (input_text_obj[input_string].match_status == "correct") {
+                console.log('removing a "correct" row');
             }
 
 			var row_to_remove = document.getElementById(input_string).rowIndex;
@@ -383,6 +410,10 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
             to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
             
             input_text_obj[input_string].removed = true;
+            
+            if (input_text_obj[input_string].doi != '') {
+                console.log( 'removing row with a doi in it: '+ input_text_obj[input_string].doi);
+            }
             
 			numRowsTotal--;
 			updateProgress();
@@ -415,9 +446,9 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
             // don't try to combine with rows that are already settled. 
             // dfd: I think this should be changed. If the second one has a bad doi, maybe it should still try to combine them. 
             if (typeof input_text_obj[previousRow_input_string] !== 'undefined' && input_text_obj[previousRow_input_string] !== null) {	// this line seems unnecessary, no??
-                if (input_text_obj[previousRow_input_string].match_status == "good") {
+                if (input_text_obj[previousRow_input_string].match_status == "correct") {
                     if (verbose) {
-                        console.log( "tried to combine, but this one already had status [good], so returned instead: ");
+                        console.log( "tried to combine, but this one already had status [correct], so returned instead: ");
                         console.log( previousRow_input_string)
                     }
                     return;
@@ -442,12 +473,12 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
         try {
 //             console.log( 'in combine rows, match status='+input_text_obj[input_reference_obj.user_input].match_status)
         
-            if (input_text_obj[input_reference_obj.user_input].match_status == "good" && input_text_obj[input_string].match_status == 'good') {
+            if (input_text_obj[input_reference_obj.user_input].match_status == "correct" && input_text_obj[input_string].match_status == 'correct') {
                 // if both have good dois already
                 if (verbose) {console.log(' they are both solid gold'); }
                 if (input_text_obj[input_string].doi !== input_reference_obj.doi) {
                     // if the two dois are not the same
-                    console.log( 'tried to combine two "good" rows with different dois. returning.')
+                    console.log( 'tried to combine two "correct" rows with different dois. returning.')
                     return false;
                 }
             }
@@ -480,7 +511,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
             if (shouldCombine == true || combine_NoMatterWhat == true) {
                 remove_row(input_string);
                 change_user_input(input_reference_obj, bestcombo);
-                pagelog('combined',bestcombo)
+//                 pagelog('combined',bestcombo)
                 return true;
             } else {
                 return false;
@@ -537,13 +568,6 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
             comboScore = compute_letter_match(comboText, apa_goal);
             reverse_comboScore = compute_letter_match(reverse_comboText, apa_goal);
 
-//             aScore = compute_letter_match_percentage(aText, apa_goal);
-//             bScore = compute_letter_match_percentage(bText, apa_goal);
-//             comboScore = compute_letter_match_percentage(comboText, apa_goal);
-//             reverse_comboScore = compute_letter_match_percentage(reverse_comboText, apa_goal);
-        
-    // 		console.log( compute_letter_match_percentage(aText, bText) + " ? " + compute_letter_match_percentage(bText, aText));
-
             if (verbose) {
                 console.log( '--running best combination--');
                 console.log('a = ['+input_text_obj[aText].search_status+', '+input_text_obj[aText].match_status+'] ' + aText)
@@ -557,7 +581,6 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
             console.log('aText was='+aText);
             console.log('bText was='+bText);
         }
-//         dfd general qn: if it finds two rows that have dois, will it try to combine them? If they're not user-entered dois, it should, bc two substrings could both return the wrong dois
 
 		maxScore = Math.max(aScore,bScore,comboScore,reverse_comboScore);
 		if (maxScore == comboScore) {
@@ -583,14 +606,18 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		// return a score
 		if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	// with typeof, put undefined in quotes
 			// if there was a valid DOI in the user input, return a score of 100
-			if (userDOI[0] == databaseDOI[0]) { // if the user doi was correct
-				return 100; 
+			if (userDOI[0] == databaseDOI[0]) { 
+			    // if a doi was found, it returns percentage. why? basically, if it's part of a reference with the right doi, this 
+			    // will be high. but if it's the wrong reference, it'll be low. 
+			    return compute_letter_match_percentage(userString,databaseString);
 			} else {
-				// if the user doi wasn't correct return the match strength without removing the doi (which is what would happen below)
+				// if the user doi wasn't the same as the database one (is this possible?!) return the match strength without removing the doi
 				return compute_letter_match(databaseString,userString);
+				console.log( 'THIS HAPPENED BUT I THOUGHT IT WAS NOT POSSIBLE');
 			}
 		} else {
-			// if there's not a valid doi in the user input, remove the doi from the database string for the sake of comparison. 
+			// if there is not a valid doi in the user input, remove the doi from the database string for the sake of comparison. 
+			// this does not use percentage because without a doi, I can't assume either side is good 
 			databaseString = remove_doi_from_string(databaseString, databaseDOI);
 			return compute_letter_match(databaseString,userString);
 		}
@@ -603,7 +630,6 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 	function compute_letter_match_percentage(a, b) {
         // This returns how good a match it is in terms of doing the best it could. 
         // In other words, the amount of letter match divided by the total possible amount of letter match. 
-         
         
 		var tempMatch = compute_letter_match(a, b);
 		var maxPossible = a.length / b.length;
@@ -861,7 +887,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 		input_text_obj = [];
 		numRowsCompleted = 0;
 		numRowsTotal = 0;
-		numRowsWithDOIsTotal = 0;
+		numRowsWithUserDOIsTotal = 0;
 		startTime = Date.now();
 		duplicate_input_text = [];
 
@@ -875,14 +901,14 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 	}
 	
 	function updateProgress() {
-//     	console.log('update progress '+numRowsCompleted+'/'+numRowsWithDOIsTotal+'/'+numRowsTotal);
-		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numRowsCompleted + ' of ' + numRowsTotal + "(" + numRowsWithDOIsTotal + ")" + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
+//     	console.log('update progress '+numRowsCompleted+'/'+numRowsWithUserDOIsTotal+'/'+numRowsTotal);
+		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numRowsCompleted + ' of ' + numRowsTotal + "(" + numRowsWithUserDOIsTotal + ")" + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
 		if (numRowsCompleted == numRowsTotal) {
 			console.log( 'done');
 			document.getElementById('progressHeader').innerHTML = "Done";
-		} else if (numRowsCompleted == numRowsWithDOIsTotal) {
+		} else if (numRowsCompleted == numRowsWithUserDOIsTotal) {
             console.log( 'starting non-doi rows')
-			numRowsWithDOIsTotal = -1;
+			numRowsWithUserDOIsTotal = -1;
 			remove_duplicate_rows();
             getAllUrls('not_found_yet');
         }
