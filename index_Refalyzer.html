@@ -399,19 +399,16 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 
 	function remove_duplicate_rows() {
 	    // this is called once, after user dois have been processed
-
-	// dfd: this seems like it removes rows and then also increments the counter (i++) which means it'll end up skipping 
-	// something every time it removes? Like, wouldn't two duplicate lines in a row be a problem? or if hte last line is a duplicate?
-	
-	// change this so that it loops though twice
-	// 1. for each item, first it checks if it's on the remove list, then it checks whether it matches any other row
-	// 2. after finding all the removable rows, it removes them all. 
+        // it's a 2-step process
+        // 1. for each item, first it checks if it's on the remove list, then it checks whether it matches any other row
+        // 2. after finding all the removable rows, it removes them all. 
 	
 		var i = 0;
 		var target = 0;
 		var target_string = '';
 		var tempScore = 0;
 		var remove_these_row_numbers = [];
+		var target_has_been_found = false;
 		
         for (target = 0; target < to_do_list_input_string.length; target++) {
             target_string = to_do_list_input_string[target];
@@ -422,11 +419,12 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                         duplicate_input_text.push(target_string);
                     }
                     remove_these_row_numbers.push(target);
+                    target_has_been_found = true dfd
                     break; // exit this loop
                 }
             }
             if (remove_these_row_numbers.includes(target) == true) {
-                continue; // skip the rest of this loop, but start with the next value (i.e., target+1). Because this target is already labelled a duplicate.
+                continue; // skip the rest of this loop and start with the next value (i.e., target+1). Because this target is already labelled a duplicate.
             } else {           
                 for (i = target + 1; i < to_do_list_input_string.length; i++) {
                     tempScore = compute_letter_match(target_string, to_do_list_input_string[i]);
@@ -466,16 +464,14 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	function remove_row(input_string) {
 		// remove a row that is no longer needed
 		
-		// dfd fix this up, see if the whole numRowsTotal thing can be gotten rid of and replaced with a row count for the table, and maybe combine BEFOre dealing with doi rows?
+		// dfd see if the whole numRowsTotal thing can be gotten rid of and replaced with a row count for the table, and maybe combine BEFOre dealing with doi rows?
 
         if (input_text_obj[input_string].removed) {
-            // if it's already removed, don't remove it. But, do check if it's still in the to do list, 
-            // and if it is, remove it. Exact duplicate rows need to be removed from the to do list more than once. 
-//             console.log( "remove_row called when .removed == true for: " + input_string);
+            // if it's already removed, don't remove it. 
             if (to_do_list_input_string.indexOf(input_string) >= 0) {
+                // But before returning, check if it's still in the to do list, and if it is, remove it. (This can happen because exact duplicate rows need to be removed from the to do list more than once.)
                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
             }
-//             console.log( document.getElementById(input_string).rowIndex) dfd
             return;
         } else {
 
