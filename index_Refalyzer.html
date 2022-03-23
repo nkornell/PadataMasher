@@ -13,10 +13,12 @@ it search all the doi rows before returning to the noners.) Not sure if this wou
 
 <!-- 
 dfd To do: 
+make reference_obj a propoerty of input_obj(?)
 
-if it finds dois for two rows, will it try to combine them? If they're not user-entered dois, it should.
+if it finds dois for two adjacent-ish rows, will it try to combine them? If they're not user-entered dois, it should.
 There are 4 possiblities, the first one is right, the 2nd is right, both are wrong but the combo is right, or nothing is right. 
 
+maybe get rid of duplicate_input_text and instead have each line's object know if it's a duplicate or not?
 
 the counting still gets out of whack (e.g., 44/43 completed)
 
@@ -154,6 +156,11 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		    // possible match status values
 		    //    unknown, wrong, probable, correct
 		    
+            if (this.removed) {
+                console.log( 'update_input called for .removed object (returned instead): '+this.user_input);
+                return;
+            }
+
 		    if (this.search_status == 'done') {
 // 		        console.log( '* error: called update input for a "done" row')
 		    } else {
@@ -184,7 +191,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		    try {
     			document.getElementById('notes_'+this.user_input).innerHTML = temp_search_status_to_show + temp_match_status_to_show; 
     		} catch(err) {
-    		    console.log( 'did not update notes for '+this.user_input);
+    		    console.log( '*error, did not update notes because getElementById did not find: '+this.user_input);
     		}
 		}
 	}
@@ -202,7 +209,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		this.update_ref = function() {
 			// update score and coloring
 			if (this.removed) {
-			    console.log( '*UPDAtING REMOVED THING: '+this.user_input+' Which is bad because it shouldnt be in the table anymore');
+                console.log( 'update_ref called for .removed object (returned instead): '+this.user_input);
 			    return;
 			}
 			this.score = compute_score(this.apa_no_html, this.user_input); // order has to be database version, user version 
@@ -334,8 +341,9 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 					if (duplicate_input_text.indexOf(input_string) < 0) {			
 						// only show it if it's not a duplicate row
 		                input_text_obj[input_string].update_input('done','wrong');
+		                console.log( '** 859 THIS IS POSSIBLE?')
 					} else {
-					    console.log( "i didn't' think THIS HAPPENING WAS POSSIBLE");
+					    console.log( "** 823 i didn't' think THIS HAPPENING WAS POSSIBLE");
 					}
 				} else {
 					// if a doi was found, run this thing again but with the doi in the parameter, so Cite will work.
@@ -390,6 +398,8 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	}	
 
 	function remove_duplicate_rows() {
+	    // this is called once, after user dois have been processed
+
 	// dfd: this seems like it removes rows and then also increments the counter (i++) which means it'll end up skipping 
 	// something every time it removes? Like, wouldn't two duplicate lines in a row be a problem? or if hte last line is a duplicate?
 	
@@ -397,8 +407,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	// 1. for each item, first it checks if it's on the remove list, then it checks whether it matches any other row
 	// 2. after finding all the removable rows, it removes them all. 
 	
-	    // this is called once, after user dois have been processed
-// 	    console.log( 'remove duplicate_rows');
 		var i = 0;
 		var target = 0;
 		var target_string = '';
@@ -406,7 +414,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		var remove_these_row_numbers = [];
 		
         for (target = 0; target < to_do_list_input_string.length; target++) {
-             target_string = to_do_list_input_string[target];
+            target_string = to_do_list_input_string[target];
             for (i = 0; i < duplicate_input_text.length-1; i++) {
                 tempScore = compute_letter_match(target_string, duplicate_input_text[i]);
                 if (tempScore > 90) { // if it's the same as a previous row
@@ -438,67 +446,18 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 }
             }
         }
-        console.log('--removing '+duplicate_input_text.length+' duplicate rows--');
+        console.log('--removing '+duplicate_input_text.length+ '(='+remove_these_row_numbers.length +') duplicate rows--');
         
         for (i = to_do_list_input_string.length - 1; i >= 0; i--) {
             if (duplicate_input_text.includes(to_do_list_input_string[i])) {
                 pagelog('[removing] ' + to_do_list_input_string[i])
                 remove_row(to_do_list_input_string[i]);
-            } else {
-                pagelog('] ' + to_do_list_input_string[i])
-
-                // break;       //<-- Uncomment  if only the first term has to be removed
+//             } else {
+//                 pagelog('] ' + to_do_list_input_string[i])
             }
-        }
-        
-//         dfd keep testing htis. can I get rid of remove_these_row_numbers? does it remove stuff? actually, I didn't even make it remove stuff yet I don't think
-
-			
-// 		// remove it if it's been identified as a duplicate for the first time (remove both)
-// 	    // this goes through all items (targets) and compares them to all the items that follow them in the to_do_list array. 
-// 	    // if a match is found, it removes both
-//         for (target = 0; target < to_do_list_input_string.length; target++) {
-//             target_string = to_do_list_input_string[target];
-//             for (i = target + 1; i < to_do_list_input_string.length; i++) {
-//                 tempScore = compute_letter_match(target_string, to_do_list_input_string[i]);
-//                 if (tempScore > 90) { // if it's the same as a previous row
-// //                     console.log("remove: "+ to_do_list_input_string[i]);
-//                     if (duplicate_input_text.includes(to_do_list_input_string[i]) == false) {
-//                       duplicate_input_text.push(to_do_list_input_string[i]);
-//                     }
-//                     pagelog('removed (1/2):', to_do_list_input_string[i]);
-//                     remove_row(to_do_list_input_string[i]);
-// 
-//                     if (input_text_obj[target_string].match_status !== 'correct') {
-// //                         console.log("remove: "+ target_string);
-//                         if (duplicate_input_text.includes(target_string) == false) {
-//                             duplicate_input_text.push(target_string);
-//                         }
-//                         remove_row(target_string);
-//                         pagelog('removed (2/2):', target_string);
-//                     }
-//                 }
-//             }
-//         }
-// 
-// 	    // remove it if it's been found and removed before
-// 	    // this goes through all items (targets) and compares them to stuff that's been identified as a duplicate string. 
-// 	    // if a match is found, it gets rid of the target (the other has already been removed)
-//         for (target = 0; target < to_do_list_input_string.length; target++) {
-//             target_string = to_do_list_input_string[target];
-//             for (i = 0; i < duplicate_input_text.length-1; i++) {
-//                 tempScore = compute_letter_match(target_string, duplicate_input_text[i]);
-//                 if (tempScore > 90) { // if it's the same as a previous row
-// //                     console.log('removing single duplicate :'+target_string);
-//                     if (duplicate_input_text.includes(target_string) == false) {
-//                         duplicate_input_text.push(target_string);
-//                     }
-//                     remove_row(target_string);
-//                     pagelog('removed (1/1):', target_string);
-//                 }
-//             }
-//         }        
+        }     
 	}
+	
 	
 	function pagelog(instring) {
         document.getElementById("outputText").innerHTML += instring + '<br><br>';
@@ -506,39 +465,45 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	
 	function remove_row(input_string) {
 		// remove a row that is no longer needed
+		
+		// dfd fix this up, see if the whole numRowsTotal thing can be gotten rid of and replaced with a row count for the table, and maybe combine BEFOre dealing with doi rows?
 
         if (input_text_obj[input_string].removed) {
-           return;
+            // if it's already removed, don't remove it. But, do check if it's still in the to do list, 
+            // and if it is, remove it. Exact duplicate rows need to be removed from the to do list more than once. 
+//             console.log( "remove_row called when .removed == true for: " + input_string);
+            if (to_do_list_input_string.indexOf(input_string) >= 0) {
+                to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
+            }
+//             console.log( document.getElementById(input_string).rowIndex) dfd
+            return;
+        } else {
+
+            try {
+                if (input_text_obj[input_string].match_status == "correct") {
+                    console.log('removing a "correct" row');
+                }
+
+                var row_to_remove = document.getElementById(input_string).rowIndex;
+                document.getElementById("article_table").deleteRow(row_to_remove);
+
+                to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
+        
+                input_text_obj[input_string].removed = true;
+        
+                if (input_text_obj[input_string].doi != '') {
+                    console.log( 'removing row with a doi in it: '+ input_text_obj[input_string].doi);
+                }
+            }
+            catch(err) {
+                console.log( '*error in remove_row. input_string='+ input_string + " [error next line]");
+                console.log( err);
+    // 			console.log( document.getElementById("article_table").innerHTML);
+            }
         }
-	    // dfd (?)
-	    // it should check whether the one that's being removed had a doi. if it did, it should remove that one's reference object (or earlier, I should not create it)
-	    // and should it numRowsWithUserDOIsTotal--;
-	    //  actually mabye the thing above is done? I'm not sure this ever happens because maybe it never gets created? I should check whether it happens.    
-
-		try {
-            if (input_text_obj[input_string].match_status == "correct") {
-                console.log('removing a "correct" row');
-            }
-
-			var row_to_remove = document.getElementById(input_string).rowIndex;
-			document.getElementById("article_table").deleteRow(row_to_remove);
-
-            to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
-            
-            input_text_obj[input_string].removed = true;
-            
-            if (input_text_obj[input_string].doi != '') {
-                console.log( 'removing row with a doi in it: '+ input_text_obj[input_string].doi);
-            }
-            
-			numRowsTotal--;
-			updateProgress();
-		}
-		catch(err) {
-			console.log( '*error in remove_row, input_string='+ input_string);
-			console.log( err);
-// 			console.log( document.getElementById("article_table").innerHTML);
-		}
+        
+        numRowsTotal--;
+        updateProgress();
 	}
 
 	function try_to_combine_with_previous_rows(input_reference_obj) {
@@ -787,7 +752,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 				
 		// figure out author stuff (for author table)
 		if (typeof input_json.author === 'undefined') { // if crossref didn't find it, ignore it 
-			console.log('no authors found ' + input_json.DOI);
+// 			console.log('no authors found ' + input_json.DOI);
 		} else {
 			for (a = 0; a < input_json.author.length; a++) {
 			    if (input_json.author[a].family !== undefined && input_json.author[a].family !== null) {
@@ -872,8 +837,8 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             // dfd the two things below: should I also call remove row? 
             if (tempDOIsFoundSoFar.includes(tempDOI)) { // if the doi has already been found in the user input
                 console.log( 'duplicate doi found in user input. not added: ' + tempDOI);
-            } else if (typeof input_text_obj[urlSuffix[i]] !== 'undefined') {
-                console.log( "existinginsd thignsds. not added: " + urlSuffix[i]); 
+//             } else if (typeof input_text_obj[urlSuffix[i]] !== 'undefined') { //dfdf
+//                 console.log( "existinginsd thignsds. not added: " + urlSuffix[i]); 
             } else {
                 // if there's no doi or the doi is new, use it. 
                 input_text_obj[urlSuffix[i]] = new Input_text_object(urlSuffix[i], tempDOI, tempDOItype);
@@ -893,7 +858,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     	articleTableText += '<th style="width:20%">Notes</th></tr>';
     	
 		for (let key in input_text_obj) {
-		// this loops through all of to_do_list_input_text_obj
+		// this loops through all of input_text_obj
 			var s = input_text_obj[key].user_input;
 			articleTableText += "<tr id='"+s+"'>";
 			articleTableText += "<td id='inputText_"+ s +"'>"+ s +"</td>";
@@ -1051,20 +1016,17 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
 
-Importance of the kind of cue for judgments of learning (JOL) and the delayed-JOL effect.
+DELAYED JUDGMENTS IN SOURCE MONITORING 53
 
-Meiser, T., Sattler, C., & Von Hecker, U. (2007). Metacognitive inferences in source memory
+Kenny, D. A., Korchmaros, J. D., & Bolger, N. (2003). Lower level mediation in multilevel
 
-judgements: The role of perceived differences in item recognition. Quarterly Journal of
+models. Psychological Methods, 8, 115–128. https://doi.org/10.1037/1082-989X.8.2.115
 
-Experimental Psychology, 60, 1015–1040. https://doi.org/10.1080/17470210600875215 Metcalfe, J. (2009). Metacognitive judgments and control of study. Current Directions in
+DELAYED JUDGMENTS IN SOURCE MONITORING 57
 
-Psychological Science, 18, 159-163. https://doi.org/10.1111/j.1467-8721.2009.01628.x 
+Kimball, D. R., & Metcalfe, J. (2003). Delaying judgments of learning affects memory, not metamemory. Memory & Cognition, 31, 918–929. https://doi.org/10.3758/BF03196445
 
-
-Metacognitive Judgments and Control of Study
-
-Psychological Science, 18, 159-163. https://doi.org/10.1111/j.1467-8721.2009.01628.x 
+DELAYED JUDGMENTS IN SOURCE MONITORING 57
 
 muddy 8ug39hurjgfioeasdofhjg test it with something it can't find
 
@@ -1232,6 +1194,7 @@ DELAYED JUDGMENTS IN SOURCE MONITORING 56
 <p>https://doi.org/10.1080/09658211.2019.1566928
 <p>Mitchum, A. L., Kelley, C. M., & Fox, M. C. (2016). When asking the question changes the
 <p>ultimate answer: Metamemory judgments change memory. Journal of Experimental Psychology: General, 145, 200–219. http://doi.org/10.1037/a0039923
+<!-- 
 <p>
 <p>DELAYED JUDGMENTS IN SOURCE MONITORING 60
 <p>Mueller, M. L., & Dunlosky, J. (2017). How beliefs can impact judgments of learning: Evaluating analytic processing theory with beliefs about fluency. Journal of Memory and Language, 93, 245–258. https://doi.org/10.1016/j.jml.2016.10.008
@@ -1298,3 +1261,4 @@ DELAYED JUDGMENTS IN SOURCE MONITORING 56
 <p>Yang, C., Potts, R., & Shanks, D. R. (2017). Metacognitive unawareness of the errorful generation benefit and its effects on self-regulated learning. Journal of Experimental Psychology: Learning, Memory, and Cognition, 43, 1073–1092. https://doi.org/10.1037/xlm0000363
 <p>Zechmeister, E. B., & Shaughnessy, J. J. (1980). When you know that you know and when you think that you know but you don’t. Bulletin of the Psychonomic Society, 15, 41–44. https://doi.org/10.3758/BF03329756
 <p>Zhang, Y., Pan, Z., Li, K., & Guo, Y. (2018). Self-serving bias in memories: Selectively forgetting the connection between negative information and the self. Experimental Psychology, 65, 236–244. http://dx.doi.org/10.1027/1618-3169/a000409
+ -->
