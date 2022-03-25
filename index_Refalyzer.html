@@ -22,11 +22,16 @@ maybe get rid of duplicate_input_text and instead have each line's object know i
 
 the counting still gets out of whack (e.g., 44/43 completed)
 
-Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
+Just looking at the output, it seems like maybe some of the ones marked wrong are actually 
+right. Should they be marked probable instead? 
 
-why isn't it finding all of the duplicate rows? 
+maybe get rid of duplicate rows BEFOre dealing with doi rows (because some of the duplicates are getting used in references)?
 
-maybe if it was really smart it would specifically look for author names and year and page numbers, or something? Or maybe not... those can be missing or wrong too. 
+maybe if it was really smart it would specifically look for author names and year and page 
+numbers, or something? Or maybe not... those can be missing or wrong too. 
+
+instead of re-building the table, have it update the table. to do this, it should check 
+whether a row for the author exists. Then either add it, or change the citation count and co-authors
 
 Look for cases where it's the same author but the name is different (e.g., Bjork, E. L. and Bjork, 
 Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring case
@@ -122,7 +127,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	var articleTableText = "";
 	var startTime = 0;
 	var numRowsCompleted = 0;
-	var numRowsTotal = 0;
 	var numRowsWithUserDOIsTotal = 0;
 	var duplicate_input_text = [];
 	var doi_pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/gi; // doi_pattern is used to find a DOI within the input string. note: I added in the g, which makes it return all of the DOIs instead of just 1
@@ -161,13 +165,8 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 return;
             }
 
-		    if (this.search_status == 'done') {
-// 		        console.log( '* error: called update input for a "done" row')
-		    } else {
-                if (input_search_status == 'done') {
-    				numRowsCompleted++; // this only happens the first time it's marked as done
-//     				console.log( '[done] '+this.user_input)
-                }
+		    if (this.search_status != 'done' && input_search_status == 'done') {
+                numRowsCompleted++; // this only happens the first time it's marked as done
 		    }
 		    
 		    this.search_status = input_search_status;
@@ -363,13 +362,13 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 					// create new reference
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
 					reference_obj[myJSON.data[0].DOI].update_ref();
-					try_to_combine_with_previous_rows(reference_obj[myJSON.data[0].DOI]);
+					try_to_combine_with_previous_row(reference_obj[myJSON.data[0].DOI]);
 					to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
 					parse_JSON_for_authors(myJSON.data[0]); 
 				} else { 
 					// if it finds a doi that's been found before.
-// 					console.log( 'combining a pair of rows that have the same doi, doi = '+myJSON.data[0].DOI);
-					combine_rows(input_string, reference_obj[myJSON.data[0].DOI], true);
+					console.log( 'combining a pair of rows that have the same doi, doi = '+myJSON.data[0].DOI);
+					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); // maybe call update_ref before calling combine?
 					// note: I used to call the following line here
 //     				reference_obj[myJSON.data[0].DOI].update_ref(); // removed.. put back?
 				}
@@ -392,6 +391,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 console.log( 'time to give up')
                 input_text_obj[input_string].update_input('done','wrong');
 			} else {
+			    console.log( '*error in get one url:');
 				console.log(err);
 			}
 		}
@@ -407,10 +407,11 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		var target = 0;
 		var target_string = '';
 		var tempScore = 0;
-		var remove_these_row_numbers = [];
 		var target_has_been_found = false;
+		var foof = 0;
 		
         for (target = 0; target < to_do_list_input_string.length; target++) {
+            target_has_been_found = false;
             target_string = to_do_list_input_string[target];
             for (i = 0; i < duplicate_input_text.length-1; i++) {
                 tempScore = compute_letter_match(target_string, duplicate_input_text[i]);
@@ -418,12 +419,11 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                     if (duplicate_input_text.includes(target_string) == false) {
                         duplicate_input_text.push(target_string);
                     }
-                    remove_these_row_numbers.push(target);
-                    target_has_been_found = true dfd
+                    target_has_been_found = true;
                     break; // exit this loop
                 }
             }
-            if (remove_these_row_numbers.includes(target) == true) {
+            if (target_has_been_found) {
                 continue; // skip the rest of this loop and start with the next value (i.e., target+1). Because this target is already labelled a duplicate.
             } else {           
                 for (i = target + 1; i < to_do_list_input_string.length; i++) {
@@ -432,40 +432,35 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                         if (duplicate_input_text.includes(to_do_list_input_string[i]) == false) {
                           duplicate_input_text.push(to_do_list_input_string[i]);
                         }
-                        remove_these_row_numbers.push(to_do_list_input_string[i]);
 
                         if (input_text_obj[target_string].match_status !== 'correct') {
                             if (duplicate_input_text.includes(target_string) == false) {
                                 duplicate_input_text.push(target_string);
                             }
-                            remove_these_row_numbers.push(target);
                         }
                     }   
                 }
             }
         }
-        console.log('--removing '+duplicate_input_text.length+ '(='+remove_these_row_numbers.length +') duplicate rows--');
         
         for (i = to_do_list_input_string.length - 1; i >= 0; i--) {
             if (duplicate_input_text.includes(to_do_list_input_string[i])) {
                 pagelog('[removing] ' + to_do_list_input_string[i])
                 remove_row(to_do_list_input_string[i]);
-//             } else {
-//                 pagelog('] ' + to_do_list_input_string[i])
+                foof++;
             }
         }     
+        console.log('--removing '+foof+ ' duplicate rows--');
 	}
 	
 	
 	function pagelog(instring) {
-        document.getElementById("outputText").innerHTML += instring + '<br><br>';
+        document.getElementById("outputText").innerHTML += '<p>' +instring;
 	}
 	
 	function remove_row(input_string) {
 		// remove a row that is no longer needed
 		
-		// dfd see if the whole numRowsTotal thing can be gotten rid of and replaced with a row count for the table, and maybe combine BEFOre dealing with doi rows?
-
         if (input_text_obj[input_string].removed) {
             // if it's already removed, don't remove it. 
             if (to_do_list_input_string.indexOf(input_string) >= 0) {
@@ -498,18 +493,16 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             }
         }
         
-        numRowsTotal--;
         updateProgress();
 	}
 
-	function try_to_combine_with_previous_rows(input_reference_obj) {
+	function try_to_combine_with_previous_row(input_reference_obj) {
         // The way this is now, it works if you trust the DOI. But if the doi isn't trustworthy and the score is low,
         // it will need to be more sophisticated about comparing possible situations (e.g., it found 2 dois
         // but by combining them it get's a third doi that's better). And it should use:
 	
 	    if (document.getElementById(input_reference_obj.user_input) == null) {
-	        console.log( 'null found :(');
-	        console.log( 'the null was for '+input_reference_obj.user_input)
+	        console.log( '*null found for '+input_reference_obj.user_input)
 	        return;
 	    } else {
         	var previousRow_index = document.getElementById(input_reference_obj.user_input).rowIndex - 1;
@@ -521,11 +514,10 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         
         try {
             // don't try to combine with rows that are already settled. 
-            // dfd: I think this should be changed. If the second one has a bad doi, maybe it should still try to combine them. 
             if (typeof input_text_obj[previousRow_input_string] !== 'undefined' && input_text_obj[previousRow_input_string] !== null) {	// this line seems unnecessary, no??
                 if (input_text_obj[previousRow_input_string].match_status == "correct") {
                     if (verbose) {
-                        console.log( "tried to combine, but this one already had status [correct], so returned instead: ");
+                        console.log( "tried to combine this with previous, but the previous one already had status=correct, so returned instead. Previous: ");
                         console.log( previousRow_input_string)
                     }
                     return;
@@ -535,45 +527,54 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             console.log( "*error palm frond="+err);
         }
         
-        if (combine_rows(previousRow_input_string, input_reference_obj, false) == true) {
-            if (verbose) {console.log( '--combine happened--^');}
-            try_to_combine_with_previous_rows(input_reference_obj); // do it again recursively
+        if (combine_rows(previousRow_input_string, input_reference_obj) == true) { // get ride of the third parameter
+            try_to_combine_with_previous_row(input_reference_obj); // do it again recursively
             return;
         }
 	}
 
-	function combine_rows(input_string, input_reference_obj, combine_NoMatterWhat) {
+	function combine_rows(input_string, input_reference_obj) {
+// dfdf   
+// 1st, when calling combine rows, 
+// - get rid of that third parameter
+// 2nd, in try_to_combine_with_previous_row
+// - it should try to combine with rows above and below. 
+// 3rd, in combine_ ows, 
+// - it should not try to combine rows when when one has a status of searching
+// - it should know what to do when they have the same doi (combine them no matter what)
+// - when both rows that are being combined have a doi, it needs to learn to prioritize. I think right now it's just whichever it comes to first. 
+
 	    // This figures out the best combination and then, if appropriate, it merges the two rows and then deletes the extra one.
 	    // The one it keeps is the input reference obj.  
 	    
-	    
+        var shouldCombine = false;
+
         try {
 //             console.log( 'in combine rows, match status='+input_text_obj[input_reference_obj.user_input].match_status)
         
             if (input_text_obj[input_reference_obj.user_input].match_status == "correct" && input_text_obj[input_string].match_status == 'correct') {
                 // if both have good dois already
-                if (verbose) {console.log(' they are both solid gold'); }
                 if (input_text_obj[input_string].doi !== input_reference_obj.doi) {
                     // if the two dois are not the same
                     console.log( 'tried to combine two "correct" rows with different dois. returning.')
                     return false;
                 }
             }
+            
             if (input_text_obj[input_string].removed) {
                 if (verbose) {console.log( 'tried to combine with a row that has already been removed. returning.');}
                 return false;
             }
 
+            // if it finds the same reference twice, combine them
+            if (input_text_obj[input_string].doi == input_reference_obj.doi) {
+                shouldCombine = true;
+            }
         
             // assume input reference obj is correct (i.e., that's the apa string target)
             var bestcombo = best_combination(input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
-            var shouldCombine = false;
         
             // if the best match is the combo, combine them. 
-            if (verbose) {
-                console.log( 'best combo:')
-                console.log( bestcombo);
-            }
             if (input_reference_obj.user_input !== bestcombo) {
                 shouldCombine = true;
             }
@@ -585,10 +586,11 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 //             console.log( "shouldCombine="+shouldCombine)
         
             // if appropriate, remove the row
-            if (shouldCombine == true || combine_NoMatterWhat == true) {
+            if (shouldCombine == true) {
+                console.log( 'removing row in combine: '+input_string)
                 remove_row(input_string);
                 change_user_input(input_reference_obj, bestcombo);
-//                 pagelog('[combined] '+bestcombo+"<br>["+input_reference_obj.apa_no_html+"]");
+                pagelog('[combination] '+bestcombo+"<br>[should match] "+input_reference_obj.apa_no_html);
                 return true;
             } else {
                 return false;
@@ -690,7 +692,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 			} else {
 				// if the user doi wasn't the same as the database one (is this possible?!) return the match strength without removing the doi
 				return compute_letter_match(databaseString,userString);
-				console.log( 'THIS HAPPENED BUT I THOUGHT IT WAS NOT POSSIBLE');
+				console.log( '*THIS HAPPENED BUT I THOUGHT IT WAS NOT POSSIBLE');
 			}
 		} else {
 			// if there is not a valid doi in the user input, remove the doi from the database string for the sake of comparison. 
@@ -830,11 +832,8 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 tempDOI = '';
             }
             
-            // dfd the two things below: should I also call remove row? 
             if (tempDOIsFoundSoFar.includes(tempDOI)) { // if the doi has already been found in the user input
                 console.log( 'duplicate doi found in user input. not added: ' + tempDOI);
-//             } else if (typeof input_text_obj[urlSuffix[i]] !== 'undefined') { //dfdf
-//                 console.log( "existinginsd thignsds. not added: " + urlSuffix[i]); 
             } else {
                 // if there's no doi or the doi is new, use it. 
                 input_text_obj[urlSuffix[i]] = new Input_text_object(urlSuffix[i], tempDOI, tempDOItype);
@@ -861,7 +860,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 			articleTableText += "<td id='reference_" + s + "'></td>";
 			articleTableText += "<td id='notes_" + s + "'></td>";
 			articleTableText += "</tr>";
-			numRowsTotal++;
 		}
 
 		articleTableText += "</table>";
@@ -920,8 +918,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         } else {
             // if this is not the first time the table is drawn, update it
 	        build_author_table(); 
-	        // dfd instead of re-building the table, have it update the table. 
-	        // to do this, it should check whether a row for the author exists. Then either add it, or change the citation count and co-authors
         }
 	}
 	
@@ -959,14 +955,12 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		x.style.display = "flex";
 	}
 	
-// 	dfd figure out why it's deleting the first part of references whent hey're split into different lines (if it still does that)
 	function start() {
 		author_obj = [];
 		reference_obj = [];
 		to_do_list_input_string = [];
 		input_text_obj = [];
 		numRowsCompleted = 0;
-		numRowsTotal = 0;
 		numRowsWithUserDOIsTotal = 0;
 		startTime = Date.now();
 		duplicate_input_text = [];
@@ -980,14 +974,15 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		updateProgress();
 	}
 	
+	
 	function updateProgress() {
-//     	console.log('update progress '+numRowsCompleted+'/'+numRowsWithUserDOIsTotal+'/'+numRowsTotal);
+        var numRowsTotal = document.getElementById('article_table').rows.length - 1;
 		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numRowsCompleted + ' of ' + numRowsTotal + "(" + numRowsWithUserDOIsTotal + ")" + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
+
 		if (numRowsCompleted == numRowsTotal) {
 			console.log( 'done');
 			document.getElementById('progressHeader').innerHTML = "Done";
 		} else if (numRowsCompleted == numRowsWithUserDOIsTotal) {
-//             console.log( 'starting non-doi rows')
 			numRowsWithUserDOIsTotal = -1;
 			remove_duplicate_rows();
             getAllUrls('not_found_yet');
@@ -1001,6 +996,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 <body>
 
 	<!--  navigation menu -->
+<!-- 
 	<nav>
 		<ul>
 			<li><a href="index.html"><div class="navMenuItem"><img src="images/pm.png" > Masher Home</div></a></li>
@@ -1009,20 +1005,16 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 			<li style="float:right"><a href="index_About.html"><div class="navMenuItem">About</div></a></li>
 		</ul>
 	</nav>
+ -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
 
-DELAYED JUDGMENTS IN SOURCE MONITORING 53
 
 Kenny, D. A., Korchmaros, J. D., & Bolger, N. (2003). Lower level mediation in multilevel
 
 models. Psychological Methods, 8, 115–128. https://doi.org/10.1037/1082-989X.8.2.115
 
-DELAYED JUDGMENTS IN SOURCE MONITORING 57
-
-Kimball, D. R., & Metcalfe, J. (2003). Delaying judgments of learning affects memory, not metamemory. Memory & Cognition, 31, 918–929. https://doi.org/10.3758/BF03196445
-
-DELAYED JUDGMENTS IN SOURCE MONITORING 57
+Kimball, D. R., & Metcalfe, J. (2003). Delaying judgments of learning affects memory, not metamemory. Memory & Cognition, 31, 918–929. 
 
 muddy 8ug39hurjgfioeasdofhjg test it with something it can't find
 
@@ -1136,6 +1128,7 @@ metamemory: Analyzing the perceptual fluency hypothesis in the auditory modality
 <p>https://doi.org/10.1006/jmla.1996.0009
 <p>Kenny, D. A., Korchmaros, J. D., & Bolger, N. (2003). Lower level mediation in multilevel
 <p>models. Psychological Methods, 8, 115–128. https://doi.org/10.1037/1082-989X.8.2.115
+<!-- 
 <p>
 DELAYED JUDGMENTS IN SOURCE MONITORING 56
 <p>Kimball, D. R., & Metcalfe, J. (2003). Delaying judgments of learning affects memory, not metamemory. Memory & Cognition, 31, 918–929. https://doi.org/10.3758/BF03196445
@@ -1190,7 +1183,6 @@ DELAYED JUDGMENTS IN SOURCE MONITORING 56
 <p>https://doi.org/10.1080/09658211.2019.1566928
 <p>Mitchum, A. L., Kelley, C. M., & Fox, M. C. (2016). When asking the question changes the
 <p>ultimate answer: Metamemory judgments change memory. Journal of Experimental Psychology: General, 145, 200–219. http://doi.org/10.1037/a0039923
-<!-- 
 <p>
 <p>DELAYED JUDGMENTS IN SOURCE MONITORING 60
 <p>Mueller, M. L., & Dunlosky, J. (2017). How beliefs can impact judgments of learning: Evaluating analytic processing theory with beliefs about fluency. Journal of Memory and Language, 93, 245–258. https://doi.org/10.1016/j.jml.2016.10.008
