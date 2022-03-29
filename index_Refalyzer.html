@@ -171,7 +171,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		    if (this.search_status != 'done' && input_search_status == 'done') {
                 numRowsCompleted++; // this only happens the first time it's marked as done
 				to_do_list_input_string.splice(to_do_list_input_string.indexOf(this.user_input),1); // remove it from to do list because it's done
-                // this helps but I think it needs to splice somewhere else too?? dfd
 		    }
 		    
 		    this.search_status = input_search_status;
@@ -371,7 +370,12 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
 					reference_obj[myJSON.data[0].DOI].update_ref();
 					decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], -1);
-// 					decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], 1); //	dfd also call the line above with  +1
+					if (text_obj[reference_obj[myJSON.data[0].DOI].user_input].removed == false) {
+					    console.log( '+1;')
+    					decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], 1);
+    				} else {
+    				    console.log( 'not trying to convine +1 row because combo already happened.');
+    				}
 					to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
 					parse_JSON_for_authors(myJSON.data[0]); // dfd this assumes the json is still correct. Does the whole author thing adjust for removed rows? maybe it should happen at the end?
 				} else { 
@@ -489,7 +493,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 
                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
         
-                text_obj[input_string].removed = true;
+                text_obj[input_string].removed = true; // I think I did this rather than deleting it because get URL might be looking for it later. 
         
                 if (text_obj[input_string].doi != '') {
                     console.log( 'removing row with a doi in it: '+ text_obj[input_string].doi);
@@ -523,22 +527,24 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         // don't try it if it would go outside the table
     	if (otherRow_index < 1) { // it's 1 because row 0 is the table header
     	    return;
-    	} else if (otherRow_index > document.getElementById("article_table").rows.length) {
-    	    console.log( 'PAST END OF TABLE')
+    	} else if (otherRow_index >= document.getElementById("article_table").rows.length) {
+    	    console.log( 'PASSED END OF TABLE with shift='+shift +', '+input_reference_obj.user_input)
     	    return;
     	}
         
+//         console.log( otherRow_index+' ('+document.getElementById("article_table").rows.length+')')
+
         var otherRow_input_string = document.getElementById("article_table").rows[otherRow_index].cells[0].innerHTML;
         
         try {
             // don't try to combine with rows that are already settled. 
-            if (typeof text_obj[otherRow_input_string] !== 'undefined' && text_obj[otherRow_input_string] !== null) {	// this line seems unnecessary, but it can't hurt(?)
+//             if (typeof text_obj[otherRow_input_string] !== 'undefined' && text_obj[otherRow_input_string] !== null) {	// this line seems unnecessary, but it can't hurt(?)
                 // dfd put in something here that says, if they have the same doi, combine them
                 if (text_obj[otherRow_input_string].match_status == "correct") {
-                    console.log( "tried to combine this and a row with status=correct, so returned instead. other row: "+ otherRow_input_string)
+//                     console.log( "tried to combine this and a row with status=correct, so returned instead. other row: "+ otherRow_input_string)
                     return;
                 }
-            }
+//             }
         } catch(err) {
             console.log( "*error palm frond="+err);
         }
@@ -548,7 +554,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             decide_whether_to_combine_rows(input_reference_obj, shift); // do it again recursively
             return;
         } else {
-            console.log('decided false for: '+ otherRow_input_string);
+//             console.log('decided false for: '+ otherRow_input_string);
         }
 	}
 
@@ -566,10 +572,14 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         var shouldCombine = false;
 
         try {
-
+// dfd: Check whether it's done by looking at all the rows rather than based on counters. 
             if (text_obj[input_string].removed) {
                 return false;
             } 
+            if (text_obj[input_reference_obj.user_input].removed) {
+                console.log( '*tried to combine with a removed reference obj: '+input_reference_obj.user_input); // dfd this happend. that's bad. 
+                return false;                
+            }
 
             if (input_reference_obj.doi == text_obj[input_string].doi) {
                 // if it finds the same reference twice, combine them
@@ -577,7 +587,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 //                 console.log('dois match = ' + text_obj[input_string].doi);            
             } else if (text_obj[input_string].search_status == "searching") {
                 // if it's still searching for a row, return. it'll try again with that row later. 
-                console.log('search status = searching: ' + input_string + ' [returning in combine rows]');
+//                 console.log('search status = searching: ' + input_string + ' [returning in combine rows]');
                 return false; 
             }
             
@@ -589,7 +599,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 // if both have good dois already
                 if (text_obj[input_string].doi !== input_reference_obj.doi) {
                     // if the two dois are not the same
-                    console.log( 'tried to combine two "correct" rows with different dois. returning.')
+//                     console.log( 'tried to combine two "correct" rows with different dois. returning.')
                     return false;
                 }
             }
@@ -597,9 +607,9 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             // assume input reference obj is correct (i.e., that's the apa string target)
             if (text_obj[input_string].doi != '') {
                 if (typeof reference_obj[text_obj[input_string].doi] != "unknown") {
-                    console.log( '-3#*$%($*()) input obj score='+ reference_obj[text_obj[input_string].doi].score +' reference obj score='+input_reference_obj.score)
+                    console.log( 'in combine rows, both have dois. input obj score='+ reference_obj[text_obj[input_string].doi].score +' reference obj score='+input_reference_obj.score)
                     if (reference_obj[text_obj[input_string].doi].score > input_reference_obj.score) {
-                        console.log( 'should backweardsyl') //dfd
+                        console.log( 'should backweardsyl') //dfd make it treat the other one as the target
                     }
                 }
             }
@@ -645,7 +655,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         
             // change input obj
             // create a new version of the input obj (with a new array index), but then copy the old one into it. 
-            // I don't remember why I did this, or why I didn't do anything to the old object (e.g., delete it).
+            // I think I did this because get url is going to be expecting to return info to this thingy
             text_obj[to_string] = new Text_object(to_string, "",""); // not giving it a doi means it won't add 1 to numRows withDOIsTotal
             text_obj[to_string] = Object.assign({}, text_obj[from_obj.user_input]);
             text_obj[to_string].user_input = to_string;
@@ -660,7 +670,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             updateProgress();
         }
         catch(err) {
-            console.log( '*error in change user input:')
+            console.log( '*error in change user input, from = '+from_string+' to = '+to_string+' error:')
             console.log( err)
         }
 	}
@@ -764,10 +774,17 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	}
 
 	function change_elementIDs(from, to) {
-		document.getElementById(from).id = to;
-		document.getElementById('reference_'+from).id = 'reference_'+to;
-		document.getElementById('inputText_'+from).id = 'inputText_'+to;
-		document.getElementById('notes_'+from).id = 'notes_'+to;			
+	    try {
+            document.getElementById(from).id = to;
+            document.getElementById('reference_'+from).id = 'reference_'+to;
+            document.getElementById('inputText_'+from).id = 'inputText_'+to;
+            document.getElementById('notes_'+from).id = 'notes_'+to;			
+        } catch(err) {
+            console.log( '*error in change element IDs')
+            console.log( 'from = '+from)
+            console.log( 'to = '+to)
+            console.log( err)
+        }
 	}
 	
 	function remove_doi_from_string(input_string, input_doi) {
