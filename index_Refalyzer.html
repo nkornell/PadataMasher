@@ -133,7 +133,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	var duplicate_input_text = [];
 	var doi_pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/gi; // doi_pattern is used to find a DOI within the input string. note: I added in the g, which makes it return all of the DOIs instead of just 1
     const cc = [];
-    cc['probable'] = 'blue';
+    cc['fragment'] = 'blue';
     cc['wrong'] = 'red';
 
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
@@ -156,16 +156,15 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         
         to_do_list_input_string.push(input_userInput);
         
-        make it so the notes don't clear, so I can see what it goes through. and include both search and match
-        add an object property fragment. if it's a fragment, the doi is probably right. if it's not, then the doi is probably wrong. or mabye trust_doi
-        eventually, the reference object should be part of the text object
+//         add an object property fragment. if it's a fragment, the doi is probably right. if it's not, then the doi is probably wrong. or mabye trust_doi
+//         eventually, the reference object should be part of the text object
         
        
 		this.update_input = function(input_search_status, input_match_status, input_new_doi) {
 		    // possible search status values:
             //    not started, searching, incorrect doi entered; searching again, done // dfd add 'doi found' (but what if no doi is found?)
 		    // possible match status values
-		    //    unknown, wrong, probable, correct
+		    //    unknown, wrong, fragment, correct
 		    
             if (this.removed) {
                 console.log( 'update_input called for .removed object (returned instead): '+this.user_input);
@@ -195,11 +194,11 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		        var temp_search_status_to_show = this.search_status;
 
 		    }
-		    try {
-    			document.getElementById('notes_'+this.user_input).innerHTML = temp_search_status_to_show + temp_match_status_to_show; 
-    		} catch(err) {
-    		    console.log( '*error, did not update notes because getElementById did not find: '+this.user_input);
-    		}
+// 		    try {
+//     			document.getElementById('notes_'+this.user_input).innerHTML = temp_search_status_to_show + temp_match_status_to_show; 
+//     		} catch(err) {
+//     		    console.log( '*error, did not update notes because getElementById did not find: '+this.user_input);
+//     		}
 		}
 	}
 	
@@ -232,7 +231,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             } else {
                 if (this.letter_match_percentage > good_match_theshold) {
                     this.good_match = true;
-                    text_obj[this.user_input].update_input('done','probable');
+                    text_obj[this.user_input].update_input('done','fragment');
                 } else {
                     this.good_match = false;
                     text_obj[this.user_input].update_input('done','wrong');
@@ -243,17 +242,16 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 // update the notes 
                 const c  = ['tomato','black'];                
                 var temp_stringToShow = "";
-                if (text_obj[this.user_input].search_status == "done") {
-                    if (text_obj[this.user_input].match_status != 'correct') {
-                        temp_stringToShow += '<div style="color:' + cc[text_obj[this.user_input].match_status]  + ';">' + text_obj[this.user_input].match_status+'</div>';
-                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
-                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
-                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
-                    }
-                } else {
-                    temp_stringToShow = 'search status='+text_obj[this.user_input].search_status;
-                }
-                this.notes = temp_stringToShow;
+				if (text_obj[this.user_input].match_status != 'correct') {
+					temp_stringToShow += '<div style="color:' + cc[text_obj[this.user_input].match_status]  + ';">' + text_obj[this.user_input].match_status+'</div>';
+					temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
+					temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
+					temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
+	                this.notes = temp_stringToShow;
+				} else {
+					this.notes = '';
+				}
+//                 this.notes = this.notes + '<br>--<br>'+'match status='+text_obj[this.user_input].match_status+"<br>" + temp_stringToShow;
 
                 // update html
                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
@@ -526,6 +524,13 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	        return;
         }
         
+        if (text_obj[input_reference_obj.user_input].match_status == "wrong") {
+        	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input)
+        	return;
+        } else {
+        	console.log( ' d match status = ' + text_obj[input_reference_obj.user_input].match_status);
+        }
+        
        	var otherRow_index = input_reference_obj.table_row_number() + shift;
 
         // don't try it if it would go outside the table
@@ -536,8 +541,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     	    return;
     	}
         
-//         console.log( otherRow_index+' ('+document.getElementById("article_table").rows.length+')')
-
         var otherRow_input_string = document.getElementById("article_table").rows[otherRow_index].cells[0].innerHTML;
         
         try {
