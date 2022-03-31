@@ -121,7 +121,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 // Step 1: take care of all of the user-input DOIs. 
 // Step 2: take care of crossref DOIs. 
 
-	var verbose = false;
 	var author_obj = [];
 	var reference_obj = [];
 	var to_do_list_input_string = [];
@@ -135,6 +134,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     const cc = [];
     cc['fragment'] = 'blue';
     cc['wrong'] = 'red';
+    var good_match_threshold = 80;
 
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
 // 	var doi_pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
@@ -203,7 +203,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	}
 	
 	function Reference_object(input_userInput, input_json, input_apa) {
-	    var good_match_theshold = 80;
 		this.user_input = input_userInput;
 		this.json = input_json;
 		this.apa = input_apa;
@@ -224,12 +223,11 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 			this.score = compute_score(this.apa_no_html, this.user_input); // order has to be database version, user version 
 			this.letter_match = compute_letter_match(this.apa_no_html, this.user_input);
 		    this.letter_match_percentage = compute_letter_match_percentage(this.user_input, this.apa_no_html); // order has to be user, database
-		    if (verbose) {console.log( 'update ref: '+this.user_input);}
-            if (this.score > good_match_theshold) {
+            if (this.score > good_match_threshold) {
                 this.good_match = true;
 		        text_obj[this.user_input].update_input('done','correct');
             } else {
-                if (this.letter_match_percentage > good_match_theshold) {
+                if (this.letter_match_percentage > good_match_threshold) {
                     this.good_match = true;
                     text_obj[this.user_input].update_input('done','fragment');
                 } else {
@@ -340,7 +338,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                     temp_search_string = input_string;
     			}
 
-	       		pagelog( 'getOneURL  [no doi]: '+temp_search_string)
+// 	       		pagelog( 'getOneURL  [no doi]: '+temp_search_string)
    				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
 // 				document.getElementById('reference_' + input_string).innerHTML = "searching"; 
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
@@ -361,7 +359,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 					return;
 				}
 			} else { // if a doi was found
-	       		pagelog( 'getOneURL [yes doi]: '+input_string)
+// 	       		pagelog( 'getOneURL [yes doi]: '+input_string)
 				let myJSON = await Cite.async(inputDOI);
 				let bibliography = myJSON.format ('bibliography', {
 					format: 'html'
@@ -407,7 +405,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 console.log( 'time to give up')
                 text_obj[input_string].update_input('done','wrong');
 			} else {
-			    console.log( '*error in get one url:');
+			    console.log( '*error in get one url: '+input_string);
 				console.log(err);
 			}
 		}
@@ -525,10 +523,10 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         }
         
         if (text_obj[input_reference_obj.user_input].match_status == "wrong") {
-        	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input)
+//         	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input)
         	return;
         } else {
-        	console.log( ' d match status = ' + text_obj[input_reference_obj.user_input].match_status);
+//         	console.log( 'd match status = ' + text_obj[input_reference_obj.user_input].match_status);
         }
         
        	var otherRow_index = input_reference_obj.table_row_number() + shift;
@@ -553,7 +551,8 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 }
 //             }
         } catch(err) {
-            console.log( "*error palm frond="+err);
+            console.log( "*error palm frond for "+text_obj[otherRow_input_string].user_input)
+            console.log( err);
         }
         
         if (combine_rows(otherRow_input_string, input_reference_obj) == true) { 
@@ -618,8 +617,8 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                     if (reference_obj[text_obj[input_string].doi].score > input_reference_obj.score) {
                         console.log( 'should backweardsyl') //dfd make it treat the other one as the target
                     } else if (reference_obj[text_obj[input_string].doi].score == input_reference_obj.score) {
-                        console.log( 'equal for input string='+reference_obj[text_obj[input_string].doi].user_input+ '----and-- reference obj='+input_reference_obj.user_input)
-                        console.log( 'these should e the same: '+reference_obj[text_obj[input_string].doi].user_input+ ' --and-- '+ input_string)
+                        console.log( '*trying to combine with itself for '+reference_obj[text_obj[input_string].doi].user_input+ '----and-- reference obj='+input_reference_obj.user_input)
+//                         console.log( 'these should be the same: '+reference_obj[text_obj[input_string].doi].user_input+ ' --and-- '+ input_string)
                     }
                 }
             }
@@ -630,18 +629,12 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 shouldCombine = true;
             }
 
-//             console.log('trying to combine, top half =')
-//             console.log( input_string+", match_status="+ text_obj[input_string].match_status)
-//             console.log( 'bottom half =')
-//             console.log( input_reference_obj.user_input)
-//             console.log( "shouldCombine="+shouldCombine)
-        
             // if appropriate, remove the row
             if (shouldCombine == true) {
 //                 console.log( 'removing row in combine: '+input_string)
                 remove_row(input_string);
                 change_user_input(input_reference_obj, bestcombo);
-//                 pagelog('[combination] '+bestcombo+"<br>[should match] "+input_reference_obj.apa_no_html);
+                pagelog('[combination] '+bestcombo+"<br>[should match] "+input_reference_obj.apa_no_html);
                 return true;
             } else {
                 return false;
@@ -688,34 +681,53 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	
 	function best_combination(user_input_current, user_input_older, apa_goal) {
 	    // tries the first two input parameters alone and in combination, to see which one matches the 3rd parameter best.
-	    // the order of the first two parameters doesn't matter. 
+	    // the order of the first two parameters doesn't matter because it reorders them in terms of where they appear in the table. 
 		var out = "";
+    	var verbose = false;
 
-		aText = user_input_older;
-		bText = user_input_current;
+        if (document.getElementById(user_input_current).rowIndex > document.getElementById(user_input_older).rowIndex) {
+            aText = user_input_older;
+            bText = user_input_current;
+		} else {
+            aText = user_input_current;
+            bText = user_input_older;
+		}
 		comboText = aText + " " + bText;
 		reverse_comboText = bText + " " + aText;
 				
         try {
             aScore = compute_letter_match(aText, apa_goal);
             bScore = compute_letter_match(bText, apa_goal);
+            bScore_percent = compute_letter_match_percentage(bText, apa_goal);
             comboScore = compute_letter_match(comboText, apa_goal);
             reverse_comboScore = compute_letter_match(reverse_comboText, apa_goal);
-
+            
+            // maybe to really be smart, it should look at where the fragment is (in the goal string). If it's the end, don't add 
+            // something after it; if it's the start, don't add something before it. 
+            
             if (verbose) {
                 console.log( '--running best combination--');
                 console.log('a = ['+text_obj[aText].search_status+', '+text_obj[aText].match_status+'] ' + aText)
                 console.log('b = ['+text_obj[bText].search_status+', '+text_obj[bText].match_status+'] ' + bText)
                 console.log( 'goal = '+apa_goal)
                 console.log( aScore, bScore, comboScore, reverse_comboScore)
+                console.log( compute_letter_match_percentage(aText, apa_goal),compute_letter_match_percentage(bText, apa_goal),compute_letter_match_percentage(comboText, apa_goal),compute_letter_match_percentage(reverse_comboText, apa_goal))
             }
+
+        if (bScore_percent < good_match_threshold) {
+            // if the new piece by itself is not a good match for the target, don't combine
+            console.log("[returning aText] bScore percent "+bScore_percent+" < good match threshold")
+            return aText;
+        }
+
         }
         catch(err) {
             console.log('*error in best combination:')
             console.log('aText was='+aText);
             console.log('bText was='+bText);
         }
-
+        
+        reverse_comboScore = 0; // doing this makes it so reverse can't win. 
 		maxScore = Math.max(aScore,bScore,comboScore,reverse_comboScore);
 		if (maxScore == comboScore) {
 		    if (verbose) {console.log( 'winner=comboText');}
@@ -740,14 +752,16 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		// return a score
 		if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	// with typeof, put undefined in quotes
 			// if there was a valid DOI in the user input, return a score of 100
-			if (userDOI[0] == databaseDOI[0]) { 
+			if (userDOI[0].toLowerCase() == databaseDOI[0].toLowerCase()) { 
 			    // if a doi was found, it returns percentage. why? basically, if it's part of a reference with the right doi, this 
 			    // will be high. but if it's the wrong reference, it'll be low. 
 			    return compute_letter_match_percentage(userString,databaseString);
 			} else {
 				// if the user doi wasn't the same as the database one (is this possible?!) return the match strength without removing the doi
+				console.log( '*THIS HAPPENED BUT I THOUGHT IT WAS NOT POSSIBLE.');
+				console.log( userDOI[0]+' userDOI[0]')
+				console.log( databaseDOI[0]+' databaseDOI[0]');
 				return compute_letter_match(databaseString,userString);
-				console.log( '*THIS HAPPENED BUT I THOUGHT IT WAS NOT POSSIBLE');
 			}
 		} else {
 			// if there is not a valid doi in the user input, remove the doi from the database string for the sake of comparison. 
@@ -1042,16 +1056,15 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		if (numRowsCompleted == numRowsTotal) {
 // 			console.log( 'done (to do list length = '+to_do_list_input_string.length+'): ');
 // 			document.getElementById('progressHeader').innerHTML = "Done";
+            if (all_rows_are_done()) {
+                document.getElementById('progressHeader').innerHTML = "Done";
+            }
 		} else if (numRowsCompleted == numRowsWithUserDOIsTotal) {
 			numRowsWithUserDOIsTotal = -1;
 			remove_duplicate_rows();
             getAllUrls('not_found_yet');
         }
         
-        if (all_rows_are_done()) {
-// 			console.log( 'done for real');
-			document.getElementById('progressHeader').innerHTML = "Done";
-        }
 	}
 	
 	function all_rows_are_done() {
@@ -1060,13 +1073,18 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         var s = '';
         
 //         console.log( 'calling all_rows_are_done')
-		for (i = 1; i < numRowsTotal; i++) { // start at 1 to skip header row
-            s = document.getElementById("article_table").rows[i].cells[0].innerHTML;
-            if (text_obj[s].search_status != "done") {
-                return false;
+        try {
+            for (i = 1; i < numRowsTotal; i++) { // start at 1 to skip header row
+                s = document.getElementById("article_table").rows[i].cells[0].innerHTML;
+                if (text_obj[s].search_status != "done") {
+                    return false;
+                }
             }
+            return true;
+        } catch (err) {
+            console.log('*error in all rows are done: '+s);
+            console.log( err);
         }
-        return true;
 	}
 
 </script>
