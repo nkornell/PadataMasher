@@ -156,7 +156,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         
         to_do_list_input_string.push(input_userInput);
         
-//         add an object property fragment. if it's a fragment, the doi is probably right. if it's not, then the doi is probably wrong. or mabye trust_doi
 //         eventually, the reference object should be part of the text object
         
        
@@ -291,7 +290,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         var i = 0;
 		var t = document.getElementById("article_table");
 		var temp_row_text = '';
- 
+
 //  		for (i = to_do_list_input_string.length - 1; i >= 0; i--) { // this would from the bottom up
  		for (i = 0; i < to_do_list_input_string.length; i++) {
             if (text_obj[to_do_list_input_string[i]].doi_type === doi_type_to_handle) {
@@ -369,14 +368,17 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 					// create new reference
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
 					reference_obj[myJSON.data[0].DOI].update_ref();
+// 					console.log( 'splice it ar$$$$$ '+to_do_list_input_string.indexOf(input_string)+' '+to_do_list_input_string[to_do_list_input_string.indexOf(input_string)])
+
 					decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], -1);
 					if (text_obj[reference_obj[myJSON.data[0].DOI].user_input].removed == false) {
 // 					    console.log( '+1;')
     					decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], 1);
-    				} else {
-//     				    console.log( 'not trying to convine +1 row because it was removed by -1.');
     				}
-					to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
+// 					console.log( 'splice it up$$$$$ '+to_do_list_input_string.indexOf(input_string)+' '+to_do_list_input_string[to_do_list_input_string.indexOf(input_string)])
+					if (to_do_list_input_string.indexOf(input_string) > -1) {
+						to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
+					}
 					parse_JSON_for_authors(myJSON.data[0]); // dfd this assumes the json is still correct. Does the whole author thing adjust for removed rows? maybe it should happen at the end?
 				} else { 
 					// if it finds a doi that's been found before.
@@ -492,6 +494,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 document.getElementById("article_table").deleteRow(row_to_remove);
 
                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
+//                 console.log( 'splash '+input_string);
         
                 text_obj[input_string].removed = true; // I think I did this rather than deleting it because get URL might be looking for it later. 
         
@@ -505,29 +508,26 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     // 			console.log( document.getElementById("article_table").innerHTML);
             }
         }
-        
+        pagelog('Removed: '+input_string)
         updateProgress();
 	}
 
 	function decide_whether_to_combine_rows(input_reference_obj, shift) {
-        // The way this is now, it works if you trust the DOI. But if the doi isn't trustworthy and the score is low,
-        // it will need to be more sophisticated about comparing possible situations (e.g., it found 2 dois
-        // but by combining them it get's a third doi that's better). And it should use:
-	
-	
-	    // dfd change this so that it uses two values, rather than a value and shift. and figure out a good way to make the recursion work anyway
-	    
-	    if (document.getElementById(input_reference_obj.user_input) == null) { // this can happen when the user_input has changed but the reference obj hasn't)
-	        console.log( '*in decide whether to combine... null found for '+input_reference_obj.user_input)
-	        return;
-        }
+        // The way this is now, it works if you trust the DOI. 
         
-        if (text_obj[input_reference_obj.user_input].match_status == "wrong") {
+        // dfd But if the doi isn't trustworthy and the score is low,
+        // it will need to be more sophisticated about comparing possible situations (e.g., it found 2 dois
+        // but by combining them it get's a third doi that's better). 
+	    
+		if (document.getElementById(input_reference_obj.user_input) == null) { // this can happen when the user_input has changed but the reference obj hasn't)
+			console.log( '*in decide whether to combine... null found for '+input_reference_obj.user_input)
+			return;
+		}
+	
+		if (text_obj[input_reference_obj.user_input].match_status == "wrong") {
 //         	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input)
-        	return;
-        } else {
-//         	console.log( 'd match status = ' + text_obj[input_reference_obj.user_input].match_status);
-        }
+			return;
+		}
         
        	var otherRow_index = input_reference_obj.table_row_number() + shift;
 
@@ -539,7 +539,13 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     	    return;
     	}
         
-        var otherRow_input_string = document.getElementById("article_table").rows[otherRow_index].cells[0].innerHTML;
+        try {
+	        var otherRow_input_string = document.getElementById("article_table").rows[otherRow_index].cells[0].textContent;
+// 	        var otherRow_input_string = document.getElementById("article_table").rows[otherRow_index].cells[0].innerHTML;
+	    } catch(err) {
+	    	console.log( "**error: in decide whether... can't find this row: " + otherRow_index)
+	    	return;
+	    }
         
         try {
             // don't try to combine with rows that are already settled. 
@@ -551,7 +557,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 }
 //             }
         } catch(err) {
-            console.log( "*error palm frond for "+text_obj[otherRow_input_string].user_input)
+            console.log( "*error palm frond for "+otherRow_input_string)
             console.log( err);
         }
         
@@ -566,7 +572,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 
 	function combine_rows(input_string, input_reference_obj) {
 // dfd
-// in best_combination
+// in best combination
 // - it should take two targets as parameters and return which combination/target fit is best. 
 // in combine_ rows, 
 // - it should not try to combine rows when when one has a status of searching
@@ -631,7 +637,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 
             // if appropriate, remove the row
             if (shouldCombine == true) {
-//                 console.log( 'removing row in combine: '+input_string)
                 remove_row(input_string);
                 change_user_input(input_reference_obj, bestcombo);
                 pagelog('[combination] '+bestcombo+"<br>[should match] "+input_reference_obj.apa_no_html);
@@ -679,28 +684,35 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	}
 	
 	
-	function best_combination(user_input_current, user_input_older, apa_goal) {
+	function best_combination(user_input_addition, user_input_target, goal) {
 	    // tries the first two input parameters alone and in combination, to see which one matches the 3rd parameter best.
 	    // the order of the first two parameters doesn't matter because it reorders them in terms of where they appear in the table. 
 		var out = "";
     	var verbose = false;
 
-        if (document.getElementById(user_input_current).rowIndex > document.getElementById(user_input_older).rowIndex) {
-            aText = user_input_older;
-            bText = user_input_current;
+		// if the new piece by itself is not a good percentage match for the target, don't combine
+		var newthing_Score_percent = compute_letter_match_percentage(user_input_addition, goal);
+		if (newthing_Score_percent < good_match_threshold) {
+			console.log("[returning no change] newthing score percent "+newthing_Score_percent+" < good match threshold")
+			return user_input_target;
+		}
+
+		// figure out the input, and put it in the order of the table (so that only forward combos will be accepted)
+        if (document.getElementById(user_input_addition).rowIndex > document.getElementById(user_input_target).rowIndex) {
+            aText = user_input_target;
+            bText = user_input_addition;
 		} else {
-            aText = user_input_current;
-            bText = user_input_older;
+            aText = user_input_addition;
+            bText = user_input_target;
 		}
 		comboText = aText + " " + bText;
 		reverse_comboText = bText + " " + aText;
 				
         try {
-            aScore = compute_letter_match(aText, apa_goal);
-            bScore = compute_letter_match(bText, apa_goal);
-            bScore_percent = compute_letter_match_percentage(bText, apa_goal);
-            comboScore = compute_letter_match(comboText, apa_goal);
-            reverse_comboScore = compute_letter_match(reverse_comboText, apa_goal);
+            aScore = compute_letter_match(aText, goal);
+            bScore = compute_letter_match(bText, goal);
+            comboScore = compute_letter_match(comboText, goal);
+            reverse_comboScore = compute_letter_match(reverse_comboText, goal);
             
             // maybe to really be smart, it should look at where the fragment is (in the goal string). If it's the end, don't add 
             // something after it; if it's the start, don't add something before it. 
@@ -709,17 +721,10 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 console.log( '--running best combination--');
                 console.log('a = ['+text_obj[aText].search_status+', '+text_obj[aText].match_status+'] ' + aText)
                 console.log('b = ['+text_obj[bText].search_status+', '+text_obj[bText].match_status+'] ' + bText)
-                console.log( 'goal = '+apa_goal)
+                console.log( 'goal = '+goal)
                 console.log( aScore, bScore, comboScore, reverse_comboScore)
-                console.log( compute_letter_match_percentage(aText, apa_goal),compute_letter_match_percentage(bText, apa_goal),compute_letter_match_percentage(comboText, apa_goal),compute_letter_match_percentage(reverse_comboText, apa_goal))
+                console.log( compute_letter_match_percentage(aText, goal),compute_letter_match_percentage(bText, goal),compute_letter_match_percentage(comboText, goal),compute_letter_match_percentage(reverse_comboText, goal))
             }
-
-        if (bScore_percent < good_match_threshold) {
-            // if the new piece by itself is not a good match for the target, don't combine
-            console.log("[returning aText] bScore percent "+bScore_percent+" < good match threshold")
-            return aText;
-        }
-
         }
         catch(err) {
             console.log('*error in best combination:')
@@ -736,10 +741,10 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		    if (verbose) {console.log( 'winner=reverse comboText');}
 			return reverse_comboText;
 		} else if (maxScore == aScore) {
-		    if (verbose) {console.log( 'winner=leave it as a');}
+		    if (verbose) {console.log( 'winner=returning earlier table entry');}
 			return aText;
 		} else if (maxScore == bScore) {
-		    if (verbose) {console.log( 'winner=change to b');}
+		    if (verbose) {console.log( 'winner=returning later table entry');}
 			return bText;
 		}
 	}
@@ -914,6 +919,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 // if there's no doi or the doi is new, use it. 
                 text_obj[urlSuffix[i]] = new Text_object(urlSuffix[i], tempDOI, tempDOItype);
                 if (tempDOI.length > 0) {
+//                 	console.log( tempDOI+'=tempdoi')
                     tempDOIsFoundSoFar.push(tempDOI);
                 }
             }
