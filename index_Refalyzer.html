@@ -161,7 +161,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
        
 		this.update_input = function(input_search_status, input_match_status, input_new_doi) {
 		    // possible search status values:
-            //    not started, searching, incorrect doi entered; searching again, done // dfd add 'doi found' (but what if no doi is found?)
+            //    not started, searching, incorrect doi entered; searching again, done 
 		    // possible match status values
 		    //    unknown, wrong, fragment, correct
 		    
@@ -177,10 +177,13 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		    
 		    this.search_status = input_search_status;
 		    this.match_status = input_match_status;
+		    
 		    if (typeof input_new_doi !== 'undefined') {
 		        this.doi = input_new_doi;
 		        console.log( 'updated doi in this.update_input to: '+input_new_doi)
 		    }
+		    
+		    
 		    if (this.match_status == 'unknown') {
 		        var temp_match_status_to_show = '';
 		    } else {
@@ -188,16 +191,15 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		    }
 		    if (this.search_status == 'done') {
 		        var temp_search_status_to_show = '';
-                // I moved numRowsCompleted++ to here, hope it works!
 		    } else {
 		        var temp_search_status_to_show = this.search_status;
 
 		    }
-// 		    try {
-//     			document.getElementById('notes_'+this.user_input).innerHTML = temp_search_status_to_show + temp_match_status_to_show; 
-//     		} catch(err) {
-//     		    console.log( '*error, did not update notes because getElementById did not find: '+this.user_input);
-//     		}
+		    try {
+    			document.getElementById('notes_'+this.user_input).innerHTML = temp_search_status_to_show + temp_match_status_to_show; 
+    		} catch(err) {
+    		    console.log( '*error, did not update notes because getElementById did not find: '+this.user_input);
+    		}
 		}
 	}
 	
@@ -235,7 +237,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 }
             }
 
-            try {
+            try { // dfd this should be in the text obj
                 // update the notes 
                 const c  = ['tomato','black'];                
                 var temp_stringToShow = "";
@@ -248,7 +250,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 				} else {
 					this.notes = '';
 				}
-//                 this.notes = this.notes + '<br>--<br>'+'match status='+text_obj[this.user_input].match_status+"<br>" + temp_stringToShow;
 
                 // update html
                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
@@ -341,12 +342,10 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
    				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
 // 				document.getElementById('reference_' + input_string).innerHTML = "searching"; 
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
-				if (typeof myJSON.message.items[0] === 'undefined') {
-				    // if it's not in the database
-					if (duplicate_input_text.indexOf(input_string) < 0) {			
-						// only show it if it's not a duplicate row
-		                text_obj[input_string].update_input('done','wrong');
-		                console.log( '** 859 THIS IS POSSIBLE?')
+				if (typeof myJSON.message.items[0] === 'undefined') { // if it's not in the database
+					if (duplicate_input_text.indexOf(input_string) < 0) { // if it's not a duplicate
+					    // this happens when a doi is bad	
+		                text_obj[input_string].update_input('done','not found');
 					} else {
 					    console.log( "** 823 i didn't' think THIS HAPPENING WAS POSSIBLE");
 					}
@@ -386,7 +385,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 // 					console.log( 'repeat doi before combine rows: ' + input_string)
 					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); // maybe call update_ref before calling combine?
 					// note: I used to call the following line here
-//     				reference_obj[myJSON.data[0].DOI].update_ref(); // dfd removed.. put back?
+//     				reference_obj[myJSON.data[0].DOI].update_ref(); // removed.. put back?
 				}
 			}
 
@@ -405,7 +404,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 			} else if (err == 'Error: This format is not supported or recognized') { 
 			    // if it found a doi that is correct, but the citation can't be found by Cite, give up.
                 console.log( 'time to give up')
-                text_obj[input_string].update_input('done','wrong');
+                text_obj[input_string].update_input('done','not found');
 			} else {
 			    console.log( '*error in get one url: '+input_string);
 				console.log(err);
@@ -461,7 +460,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         
         for (i = to_do_list_input_string.length - 1; i >= 0; i--) {
             if (duplicate_input_text.includes(to_do_list_input_string[i])) {
-                pagelog('[removing] ' + to_do_list_input_string[i])
+//                 pagelog('[removing] ' + to_do_list_input_string[i])
                 remove_row(to_do_list_input_string[i]);
                 foof++;
             }
@@ -499,16 +498,15 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 text_obj[input_string].removed = true; // I think I did this rather than deleting it because get URL might be looking for it later. 
         
                 if (text_obj[input_string].doi != '') {
-                    console.log( 'removing row with a doi in it: '+ text_obj[input_string].doi);
+//                     console.log( 'removing row with a doi in it: '+ text_obj[input_string].doi);
                 }
             }
             catch(err) {
                 console.log( '*error in remove_row. input_string='+ input_string + " [error next line]");
                 console.log( err);
-    // 			console.log( document.getElementById("article_table").innerHTML);
             }
         }
-        pagelog('Removed: '+input_string)
+//         pagelog('Removed: '+input_string)
         updateProgress();
 	}
 
@@ -549,24 +547,19 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         
         try {
             // don't try to combine with rows that are already settled. 
-//             if (typeof text_obj[otherRow_input_string] !== 'undefined' && text_obj[otherRow_input_string] !== null) {	// this line seems unnecessary, but it can't hurt(?)
-                // dfd put in something here that says, if they have the same doi, combine them
-                if (text_obj[otherRow_input_string].match_status == "correct") {
+            // dfd put in something here that says, if they have the same doi, combine them
+            if (text_obj[otherRow_input_string].match_status == "correct") {
 //                     console.log( "tried to combine this and a row with status=correct, so returned instead. other row: "+ otherRow_input_string)
-                    return;
-                }
-//             }
+                return;
+            }
         } catch(err) {
             console.log( "*error palm frond for "+otherRow_input_string)
             console.log( err);
         }
         
         if (combine_rows(otherRow_input_string, input_reference_obj) == true) { 
-//             console.log( 'recursion for ' + otherRow_input_string);
             decide_whether_to_combine_rows(input_reference_obj, shift); // do it again recursively
             return;
-        } else {
-//             console.log('decided false for: '+ otherRow_input_string);
         }
 	}
 
@@ -575,7 +568,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 // in best combination
 // - it should take two targets as parameters and return which combination/target fit is best. 
 // in combine_ rows, 
-// - it should not try to combine rows when when one has a status of searching
 // - when both rows that are being combined have a doi, it needs to learn to prioritize. I think right now it's just whichever it comes to first. 
 
 	    // This figures out the best combination and then, if appropriate, it merges the two rows and then deletes the extra one.
@@ -584,6 +576,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         var shouldCombine = false;
 
         try {
+merge combine_rows with decide whether to combine
             if (text_obj[input_string].removed) {
                 return false;
             } 
@@ -595,8 +588,8 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 
             if (input_reference_obj.doi == text_obj[input_string].doi) {
                 // if it finds the same reference twice, combine them
+//                 console.log( 'found the same doi twice')
                 shouldCombine = true;
-//                 console.log('dois match = ' + text_obj[input_string].doi);            
             } else if (text_obj[input_string].search_status == "searching") {
                 // if it's still searching for a row, return. it'll try again with that row later. 
 //                 console.log('search status = searching: ' + input_string + ' [returning in combine rows]');
@@ -606,6 +599,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 //             console.log('in combine rows, reference obj match status='+text_obj[input_reference_obj.user_input].match_status)
 //             console.log('in combine rows, reference obj search status = ' + text_obj[input_reference_obj.user_input].search_status);
 //             console.log('search status = ' + text_obj[input_string].search_status + ' for input obj in combine rows');
+
 
             if (text_obj[input_reference_obj.user_input].match_status == "correct" && text_obj[input_string].match_status == 'correct') {
                 // if both have good dois already
@@ -618,13 +612,19 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 
             // assume input reference obj is correct (i.e., that's the apa string target)
             if (text_obj[input_string].doi != '') {
-                if (typeof reference_obj[text_obj[input_string].doi] != "unknown") {
-                    console.log( 'in combine rows, both have dois. input obj score='+ reference_obj[text_obj[input_string].doi].score +' reference obj score='+input_reference_obj.score)
+                if (typeof reference_obj[text_obj[input_string].doi] != "unknown" && reference_obj[text_obj[input_string].doi] != null) {
+//                     console.log( 'in combine rows, both have dois. ')
+//                     console.log( '   input obj score='+ reference_obj[text_obj[input_string].doi].score)
+//                     console.log( '   reference obj score='+input_reference_obj.score)
                     if (reference_obj[text_obj[input_string].doi].score > input_reference_obj.score) {
-                        console.log( 'should backweardsyl') //dfd make it treat the other one as the target
+                        console.log( '***should backweardsyl') //dfd make it treat the other one as the target
                     } else if (reference_obj[text_obj[input_string].doi].score == input_reference_obj.score) {
-                        console.log( '*trying to combine with itself for '+reference_obj[text_obj[input_string].doi].user_input+ '----and-- reference obj='+input_reference_obj.user_input)
-//                         console.log( 'these should be the same: '+reference_obj[text_obj[input_string].doi].user_input+ ' --and-- '+ input_string)
+                        //the stuff below happens when a single reference is split into multiple lines. nothingn to worry about. 
+//                         if (reference_obj[text_obj[input_string].doi].user_input == input_reference_obj.user_input) {
+//                             console.log( '*combining with itself for '+input_reference_obj.user_input)
+//                         } else {
+//                             console.log( '*combining strings with the same score '+reference_obj[text_obj[input_string].doi].user_input+ '----and-- reference obj='+input_reference_obj.user_input)
+//                         }
                     }
                 }
             }
@@ -639,7 +639,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             if (shouldCombine == true) {
                 remove_row(input_string);
                 change_user_input(input_reference_obj, bestcombo);
-                pagelog('[combination] '+bestcombo+"<br>[should match] "+input_reference_obj.apa_no_html);
+//                 pagelog('[combination] '+bestcombo+"<br>[should match] "+input_reference_obj.apa_no_html);
                 return true;
             } else {
                 return false;
@@ -691,9 +691,9 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     	var verbose = false;
 
 		// if the new piece by itself is not a good percentage match for the target, don't combine
-		var newthing_Score_percent = compute_letter_match_percentage(user_input_addition, goal);
-		if (newthing_Score_percent < good_match_threshold) {
-			console.log("[returning no change] newthing score percent "+newthing_Score_percent+" < good match threshold")
+		var addition_Score_percent = compute_letter_match_percentage(user_input_addition, goal);
+		if (addition_Score_percent < good_match_threshold) {
+// 			console.log("[returning no change] addition score percent "+addition_Score_percent+" < good match threshold")
 			return user_input_target;
 		}
 
@@ -763,9 +763,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 			    return compute_letter_match_percentage(userString,databaseString);
 			} else {
 				// if the user doi wasn't the same as the database one (is this possible?!) return the match strength without removing the doi
-				console.log( '*THIS HAPPENED BUT I THOUGHT IT WAS NOT POSSIBLE.');
-				console.log( userDOI[0]+' userDOI[0]')
-				console.log( databaseDOI[0]+' databaseDOI[0]');
+				// this happens when there's a bad doi, it searches without the doi, and finds a good doi to replace the bad one
 				return compute_letter_match(databaseString,userString);
 			}
 		} else {
@@ -1081,7 +1079,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 //         console.log( 'calling all_rows_are_done')
         try {
             for (i = 1; i < numRowsTotal; i++) { // start at 1 to skip header row
-                s = document.getElementById("article_table").rows[i].cells[0].innerHTML;
+                s = document.getElementById("article_table").rows[i].cells[0].textContent;
                 if (text_obj[s].search_status != "done") {
                     return false;
                 }
@@ -1112,17 +1110,19 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-Kenny, D. A., Korchmaros, J. D., & Bolger, N. (2003). Lower level mediation in multilevel
+Heck, D. W., Gronau, F. Q., & Wagenmakers &, E.-J. (2019). metaBMA: Bayesian Model
 
-models. Psychological Methods, 8, 115–128. https://doi.org/10.1037/1082-989X.8.2.115
+Averaging for Random and Fixed Effects Meta-Analysis. https://CRAN.R-project.org/package=metaBMA.
 
-Kimball, D. R., & Metcalfe, J. (2003). Delaying judgments of learning affects memory, not metamemory. Memory & Cognition, 31, 918–929. 
+Henkel, L. A., Johnson, M. K., & De Leonardis, D. M. (1998). Aging and source monitoring:
 
-muddy 8ug39hurjgfioeasdofhjg test it with something it can't find
+Cognitive processes and neuropsychological correlates. Journal of Experimental
 
-Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with 
-degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. 
+Psychology: General, 127, 251–268. https://doi.org/10.1037/0096-3445.127.3.251 Hicks, J. L., & Cockman, D. W. (2003). The effect of general knowledge on source memory
 
+and decision processes. Journal of Memory and Language, 48, 489–501.
+
+https://doi.org/10.1016/S0749-596X(02)00537-5
 </textarea>
 
 
