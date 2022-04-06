@@ -1,8 +1,7 @@
 <!--
 Basic procedure:
-Go through everything 2x. First, find DOIs. For each one, check the row above it (recursively). 
-Then, when they're done (and you have to wait until they really finish by checking a modified 
-version of numRowsCompleted) go through again and, with the stuff that's left, keep trying. 
+Go through everything 2x. First, find user-entered DOIs. For each one, check the row above it (recursively). 
+Then, when they're done go through again and, with the stuff that's left, keep trying. 
 
 It would faster, though, if whenever if found a doi, it checked the rows above and called getoneur l
 for all of them going back to either the start or the previous one that had a doi. That way as it
@@ -18,11 +17,7 @@ make reference_obj a propoerty of input_obj(?)
 if it finds dois for two adjacent-ish rows, will it try to combine them? If they're not user-entered dois, it should.
 There are 4 possiblities, the first one is right, the 2nd is right, both are wrong but the combo is right, or nothing is right. 
 
-maybe get rid of duplicate_input_text and instead have each line's object know if it's a duplicate or not?
-
-the counting still gets out of whack (e.g., 44/43 completed)
-
-get rid of to do list???
+the counting is not right
 
 Just looking at the output, it seems like maybe some of the ones marked wrong are actually 
 right. Should they be marked probable instead? 
@@ -123,13 +118,12 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 
 	var author_obj = [];
 	var reference_obj = [];
-	var to_do_list_input_string = [];
 	var text_obj = []
+	var to_do_list_input_string = [];
+	var duplicate_input_text = [];
 	var articleTableText = "";
 	var startTime = 0;
-	var numRowsCompleted = 0;
-	var numRowsWithUserDOIsTotal = 0;
-	var duplicate_input_text = [];
+	var started_notFoundYet = false;
 	var doi_pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/gi; // doi_pattern is used to find a DOI within the input string. note: I added in the g, which makes it return all of the DOIs instead of just 1
     const cc = [];
     cc['fragment'] = 'blue';
@@ -149,17 +143,13 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         this.search_status = "not started";
         this.match_status = "unknown";
 		this.removed = false;
-
-        if (input_doi.length > 0) {
-            numRowsWithUserDOIsTotal++;
-        }
         
         to_do_list_input_string.push(input_userInput);
         
 //         eventually, the reference object should be part of the text object
         
        
-		this.update_input = function(input_search_status, input_match_status, input_new_doi) {
+		this.update_input = function(input_search_status, input_match_status) {
 		    // possible search status values:
             //    not started, searching, incorrect doi entered; searching again, done 
 		    // possible match status values
@@ -171,17 +161,23 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             }
 
 		    if (this.search_status != 'done' && input_search_status == 'done') {
-                numRowsCompleted++; // this only happens the first time it's marked as done
 				to_do_list_input_string.splice(to_do_list_input_string.indexOf(this.user_input),1); // remove it from to do list because it's done
+				console.log( 'splicing : '+this.user_input)
 		    }
 		    
 		    this.search_status = input_search_status;
 		    this.match_status = input_match_status;
 		    
-		    if (typeof input_new_doi !== 'undefined') {
-		        this.doi = input_new_doi;
-		        console.log( 'updated doi in this.update_input to: '+input_new_doi)
-		    }
+		    // if the user-entered doi was incorrect, change doi type
+            if (input_search_status == 'incorrect doi entered; searching again') {
+                this.doi_type = 'not_found_yet';
+//                 console.log( 'changed doi type to not found yet, for: ' + this.user_input)
+            }
+            
+// 		    if (typeof input_new_doi !== 'undefined') {
+// 		        this.doi = input_new_doi;
+// 		        console.log( 'updated doi in this.update_input to: '+input_new_doi)
+// 		    }
 		    
 		    
 		    if (this.match_status == 'unknown') {
@@ -200,6 +196,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     		} catch(err) {
     		    console.log( '*error, did not update notes because getElementById did not find: '+this.user_input);
     		}
+    		updateProgress();
 		}
 	}
 	
@@ -294,11 +291,10 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 
 //  		for (i = to_do_list_input_string.length - 1; i >= 0; i--) { // this would from the bottom up
  		for (i = 0; i < to_do_list_input_string.length; i++) {
+ 		    console.log( 'row que ++ loop: '+text_obj[to_do_list_input_string[i]].user_input+' status: '+text_obj[to_do_list_input_string[i]].search_status)
             if (text_obj[to_do_list_input_string[i]].doi_type === doi_type_to_handle) {
-                if (text_obj[to_do_list_input_string[i]].search_status === 'not started' || text_obj[to_do_list_input_string[i]].status === 'incorrect doi entered; searching again') {
-//                     console.log(text_obj[to_do_list_input_string[i]].doi +' added, status= '+text_obj[to_do_list_input_string[i]].status)
+                if (text_obj[to_do_list_input_string[i]].search_status === 'not started' || text_obj[to_do_list_input_string[i]].search_status === 'incorrect doi entered; searching again') {
     			    row_queue.push(to_do_list_input_string[i]); 
-//     			    console.log('add to row_queue: ' + to_do_list_input_string[i])
     		    }
             }
 		}
@@ -310,15 +306,20 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	}
 
 	
-	async function getOneURL(input_string, ignore_doi) {	
+	async function getOneURL(input_string) {	
 // 		Be careful here! This calls everything async, which means that some of this code might 
 // 		execute for item 12 before it gets to item 8, etc. Things can get out of order. Which means, 
 // 		for example, that by the time it arrives at item x (e.g., 2), item x + y (e.g., 5) might have 
 // 		already decided that x shouldn't be shown. And stuff. This is why the program does all the  
 //		rows that have dois before starting on the ones that don't. 
-
+        
+        var ignore_doi = false;
+        
         if (text_obj[input_string].search_status == "not started") {
        		text_obj[input_string].update_input('searching','unknown');
+        } else if (text_obj[input_string].search_status == 'incorrect doi entered; searching again') {
+       		text_obj[input_string].update_input('searching','unknown'); // dfd added this, it helps, but it's not enough. 
+            ignore_doi = true;
         }
         
 		var stringToSend = '';
@@ -367,15 +368,13 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 					// create new reference
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
 					reference_obj[myJSON.data[0].DOI].update_ref();
-// 					console.log( 'splice it ar$$$$$ '+to_do_list_input_string.indexOf(input_string)+' '+to_do_list_input_string[to_do_list_input_string.indexOf(input_string)])
 
 					decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], -1);
 					if (text_obj[reference_obj[myJSON.data[0].DOI].user_input].removed == false) {
-// 					    console.log( '+1;')
     					decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], 1);
     				}
-// 					console.log( 'splice it up$$$$$ '+to_do_list_input_string.indexOf(input_string)+' '+to_do_list_input_string[to_do_list_input_string.indexOf(input_string)])
 					if (to_do_list_input_string.indexOf(input_string) > -1) {
+					    console.log( 'splicing '+to_do_list_input_string.indexOf(input_string))
 						to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
 					}
 					parse_JSON_for_authors(myJSON.data[0]); // dfd this assumes the json is still correct. Does the whole author thing adjust for removed rows? maybe it should happen at the end?
@@ -389,7 +388,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 				}
 			}
 
-			showAuthors(); 
+            build_author_table();
 			updateProgress();
 		}
 		catch(err) {
@@ -398,8 +397,8 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 // 				console.log( "failed to find DOI " + inputDOI)
 				if (text_obj[input_string].search_status == 'searching') {
             		text_obj[input_string].update_input('incorrect doi entered; searching again','unknown');
-	    			getOneURL(input_string, true); // the second parameter being true means the search ignores the user's doi
-	    		}
+	    			getOneURL(input_string); // the second parameter being true means the search ignores the user's doi
+	    		} // dfd get rid of second parameter above, and add third parameter to line 2 above?
 	    		   			
 			} else if (err == 'Error: This format is not supported or recognized') { 
 			    // if it found a doi that is correct, but the citation can't be found by Cite, give up.
@@ -425,6 +424,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		var target_has_been_found = false;
 		var foof = 0;
 		
+		// find duplicate rows
         for (target = 0; target < to_do_list_input_string.length; target++) {
             target_has_been_found = false;
             target_string = to_do_list_input_string[target];
@@ -458,14 +458,17 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             }
         }
         
+        // remove duplicate rows
         for (i = to_do_list_input_string.length - 1; i >= 0; i--) {
             if (duplicate_input_text.includes(to_do_list_input_string[i])) {
-//                 pagelog('[removing] ' + to_do_list_input_string[i])
-                remove_row(to_do_list_input_string[i]);
-                foof++;
+                if (text_obj[to_do_list_input_string[i]].doi_type != 'from_user') { // don't remove if it has a doi
+//                     pagelog('[removing] ' + to_do_list_input_string[i]+' doi type='+text_obj[to_do_list_input_string[i]].doi_type)
+                    remove_row(to_do_list_input_string[i]);                
+                    foof++;
+                }
             }
-        }     
-        console.log('--removing '+foof+' duplicate rows--');
+        }
+        console.log('--removed '+foof+' duplicate rows--');
 	}
 	
 	
@@ -480,6 +483,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             // if it's already removed, don't remove it. 
             if (to_do_list_input_string.indexOf(input_string) >= 0) {
                 // But before returning, check if it's still in the to do list, and if it is, remove it. (This can happen because exact duplicate rows need to be removed from the to do list more than once.)
+                console.log( 'splicing '+to_do_list_input_string.indexOf(input_string));
                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
             }
             return;
@@ -488,18 +492,18 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 if (text_obj[input_string].match_status == "correct") {
                     console.log('removing a "correct" row');
                 }
-
+                
                 var row_to_remove = document.getElementById(input_string).rowIndex;
                 document.getElementById("article_table").deleteRow(row_to_remove);
 
+                console.log( 'spli-sing '+to_do_list_input_string.indexOf(input_string))
                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
-//                 console.log( 'splash '+input_string);
         
                 text_obj[input_string].removed = true; // I think I did this rather than deleting it because get URL might be looking for it later. 
         
-                if (text_obj[input_string].doi != '') {
+//                 if (text_obj[input_string].doi != '') {
 //                     console.log( 'removing row with a doi in it: '+ text_obj[input_string].doi);
-                }
+//                 }
             }
             catch(err) {
                 console.log( '*error in remove_row. input_string='+ input_string + " [error next line]");
@@ -576,7 +580,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         var shouldCombine = false;
 
         try {
-merge combine_rows with decide whether to combine
             if (text_obj[input_string].removed) {
                 return false;
             } 
@@ -945,7 +948,6 @@ merge combine_rows with decide whether to combine
 		articleTableText += "</table>";
 		
 		document.getElementById('articleTable').innerHTML = articleTableText;
-		document.getElementById('authorTable').innerHTML = "<table><tr><td>searching</td></tr></table>";
 
 	}
 
@@ -991,21 +993,12 @@ merge combine_rows with decide whether to combine
 		}
 	}
 
-	function showAuthors() {
-	    if (document.getElementById('author_table') == null) {
-	        // if this is the first time the function is called, build the table. 
-	        build_author_table();
-        } else {
-            // if this is not the first time the table is drawn, update it
-	        build_author_table(); 
-        }
-	}
 	
     function build_author_table() {
         var authorTableText = "";
 
         // create the html table 
-        authorTableText = "<table id='author_table'><tr>";
+        authorTableText = "<table><tr>";
         authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes"'+")' title='Click to Sort'>Highlight</th>";
         authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Author</th>";
         authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers"'+")' title='Click to Sort'>Citations</th>";
@@ -1040,55 +1033,48 @@ merge combine_rows with decide whether to combine
 		reference_obj = [];
 		to_do_list_input_string = [];
 		text_obj = [];
-		numRowsCompleted = 0;
-		numRowsWithUserDOIsTotal = 0;
 		startTime = Date.now();
 		duplicate_input_text = [];
     
 		showBoxes();
 		parse_user_input();
 		getAllUrls('from_user');
-		document.getElementById('progressHeader').innerHTML = "Working...";
 		updateProgress();
 	}
-	
-	
-	function updateProgress() {
-        var numRowsTotal = document.getElementById('article_table').rows.length - 1;
-		document.getElementById('progressText').innerHTML = '<p>Articles processed: ' + numRowsCompleted + ' of ' + numRowsTotal + "(" + numRowsWithUserDOIsTotal + ")" + "<br>Elapsed time: " +  (Date.now() - startTime)/1000 + ' seconds.';
 
-		if (numRowsCompleted == numRowsTotal) {
-// 			console.log( 'done (to do list length = '+to_do_list_input_string.length+'): ');
-// 			document.getElementById('progressHeader').innerHTML = "Done";
-            if (all_rows_are_done()) {
-                document.getElementById('progressHeader').innerHTML = "Done";
-            }
-		} else if (numRowsCompleted == numRowsWithUserDOIsTotal) {
-			numRowsWithUserDOIsTotal = -1;
-			remove_duplicate_rows();
-            getAllUrls('not_found_yet');
-        }
-        
-	}
-	
-	function all_rows_are_done() {
-        var numRowsTotal = document.getElementById('article_table').rows.length - 1;
-        var i = 0;
-        var s = '';
-        
-//         console.log( 'calling all_rows_are_done')
+	function updateProgress() {
+	    var row_text = '';
+	    var rows_done = 0;
+	    var rows_with_user_dois_total = 0;
+	    
+        var rows_total = document.getElementById('article_table').rows.length - 1;
         try {
-            for (i = 1; i < numRowsTotal; i++) { // start at 1 to skip header row
-                s = document.getElementById("article_table").rows[i].cells[0].textContent;
-                if (text_obj[s].search_status != "done") {
-                    return false;
+            for (i = 1; i <= rows_total; i++) { // start at 1 to skip header row
+                row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
+                if (text_obj[row_text].search_status == "done") {
+                    rows_done++;
                 }
+                if (text_obj[row_text].doi_type == "from_user") {
+                    rows_with_user_dois_total++;
+                }                
             }
-            return true;
         } catch (err) {
-            console.log('*error in all rows are done: '+s);
+            console.log('*error in update progress: '+row_text);
             console.log( err);
         }
+
+// 	    console.log( 'called update Progress: '+rows_done + ' of ' + rows_total + "(" + rows_with_user_dois_total + ")")
+
+		document.getElementById('progressHeader').innerHTML = "Working... ";
+		document.getElementById('progressText').innerHTML = '&nbsp;' + rows_done + ' of ' + rows_total + " (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
+
+		if (rows_done >= rows_total) {
+			document.getElementById('progressHeader').innerHTML = "Done ";
+		} else if (rows_done == rows_with_user_dois_total && started_notFoundYet == false) {
+		    started_notFoundYet = true;
+			remove_duplicate_rows();
+            getAllUrls('not_found_yet');
+        }   
 	}
 
 </script>
@@ -1130,10 +1116,9 @@ https://doi.org/10.1016/S0749-596X(02)00537-5
 
 <p><button onclick="start()">Run</button>
 
-<div class='bigBox' id='progressBox' style="display: none">
-	<div class='boxAroundTable'>
-		<div class='heading' id='progressHeader'>Progress</div><br>
-		<p>
+<div class='bigBox' id='progressBox' style="display: none;">
+	<div class='boxAroundTable' style="min-width: 300px">
+		<div class='heading' id='progressHeader'>Progress</div>
 		<div id='progressText'></div>
 	</div>
 </div>
