@@ -3,34 +3,32 @@ Basic procedure:
 Go through everything 2x. First, find user-entered DOIs. For each one, check the row above it (recursively). 
 Then, when they're done go through again and, with the stuff that's left, keep trying. 
 
-It would faster, though, if whenever if found a doi, it checked the rows above and called getoneur l
-for all of them going back to either the start or the previous one that had a doi. That way as it
-conintues searching dois below, it's already searching for the ones above. (The current plan has
-it search all the doi rows before returning to the noners.) Not sure if this would save much time, though.
-
 -->
 
 <!-- 
 dfd To do: 
-make reference_obj a propoerty of input_obj(?)
+If it's helpful, have the text_obj know what its reference_obj is, once it gets one. Don't make reference_obj a propoerty of text_obj, though. 
+
+reference table
+- don't have the table itself be important to the functioning of the program. because what if I change how the table looks?
+- don't add stuff to the table that's not correct. only add stuff that's done. And only add reference_objs to the good table. add the bad stuff to a different table. 
+- have each text_obj know what its initial row number was, so it's easy to try to combine it with above and below. (note, 
+    if a row has been removed, the numbering will get messed up. instead of trying to update it all, just write an above/below function that returns the next viable item)
+    
+if something is done and perfect, don't mark it as "don't try to combine me with other crap." Or maybe such items are already being ignored when trying to combine? 
+
+when something is done and good but not perfect, check above it and below it and suck that stuff in if appropriate. 
 
 if it finds dois for two adjacent-ish rows, will it try to combine them? If they're not user-entered dois, it should.
 There are 4 possiblities, the first one is right, the 2nd is right, both are wrong but the combo is right, or nothing is right. 
 
-the counting is not right
-
 Just looking at the output, it seems like maybe some of the ones marked wrong are actually 
 right. Should they be marked probable instead? 
 
-maybe get rid of duplicate rows BEFOre dealing with doi rows (because some of the duplicates are getting used in references)?
-
-maybe if it was really smart it would specifically look for author names and year and page 
-numbers, or something? Or maybe not... those can be missing or wrong too. 
-
-instead of re-building the table, have it update the table. to do this, it should check 
+Author table
+- instead of re-building the table, have it update the table. to do this, it should check 
 whether a row for the author exists. Then either add it, or change the citation count and co-authors
-
-Look for cases where it's the same author but the name is different (e.g., Bjork, E. L. and Bjork, 
+- Look for cases where it's the same author but the name is different (e.g., Bjork, E. L. and Bjork, 
 Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring case
 
 -->
