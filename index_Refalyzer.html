@@ -13,11 +13,15 @@ reference table
 - don't have the table itself be important to the functioning of the program. because what if I change how the table looks?
 - don't add stuff to the table that's not correct. only add stuff that's done. And only add reference_objs to the good table. add the bad stuff to a different table. 
 - have each text_obj know what its initial row number was, so it's easy to try to combine it with above and below. (note, 
-    if a row has been removed, the numbering will get messed up. instead of trying to update it all, just write an above/below function that returns the next viable item)
+    if a row has been removed, the numbering will get messed up. instead of trying to update the other rows when one is
+    removed, just write an above/below function that returns the next viable item)
     
 if something is done and perfect, don't mark it as "don't try to combine me with other crap." Or maybe such items are already being ignored when trying to combine? 
 
 when something is done and good but not perfect, check above it and below it and suck that stuff in if appropriate. 
+
+it's not smart about whether anything's missing from the reference after versus before. Like, if it has the first half of the reference, 
+maybe it shouldn't be trying to find something above that. 
 
 if it finds dois for two adjacent-ish rows, will it try to combine them? If they're not user-entered dois, it should.
 There are 4 possiblities, the first one is right, the 2nd is right, both are wrong but the combo is right, or nothing is right. 
@@ -127,6 +131,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     cc['fragment'] = 'blue';
     cc['wrong'] = 'red';
     var good_match_threshold = 80;
+    var og_input = [];
 
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
 // 	var doi_pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
@@ -134,10 +139,11 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 
 	let Cite = require('citation-js');
 
-	function Text_object(input_userInput, input_doi, input_doi_type) { 
+	function Text_object(input_userInput, input_doi, input_doi_type, input_ord) { 
 		this.user_input = input_userInput;
         this.doi = input_doi;
         this.doi_type = input_doi_type;
+        this.input_order = input_ord;
         this.search_status = "not started";
         this.match_status = "unknown";
 		this.removed = false;
@@ -160,7 +166,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 
 		    if (this.search_status != 'done' && input_search_status == 'done') {
 				to_do_list_input_string.splice(to_do_list_input_string.indexOf(this.user_input),1); // remove it from to do list because it's done
-				console.log( 'splicing : '+this.user_input)
+// 				console.log( 'splicing : '+this.user_input)
 		    }
 		    
 		    this.search_status = input_search_status;
@@ -284,12 +290,10 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         
         var row_queue = [];
         var i = 0;
-		var t = document.getElementById("article_table");
-		var temp_row_text = '';
 
 //  		for (i = to_do_list_input_string.length - 1; i >= 0; i--) { // this would from the bottom up
  		for (i = 0; i < to_do_list_input_string.length; i++) {
- 		    console.log( 'row que ++ loop: '+text_obj[to_do_list_input_string[i]].user_input+' status: '+text_obj[to_do_list_input_string[i]].search_status)
+//  		    console.log( 'row que ++ loop: '+text_obj[to_do_list_input_string[i]].user_input+' status: '+text_obj[to_do_list_input_string[i]].search_status)
             if (text_obj[to_do_list_input_string[i]].doi_type === doi_type_to_handle) {
                 if (text_obj[to_do_list_input_string[i]].search_status === 'not started' || text_obj[to_do_list_input_string[i]].search_status === 'incorrect doi entered; searching again') {
     			    row_queue.push(to_do_list_input_string[i]); 
@@ -372,7 +376,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     					decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], 1);
     				}
 					if (to_do_list_input_string.indexOf(input_string) > -1) {
-					    console.log( 'splicing '+to_do_list_input_string.indexOf(input_string))
+// 					    console.log( 'splicing '+to_do_list_input_string.indexOf(input_string))
 						to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
 					}
 					parse_JSON_for_authors(myJSON.data[0]); // dfd this assumes the json is still correct. Does the whole author thing adjust for removed rows? maybe it should happen at the end?
@@ -481,7 +485,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             // if it's already removed, don't remove it. 
             if (to_do_list_input_string.indexOf(input_string) >= 0) {
                 // But before returning, check if it's still in the to do list, and if it is, remove it. (This can happen because exact duplicate rows need to be removed from the to do list more than once.)
-                console.log( 'splicing '+to_do_list_input_string.indexOf(input_string));
+//                 console.log( 'splicing '+to_do_list_input_string.indexOf(input_string));
                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
             }
             return;
@@ -490,11 +494,14 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 if (text_obj[input_string].match_status == "correct") {
                     console.log('removing a "correct" row');
                 }
-                
-                var row_to_remove = document.getElementById(input_string).rowIndex;
-                document.getElementById("article_table").deleteRow(row_to_remove);
 
-                console.log( 'spli-sing '+to_do_list_input_string.indexOf(input_string))
+				var shouldRemoveFromTable = false;                
+                if (shouldRemoveFromTable) {
+					var row_to_remove = document.getElementById(input_string).rowIndex;
+					document.getElementById("article_table").deleteRow(row_to_remove);
+				}
+				
+//                 console.log( 'spli-sing '+to_do_list_input_string.indexOf(input_string))
                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
         
                 text_obj[input_string].removed = true; // I think I did this rather than deleting it because get URL might be looking for it later. 
@@ -528,6 +535,8 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 //         	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input)
 			return;
 		}
+
+//dfdd        
         
        	var otherRow_index = input_reference_obj.table_row_number() + shift;
 
@@ -576,6 +585,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	    // The one it keeps is the input reference obj.  
 	    
         var shouldCombine = false;
+//         console.log( 
 
         try {
             if (text_obj[input_string].removed) {
@@ -665,7 +675,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             // change input obj
             // create a new version of the input obj (with a new array index), but then copy the old one into it. 
             // I think I did this because get url is going to be expecting to return info to this thingy
-            text_obj[to_string] = new Text_object(to_string, "",""); // not giving it a doi means it won't add 1 to numRows withDOIsTotal
+            text_obj[to_string] = new Text_object(to_string, "","",-1); // not giving it a doi means it won't add 1 to numRows withDOIsTotal
             text_obj[to_string] = Object.assign({}, text_obj[from_obj.user_input]);
             text_obj[to_string].user_input = to_string;
             
@@ -915,15 +925,27 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             if (tempDOIsFoundSoFar.includes(tempDOI)) { // if the doi has already been found in the user input
                 console.log( 'duplicate doi found in user input. not added: ' + tempDOI);
             } else {
-                // if there's no doi or the doi is new, use it. 
-                text_obj[urlSuffix[i]] = new Text_object(urlSuffix[i], tempDOI, tempDOItype);
+                // if there's no doi, or the doi is new, use it. 
+                text_obj[urlSuffix[i]] = new Text_object(urlSuffix[i], tempDOI, tempDOItype, i);
                 if (tempDOI.length > 0) {
-//                 	console.log( tempDOI+'=tempdoi')
                     tempDOIsFoundSoFar.push(tempDOI);
                 }
+                og_input.push(urlSuffix[i]);
+                // dfdd 
+// const ages = [{'id':'5','foo':'bar1'},{'id':'45','foo':'bar2'}];
+// document.getElementById("demo").innerHTML = ages.find(x => x.id > 9).foo;
+				
+				console.log( urlSuffix[i]);
+				console.log( 'bar: '+text_obj[urlSuffix[i]].user_input+ ' order = ' + text_obj[urlSuffix[i]].input_order);
+//                 foo = ;
+                if (typeof text_obj.find(x => x.input_order > -1).doi !== 'undefined') {
+                	console.log('foo = ' + 'tt');
+                }
+
             }
         }
 		build_article_table();
+// 		console.log( og_input);
 	}
 	
 	function build_article_table() {
@@ -1094,6 +1116,14 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
+Gronau, Q. F., Van Erp, S., Heck, D. W., Cesario, J., Jonas, K. J., & Wagenmakers, E. J. (2017). A Bayesian model-averaged meta-analysis of the power 
+
+pose effect with informed and default priors: The case of felt power. Comprehensive Results in Social Psychology, 2, 123–138. https://doi.org/10.1080/23743603.2017.1326760
+
+Hechler, S., Neyer, F. J., & Kessler, T. (2016). The infamous among us: Enhanced reputational memory for uncooperative ingroup members. Cognition, 157, 1–13. https://doi.org/10.1016/j.cognition.2016.08.001
+</textarea>
+
+<!-- 
 Heck, D. W., Gronau, F. Q., & Wagenmakers &, E.-J. (2019). metaBMA: Bayesian Model
 
 Averaging for Random and Fixed Effects Meta-Analysis. https://CRAN.R-project.org/package=metaBMA.
@@ -1107,8 +1137,7 @@ Psychology: General, 127, 251–268. https://doi.org/10.1037/0096-3445.127.3.251
 and decision processes. Journal of Memory and Language, 48, 489–501.
 
 https://doi.org/10.1016/S0749-596X(02)00537-5
-</textarea>
-
+ -->
 
 <p id="outputText"></p>
 
@@ -1272,8 +1301,8 @@ DELAYED JUDGMENTS IN SOURCE MONITORING 56
 <p>Mitchum, A. L., Kelley, C. M., & Fox, M. C. (2016). When asking the question changes the
 <p>ultimate answer: Metamemory judgments change memory. Journal of Experimental Psychology: General, 145, 200–219. http://doi.org/10.1037/a0039923
 <p>
-<p>DELAYED JUDGMENTS IN SOURCE MONITORING 60
 <p>Mueller, M. L., & Dunlosky, J. (2017). How beliefs can impact judgments of learning: Evaluating analytic processing theory with beliefs about fluency. Journal of Memory and Language, 93, 245–258. https://doi.org/10.1016/j.jml.2016.10.008
+<p>DELAYED JUDGMENTS IN SOURCE MONITORING 60
 <p>Mueller, M. L., Dunlosky, J., & Tauber, S. K. (2016). The effect of identical word pairs on people’s metamemory judgments: What are the contributions of processing fluency and beliefs about memory? The Quarterly Journal of Experimental Psychology, 69, 781–799. https://doi.org/10.1080/17470218.2015.1058404
 <p>Mueller, M. L., Dunlosky, J., Tauber, S. K., & Rhodes, M. G. (2014). The font-size effect on judgments of learning: Does it exemplify fluency effects or reflect people’s beliefs about memory? Journal of Memory and Language, 70, 1–12. https://doi.org/10.1016/j.jml.2013.09.007
 <p>Mueller, M. L., Tauber, S. K., & Dunlosky, J. (2013). Contributions of beliefs and processing fluency to the effect of relatedness on judgments of learning. Psychonomic Bulletin & Review, 20, 378–384. https://doi.org/10.3758/s13423-012-0343-6
