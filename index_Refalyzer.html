@@ -131,7 +131,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     cc['fragment'] = 'blue';
     cc['wrong'] = 'red';
     var good_match_threshold = 80;
-    var og_input = [];
 
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
 // 	var doi_pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
@@ -930,22 +929,24 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 if (tempDOI.length > 0) {
                     tempDOIsFoundSoFar.push(tempDOI);
                 }
-                og_input.push(urlSuffix[i]);
+//                 og_input.push(urlSuffix[i]);
                 // dfdd 
-// const ages = [{'id':'5','foo':'bar1'},{'id':'45','foo':'bar2'}];
-// document.getElementById("demo").innerHTML = ages.find(x => x.id > 9).foo;
-				
-				console.log( urlSuffix[i]);
-				console.log( 'bar: '+text_obj[urlSuffix[i]].user_input+ ' order = ' + text_obj[urlSuffix[i]].input_order);
-//                 foo = ;
-                if (typeof text_obj.find(x => x.input_order > -1).doi !== 'undefined') {
-                	console.log('foo = ' + 'tt');
-                }
+// const t_o = [];
+// t_o.push({'input_order':'5','doi':'bar1'})
+// t_o.push({'input_order':'45','doi':'bar2'})
+// t_o['a'] = {'input_order':'65','doi':'bar3'}
+// // document.getElementById("demo").innerHTML = ages.find(x => x.id > 9).foo;
+// 				
+// 				console.log( urlSuffix[i]);
+// 				console.log( 'bar: '+text_obj[urlSuffix[i]].user_input+ ' order = ' + text_obj[urlSuffix[i]].input_order);
+// //                 foo = ;
+//                 if (typeof t_o.find(x => x.input_order > 0).doi !== 'undefined') {
+//                 	console.log('foo = ' + t_o.find(x => x.input_order > 0).doi);
+//                 }
 
             }
         }
 		build_article_table();
-// 		console.log( og_input);
 	}
 	
 	function build_article_table() {
@@ -957,12 +958,14 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     	
 		for (let key in text_obj) {
 		// this loops through all of text_obj
-			var s = text_obj[key].user_input;
-			articleTableText += "<tr id='"+s+"'>";
-			articleTableText += "<td id='inputText_"+ s +"'>"+ s +"</td>";
-			articleTableText += "<td id='reference_" + s + "'></td>";
-			articleTableText += "<td id='notes_" + s + "'></td>";
-			articleTableText += "</tr>";
+			if (text_obj[key].search_status == 'done') {
+				var s = text_obj[key].user_input;
+				articleTableText += "<tr id='"+s+"'>";
+				articleTableText += "<td id='inputText_"+ s +"'>"+ s +"</td>";
+				articleTableText += "<td id='reference_" + s + "'></td>";
+				articleTableText += "<td id='notes_" + s + "'></td>";
+				articleTableText += "</tr>";
+			}
 		}
 
 		articleTableText += "</table>";
