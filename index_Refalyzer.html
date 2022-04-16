@@ -1,33 +1,19 @@
 <!--
-Basic procedure:
-Go through everything 2x. First, find user-entered DOIs. For each one, check the row above it (recursively). 
-Then, when they're done go through again and, with the stuff that's left, keep trying. 
-
+Basic procedure is, go through everything 2x. 
+// Step 1: take care of all of the user-input DOIs. 
+// Step 2: search crossref for DOIs and then take care of those. 
 -->
 
 <!-- 
 dfd To do: 
-If it's helpful, have the text_obj know what its reference_obj is, once it gets one. Don't make reference_obj a propoerty of text_obj, though. 
 
-reference table
-- don't have the table itself be important to the functioning of the program. because what if I change how the table looks?
-- don't add stuff to the table that's not correct. only add stuff that's done. And only add reference_objs to the good table. add the bad stuff to a different table. 
-- have each text_obj know what its initial row number was, so it's easy to try to combine it with above and below. (note, 
-    if a row has been removed, the numbering will get messed up. instead of trying to update the other rows when one is
-    removed, just write an above/below function that returns the next viable item)
-    
-if something is done and perfect, don't mark it as "don't try to combine me with other crap." Or maybe such items are already being ignored when trying to combine? 
-
-when something is done and good but not perfect, check above it and below it and suck that stuff in if appropriate. 
-
-it's not smart about whether anything's missing from the reference after versus before. Like, if it has the first half of the reference, 
-maybe it shouldn't be trying to find something above that. 
-
-if it finds dois for two adjacent-ish rows, will it try to combine them? If they're not user-entered dois, it should.
-There are 4 possiblities, the first one is right, the 2nd is right, both are wrong but the combo is right, or nothing is right. 
-
-Just looking at the output, it seems like maybe some of the ones marked wrong are actually 
-right. Should they be marked probable instead? 
+Combining rows
+- if the row above and below are done, then this row is done. 
+- if something is done and perfect, don't mark it as "don't try to combine me with other crap." Or maybe such items are already being ignored when trying to combine? 
+- when something is done and good but not perfect, check above it and below it and suck that stuff in if appropriate. 
+- if it has the first half of the reference, maybe it shouldn't be trying to find something above itself? 
+- With two non-user-doi rows, there are 4 possiblities, the first one is right, the 2nd is right, both are wrong but the combo is right, or nothing is right. 
+- Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
 
 Author table
 - instead of re-building the table, have it update the table. to do this, it should check 
@@ -92,7 +78,16 @@ have it run the duplicate line array through the database and see if anything go
 aDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgments of learning (JOL) and the delayed-JOL effect. Memory & Cognition, 20(4), 374–380.
 aklsdkjf
 bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgments of learning (JOL) and the delayed-JOL effect. Memory & Cognition, 20(4), 374–380.
+
+-- decided not to do this-- 
+ reference table
+- don't have the table itself be important to the functioning of the program. because what if I change how the table looks?
+- don't add stuff to the table that's not correct. only add stuff that's done. And only add reference_objs to the good table. add the bad stuff to a different table. 
+- have each text_obj know what its initial row number was, so it's easy to try to combine it with above and below. (note, 
+    if a row has been removed, the numbering will get messed up. instead of trying to update the other rows when one is
+    removed, just write an above/below function that returns the next viable item)
  -->
+
  
 
 <!DOCTYPE html>
@@ -115,9 +110,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 <!-- <script src="https://cdn.jsdelivr.net/npm/string-similarity@4/package.json"></script> -->
 
 <script>
-// Step 1: take care of all of the user-input DOIs. 
-// Step 2: take care of crossref DOIs. 
-
 	var author_obj = [];
 	var reference_obj = [];
 	var text_obj = []
@@ -145,13 +137,11 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         this.input_order = input_ord;
         this.search_status = "not started";
         this.match_status = "unknown";
+		this.notes = "";
 		this.removed = false;
         
         to_do_list_input_string.push(input_userInput);
         
-//         eventually, the reference object should be part of the text object
-        
-       
 		this.update_input = function(input_search_status, input_match_status) {
 		    // possible search status values:
             //    not started, searching, incorrect doi entered; searching again, done 
@@ -177,12 +167,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 //                 console.log( 'changed doi type to not found yet, for: ' + this.user_input)
             }
             
-// 		    if (typeof input_new_doi !== 'undefined') {
-// 		        this.doi = input_new_doi;
-// 		        console.log( 'updated doi in this.update_input to: '+input_new_doi)
-// 		    }
-		    
-		    
 		    if (this.match_status == 'unknown') {
 		        var temp_match_status_to_show = '';
 		    } else {
@@ -199,7 +183,36 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     		} catch(err) {
     		    console.log( '*error, did not update notes because getElementById did not find: '+this.user_input);
     		}
+    		
     		updateProgress();
+    		
+            try { 
+                // update the notes 
+                if (typeof reference_obj[this.doi] === 'undefined') {
+			        return;
+			    }
+                const c  = ['tomato','black'];                
+                var temp_stringToShow = "";
+				if (this.match_status != 'correct') {
+					temp_stringToShow += '<div style="color:' + cc[this.match_status]  + ';">' + this.match_status+'</div>';
+                    temp_stringToShow += '<div style="color:' + c[Math.floor(reference_obj[this.doi].score/60)] + ';">' + reference_obj[this.doi].score+'=score </div>';
+                    temp_stringToShow += '<div style="color:' + c[Math.floor(reference_obj[this.doi].letter_match/60)] + ';">' + reference_obj[this.doi].letter_match+'=letter_match </div>';
+                    temp_stringToShow += '<div style="color:' + c[Math.floor(reference_obj[this.doi].letter_match_percentage/60)] + ';">' + reference_obj[this.doi].letter_match_percentage+"=letter_match_percentage</div>"; 
+	                this.notes = temp_stringToShow;
+				} else {
+					this.notes = '';
+				}
+
+                // update html
+                document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
+                document.getElementById('reference_'+this.user_input).innerHTML = reference_obj[this.doi].apa; 
+                document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
+            } catch(err) {
+    		    console.log('*error in update ref, for: ');
+    		    console.log( this.user_input);
+    		    console.log( err);
+            }
+
 		}
 	}
 	
@@ -209,14 +222,14 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		this.apa = input_apa;
 		this.apa_no_html = jQuery(input_apa).text().trim(); // apa without the html tags
 		this.doi = this.json.DOI;
-		this.notes = "";
-		
+		this.score = 0;
+        		
         this.table_row_number = function() {
             return document.getElementById(this.user_input).rowIndex;
         }
  
  		this.update_ref = function() {
-			// update score and coloring
+			// update score and status
 			if (text_obj[this.user_input].removed) {
                 console.log( 'update_ref called for .removed object (returned instead): '+this.user_input);
 			    return;
@@ -235,30 +248,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                     this.good_match = false;
                     text_obj[this.user_input].update_input('done','wrong');
                 }
-            }
-
-            try { // dfd this should be in the text obj
-                // update the notes 
-                const c  = ['tomato','black'];                
-                var temp_stringToShow = "";
-				if (text_obj[this.user_input].match_status != 'correct') {
-					temp_stringToShow += '<div style="color:' + cc[text_obj[this.user_input].match_status]  + ';">' + text_obj[this.user_input].match_status+'</div>';
-					temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
-					temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
-					temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
-	                this.notes = temp_stringToShow;
-				} else {
-					this.notes = '';
-				}
-
-                // update html
-                document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
-                document.getElementById('reference_'+this.user_input).innerHTML = this.apa; 
-                document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
-            } catch(err) {
-    		    console.log('*error in update ref, for: ');
-    		    console.log( this.user_input);
-    		    console.log( err);
             }
 		};
 	}
@@ -319,7 +308,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         if (text_obj[input_string].search_status == "not started") {
        		text_obj[input_string].update_input('searching','unknown');
         } else if (text_obj[input_string].search_status == 'incorrect doi entered; searching again') {
-       		text_obj[input_string].update_input('searching','unknown'); // dfd added this, it helps, but it's not enough. 
+       		text_obj[input_string].update_input('searching','unknown');
             ignore_doi = true;
         }
         
@@ -494,7 +483,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                     console.log('removing a "correct" row');
                 }
 
-				var shouldRemoveFromTable = false;                
+				var shouldRemoveFromTable = true;                
                 if (shouldRemoveFromTable) {
 					var row_to_remove = document.getElementById(input_string).rowIndex;
 					document.getElementById("article_table").deleteRow(row_to_remove);
@@ -518,9 +507,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         updateProgress();
 	}
 
-	function decide_whether_to_combine_rows(input_reference_obj, shift) {
-        // The way this is now, it works if you trust the DOI. 
-        
+	function decide_whether_to_combine_rows(input_reference_obj, shift) {        
         // dfd But if the doi isn't trustworthy and the score is low,
         // it will need to be more sophisticated about comparing possible situations (e.g., it found 2 dois
         // but by combining them it get's a third doi that's better). 
@@ -530,13 +517,26 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 			return;
 		}
 	
+// dfdd
+// if this is a fragment
+//     try to combine. 
+//     if the other has no doi, then just regular try to combine
+//     if the other has a  doi, then 
+//         if the dois are the same, combo is normal
+//         if the dois are different, best combo should consider both dois and only combine if the combination is better than both. 
+// if this is wrong
+//     if the other one doesn't have a doi, return. we'll come back to it when the other gets its doi. 
+//     if they both have dois, try to combine, but with the four option approach (a, b, ab, or none). because probably, both dois are wrong. 
+// if this is correct
+//     try to combine
+
+
+	    // dfd don't do this
 		if (text_obj[input_reference_obj.user_input].match_status == "wrong") {
-//         	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input)
+        	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input) 
 			return;
 		}
 
-//dfdd        
-        
        	var otherRow_index = input_reference_obj.table_row_number() + shift;
 
         // don't try it if it would go outside the table
@@ -929,21 +929,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 if (tempDOI.length > 0) {
                     tempDOIsFoundSoFar.push(tempDOI);
                 }
-//                 og_input.push(urlSuffix[i]);
-                // dfdd 
-// const t_o = [];
-// t_o.push({'input_order':'5','doi':'bar1'})
-// t_o.push({'input_order':'45','doi':'bar2'})
-// t_o['a'] = {'input_order':'65','doi':'bar3'}
-// // document.getElementById("demo").innerHTML = ages.find(x => x.id > 9).foo;
-// 				
-// 				console.log( urlSuffix[i]);
-// 				console.log( 'bar: '+text_obj[urlSuffix[i]].user_input+ ' order = ' + text_obj[urlSuffix[i]].input_order);
-// //                 foo = ;
-//                 if (typeof t_o.find(x => x.input_order > 0).doi !== 'undefined') {
-//                 	console.log('foo = ' + t_o.find(x => x.input_order > 0).doi);
-//                 }
-
             }
         }
 		build_article_table();
@@ -951,6 +936,8 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	
 	function build_article_table() {
 		// Build article table
+		var s = '';
+		
 		articleTableText = "<table id='article_table'>";
 		articleTableText += '<tr><th style="width:40%">Input text</th>';
     	articleTableText += '<th style="width:40%">Article found</th>';
@@ -958,14 +945,12 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     	
 		for (let key in text_obj) {
 		// this loops through all of text_obj
-			if (text_obj[key].search_status == 'done') {
-				var s = text_obj[key].user_input;
-				articleTableText += "<tr id='"+s+"'>";
-				articleTableText += "<td id='inputText_"+ s +"'>"+ s +"</td>";
-				articleTableText += "<td id='reference_" + s + "'></td>";
-				articleTableText += "<td id='notes_" + s + "'></td>";
-				articleTableText += "</tr>";
-			}
+            s = text_obj[key].user_input;
+            articleTableText += "<tr id='"+s+"'>";
+            articleTableText += "<td id='inputText_"+ s +"'>"+ s +"</td>";
+            articleTableText += "<td id='reference_" + s + "'></td>";
+            articleTableText += "<td id='notes_" + s + "'></td>";
+            articleTableText += "</tr>";
 		}
 
 		articleTableText += "</table>";
@@ -1058,6 +1043,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		text_obj = [];
 		startTime = Date.now();
 		duplicate_input_text = [];
+		document.getElementById("outputText").innerHTML = "";
     
 		showBoxes();
 		parse_user_input();
