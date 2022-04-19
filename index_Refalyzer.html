@@ -139,10 +139,13 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         this.match_status = "unknown";
 		this.notes = "";
 		this.removed = false;
+		this.score = 0;
+		this.letter_match = 0;
+		this.letter_match_percentage = 0;
         
         to_do_list_input_string.push(input_userInput);
         
-		this.update_input = function(input_search_status, input_match_status) {
+		this.update_input = function(input_search_status) {
 		    // possible search status values:
             //    not started, searching, incorrect doi entered; searching again, done 
 		    // possible match status values
@@ -158,14 +161,39 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 // 				console.log( 'splicing : '+this.user_input)
 		    }
 		    
-		    this.search_status = input_search_status;
-		    this.match_status = input_match_status;
+		    if (input_search_status != '') {
+    		    this.search_status = input_search_status;
+    		}
 		    
 		    // if the user-entered doi was incorrect, change doi type
             if (input_search_status == 'incorrect doi entered; searching again') {
                 this.doi_type = 'not_found_yet';
 //                 console.log( 'changed doi type to not found yet, for: ' + this.user_input)
             }
+            
+console.log( 'calling update, this.doi='+this.doi);
+if (typeof reference_obj[this.doi] !== 'undefined') {
+    const temp_apa_no_html = reference_obj[this.doi].apa_no_html;
+    this.score = compute_score(temp_apa_no_html, this.user_input); // order has to be database version, user version 
+    this.letter_match = compute_letter_match(temp_apa_no_html, this.user_input);
+    this.letter_match_percentage = compute_letter_match_percentage(this.user_input, temp_apa_no_html); // order has to be user, database
+    if (this.score > good_match_threshold) {
+        this.good_match = true;
+        this.match_status = 'correct';
+    } else {
+        if (this.letter_match_percentage > good_match_threshold) {
+            this.good_match = true;
+            this.match_status = 'fragment';
+        } else {
+            this.good_match = false;
+            this.match_status = 'wrong';
+        }
+    }
+//     this.search_status = 'done'; // dfd leave in?
+} else {
+    this.match_status = 'unknown';
+}
+
             
 		    if (this.match_status == 'unknown') {
 		        var temp_match_status_to_show = '';
@@ -190,8 +218,8 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     		
             try { 
                 // update the notes 
-                if (typeof reference_obj[this.doi] == 'undefined') { // dfd if this is == versus === it makes a big difference
-console.log( 'returned for undefined doi ('+this.doi+'): '+this.user_input);
+                if (typeof reference_obj[this.doi] === 'undefined') { // dfd if this is == versus === it makes a big difference
+console.log( 'undefined doi ('+this.doi+'): '+this.user_input);
 // 			        return;
 			    } else {
 console.log( 'good doi ('+this.doi+'): '+this.user_input);		    
@@ -200,9 +228,9 @@ console.log( 'good doi ('+this.doi+'): '+this.user_input);
                 var temp_stringToShow = "";
 				if (this.match_status != 'correct') {
 					temp_stringToShow += '<div style="color:' + cc[this.match_status]  + ';">' + this.match_status+'</div>';
-                    temp_stringToShow += '<div style="color:' + c[Math.floor(reference_obj[this.doi].score/60)] + ';">' + reference_obj[this.doi].score+'=score </div>';
-                    temp_stringToShow += '<div style="color:' + c[Math.floor(reference_obj[this.doi].letter_match/60)] + ';">' + reference_obj[this.doi].letter_match+'=letter_match </div>';
-                    temp_stringToShow += '<div style="color:' + c[Math.floor(reference_obj[this.doi].letter_match_percentage/60)] + ';">' + reference_obj[this.doi].letter_match_percentage+"=letter_match_percentage</div>"; 
+                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
+                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
+                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
 	                this.notes = temp_stringToShow;
 				} else {
 					this.notes = '';
@@ -210,7 +238,7 @@ console.log( 'good doi ('+this.doi+'): '+this.user_input);
 
                 // update html
                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
-                document.getElementById('reference_'+this.user_input).innerHTML = reference_obj[this.doi].apa; 
+                document.getElementById('reference_'+this.user_input).innerHTML = this.apa; 
                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
 // console.log( 'update_input called (end): '+this.user_input);
             } catch(err) {
@@ -225,37 +253,36 @@ console.log( 'good doi ('+this.doi+'): '+this.user_input);
 	function Reference_object(input_userInput, input_json, input_apa) {
 		this.user_input = input_userInput;
 		this.json = input_json;
-		this.apa = input_apa;
+		this.apa = input_apa; // maybe this should be figured out here, not passed as a parameter?
 		this.apa_no_html = jQuery(input_apa).text().trim(); // apa without the html tags
 		this.doi = this.json.DOI;
-		this.score = 0;
         		
         this.table_row_number = function() {
             return document.getElementById(this.user_input).rowIndex;
         }
  
- 		this.update_ref = function() {
-			// update score and status
-			if (text_obj[this.user_input].removed) {
-                console.log( 'update_ref called for .removed object (returned instead): '+this.user_input);
-			    return;
-			}
-			this.score = compute_score(this.apa_no_html, this.user_input); // order has to be database version, user version 
-			this.letter_match = compute_letter_match(this.apa_no_html, this.user_input);
-		    this.letter_match_percentage = compute_letter_match_percentage(this.user_input, this.apa_no_html); // order has to be user, database
-            if (this.score > good_match_threshold) {
-                this.good_match = true;
-		        text_obj[this.user_input].update_input('done','correct');
-            } else {
-                if (this.letter_match_percentage > good_match_threshold) {
-                    this.good_match = true;
-                    text_obj[this.user_input].update_input('done','fragment');
-                } else {
-                    this.good_match = false;
-                    text_obj[this.user_input].update_input('done','wrong');
-                }
-            }
-		};
+//  		this.update_ref = function() {
+// 			// update score and status
+// 			if (text_obj[this.user_input].removed) {
+//                 console.log( 'update_ref called for .removed object (returned instead): '+this.user_input);
+// 			    return;
+// 			}
+// 			this.score = compute_score(this.apa_no_html, this.user_input); // order has to be database version, user version 
+// 			this.letter_match = compute_letter_match(this.apa_no_html, this.user_input);
+// 		    this.letter_match_percentage = compute_letter_match_percentage(this.user_input, this.apa_no_html); // order has to be user, database
+//             if (this.score > good_match_threshold) {
+//                 this.good_match = true;
+// 		        text_obj[this.user_input].update_input('done','correct');
+//             } else {
+//                 if (this.letter_match_percentage > good_match_threshold) {
+//                     this.good_match = true;
+//                     text_obj[this.user_input].update_input('done','fragment');
+//                 } else {
+//                     this.good_match = false;
+//                     text_obj[this.user_input].update_input('done','wrong');
+//                 }
+//             }
+// 		};
 	}
 
 	function Author_object(input_familyname, input_firstname) {
@@ -312,9 +339,9 @@ console.log( 'good doi ('+this.doi+'): '+this.user_input);
         var ignore_doi = false;
         
         if (text_obj[input_string].search_status == "not started") {
-       		text_obj[input_string].update_input('searching','unknown');
+       		text_obj[input_string].update_input('searching');
         } else if (text_obj[input_string].search_status == 'incorrect doi entered; searching again') {
-       		text_obj[input_string].update_input('searching','unknown');
+       		text_obj[input_string].update_input('searching');
             ignore_doi = true;
         }
         
@@ -342,7 +369,7 @@ console.log( 'good doi ('+this.doi+'): '+this.user_input);
 				if (typeof myJSON.message.items[0] === 'undefined') { // if it's not in the database
 					if (duplicate_input_text.indexOf(input_string) < 0) { // if it's not a duplicate
 					    // this happens when a doi is bad	
-		                text_obj[input_string].update_input('done','not found');
+		                text_obj[input_string].update_input('done');
 					} else {
 					    console.log( "** 823 i didn't' think THIS HAPPENING WAS POSSIBLE");
 					}
@@ -363,7 +390,7 @@ console.log( 'good doi ('+this.doi+'): '+this.user_input);
 				if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
 					// create new reference
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
-					reference_obj[myJSON.data[0].DOI].update_ref();
+					text_obj[input_string].update_input('done');
 
 					decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], -1);
 					if (text_obj[reference_obj[myJSON.data[0].DOI].user_input].removed == false) {
@@ -376,11 +403,7 @@ console.log( 'good doi ('+this.doi+'): '+this.user_input);
 					parse_JSON_for_authors(myJSON.data[0]); // dfd this assumes the json is still correct. Does the whole author thing adjust for removed rows? maybe it should happen at the end?
 				} else { 
 					// if it finds a doi that's been found before.
-					//console.log( 'combining a pair of rows that have the same doi, doi = '+myJSON.data[0].DOI);
-// 					console.log( 'repeat doi before combine rows: ' + input_string)
-					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); // maybe call update_ref before calling combine?
-					// note: I used to call the following line here
-//     				reference_obj[myJSON.data[0].DOI].update_ref(); // removed.. put back?
+					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); 
 				}
 			}
 
@@ -392,14 +415,14 @@ console.log( 'good doi ('+this.doi+'): '+this.user_input);
 			    //if it tried a doi that isn't correct, search again without the doi this time
 // 				console.log( "failed to find DOI " + inputDOI)
 				if (text_obj[input_string].search_status == 'searching') {
-            		text_obj[input_string].update_input('incorrect doi entered; searching again','unknown');
+            		text_obj[input_string].update_input('incorrect doi entered; searching again');
 	    			getOneURL(input_string); // the second parameter being true means the search ignores the user's doi
 	    		} // dfd get rid of second parameter above, and add third parameter to line 2 above?
 	    		   			
 			} else if (err == 'Error: This format is not supported or recognized') { 
 			    // if it found a doi that is correct, but the citation can't be found by Cite, give up.
                 console.log( 'time to give up')
-                text_obj[input_string].update_input('done','not found');
+                text_obj[input_string].update_input('done');
 			} else {
 			    console.log( '*error in get one url: '+input_string);
 				console.log(err);
@@ -628,13 +651,13 @@ console.log( 'good doi ('+this.doi+'): '+this.user_input);
 
             // assume input reference obj is correct (i.e., that's the apa string target)
             if (text_obj[input_string].doi != '') {
-                if (typeof reference_obj[text_obj[input_string].doi] != "unknown" && reference_obj[text_obj[input_string].doi] != null) {
+                if (typeof reference_obj[text_obj[input_string].doi] != "unknown" && reference_obj[text_obj[input_string].doi] != null) { // dfd shouldn't unknown be undefined??
 //                     console.log( 'in combine rows, both have dois. ')
 //                     console.log( '   input obj score='+ reference_obj[text_obj[input_string].doi].score)
 //                     console.log( '   reference obj score='+input_reference_obj.score)
-                    if (reference_obj[text_obj[input_string].doi].score > input_reference_obj.score) {
+                    if (text_obj[input_string].score > text_obj[input_reference_obj.user_input].score) { dfdd
                         console.log( '***should backweardsyl') //dfd make it treat the other one as the target
-                    } else if (reference_obj[text_obj[input_string].doi].score == input_reference_obj.score) {
+                    } else if (text_obj[input_string].score == text_obj[input_reference_obj.user_input].score) {
                         //the stuff below happens when a single reference is split into multiple lines. nothingn to worry about. 
 //                         if (reference_obj[text_obj[input_string].doi].user_input == input_reference_obj.user_input) {
 //                             console.log( '*combining with itself for '+input_reference_obj.user_input)
@@ -689,7 +712,8 @@ console.log( 'good doi ('+this.doi+'): '+this.user_input);
         
             // update reference obj (i.e., from obj)
             from_obj.user_input = to_string;
-            from_obj.update_ref();
+            
+            text_obj[to_string].update_input('');
 
             updateProgress();
         }
