@@ -132,7 +132,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 
 	function Text_object(input_userInput, input_doi, input_doi_type, input_ord) { 
 		this.user_input = input_userInput;
-        this.doi = input_doi;
+        this.doi = input_doi.toLowerCase();
         this.doi_type = input_doi_type;
         this.input_order = input_ord;
         this.search_status = "not started";
@@ -146,6 +146,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         to_do_list_input_string.push(input_userInput);
         
 		this.update_input = function(input_search_status) {
+			var temp_ref_to_show = '';
 		    // possible search status values:
             //    not started, searching, incorrect doi entered; searching again, done 
 		    // possible match status values
@@ -157,8 +158,9 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             }
 
 		    if (this.search_status != 'done' && input_search_status == 'done') {
+		    	console.log( 'done: '+this.doi)
+// 		    	console.log( reference_obj[this.doi.toLowerCase()].apa)
 				to_do_list_input_string.splice(to_do_list_input_string.indexOf(this.user_input),1); // remove it from to do list because it's done
-// 				console.log( 'splicing : '+this.user_input)
 		    }
 		    
 		    if (input_search_status != '') {
@@ -168,31 +170,46 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		    // if the user-entered doi was incorrect, change doi type
             if (input_search_status == 'incorrect doi entered; searching again') {
                 this.doi_type = 'not_found_yet';
-//                 console.log( 'changed doi type to not found yet, for: ' + this.user_input)
             }
-            
-console.log( 'calling update, this.doi='+this.doi);
-if (typeof reference_obj[this.doi] !== 'undefined') {
-    const temp_apa_no_html = reference_obj[this.doi].apa_no_html;
-    this.score = compute_score(temp_apa_no_html, this.user_input); // order has to be database version, user version 
-    this.letter_match = compute_letter_match(temp_apa_no_html, this.user_input);
-    this.letter_match_percentage = compute_letter_match_percentage(this.user_input, temp_apa_no_html); // order has to be user, database
-    if (this.score > good_match_threshold) {
-        this.good_match = true;
-        this.match_status = 'correct';
-    } else {
-        if (this.letter_match_percentage > good_match_threshold) {
-            this.good_match = true;
-            this.match_status = 'fragment';
-        } else {
-            this.good_match = false;
-            this.match_status = 'wrong';
-        }
-    }
-//     this.search_status = 'done'; // dfd leave in?
-} else {
-    this.match_status = 'unknown';
-}
+            console.log( 'this.doi='+this.doi);			
+			if (typeof reference_obj[this.doi] != 'undefined') { 
+				console.log('reference_obj exists : '+this.doi)
+				// compute scores and statuses
+				const temp_apa_no_html = reference_obj[this.doi].apa_no_html;
+				temp_ref_to_show = reference_obj[this.doi].apa;
+				this.score = compute_score(temp_apa_no_html, this.user_input); // order has to be database version, user version 
+				this.letter_match = compute_letter_match(temp_apa_no_html, this.user_input);
+				this.letter_match_percentage = compute_letter_match_percentage(this.user_input, temp_apa_no_html); // order has to be user, database
+				if (this.score > good_match_threshold) {
+					this.good_match = true;
+					this.match_status = 'correct';
+				} else {
+					if (this.letter_match_percentage > good_match_threshold) {
+						this.good_match = true;
+						this.match_status = 'fragment';
+					} else {
+						this.good_match = false;
+						this.match_status = 'wrong';
+					}
+				}
+
+				// set stuff up to show (this.notes)
+                const c  = ['tomato','black'];                
+                var temp_stringToShow = "";
+				if (this.match_status != 'correct') {
+					temp_stringToShow += '<div style="color:' + cc[this.match_status]  + ';">' + this.match_status+'</div>';
+                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
+                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
+                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
+	                this.notes = temp_stringToShow;
+				} else {
+					this.notes = '';
+				}
+			} else {
+				console.log( 'no obj: '+this.doi)
+				this.match_status = 'unknown';
+				temp_ref_to_show = 'bb';
+			}
 
             
 		    if (this.match_status == 'unknown') {
@@ -217,30 +234,11 @@ if (typeof reference_obj[this.doi] !== 'undefined') {
     		// plan: put scores and stuff in hte text object, give its update function just one parameter, search status. i'll figure out match status on its own. 
     		
             try { 
-                // update the notes 
-                if (typeof reference_obj[this.doi] === 'undefined') { // dfd if this is == versus === it makes a big difference
-console.log( 'undefined doi ('+this.doi+'): '+this.user_input);
-// 			        return;
-			    } else {
-console.log( 'good doi ('+this.doi+'): '+this.user_input);		    
-			    }
-                const c  = ['tomato','black'];                
-                var temp_stringToShow = "";
-				if (this.match_status != 'correct') {
-					temp_stringToShow += '<div style="color:' + cc[this.match_status]  + ';">' + this.match_status+'</div>';
-                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
-                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
-                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
-	                this.notes = temp_stringToShow;
-				} else {
-					this.notes = '';
-				}
-
                 // update html
                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
-                document.getElementById('reference_'+this.user_input).innerHTML = this.apa; 
+//                 console.log( 'it='+temp_ref_to_show)
+                document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show; 
                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
-// console.log( 'update_input called (end): '+this.user_input);
             } catch(err) {
     		    console.log('*error in update ref, for: ');
     		    console.log( this.user_input);
@@ -390,6 +388,7 @@ console.log( 'good doi ('+this.doi+'): '+this.user_input);
 				if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
 					// create new reference
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
+					console.log( 'blarg should be gooard: '+ reference_obj[myJSON.data[0].DOI].doi)
 					text_obj[input_string].update_input('done');
 
 					decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], -1);
@@ -402,7 +401,7 @@ console.log( 'good doi ('+this.doi+'): '+this.user_input);
 					}
 					parse_JSON_for_authors(myJSON.data[0]); // dfd this assumes the json is still correct. Does the whole author thing adjust for removed rows? maybe it should happen at the end?
 				} else { 
-					// if it finds a doi that's been found before.
+					// if it finds a doi that already has a reference obj (i.e., that's been found before).
 					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); 
 				}
 			}
