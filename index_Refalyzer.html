@@ -186,10 +186,15 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     		
     		updateProgress();
     		
+    		// plan: put scores and stuff in hte text object, give its update function just one parameter, search status. i'll figure out match status on its own. 
+    		
             try { 
                 // update the notes 
-                if (typeof reference_obj[this.doi] === 'undefined') {
-			        return;
+                if (typeof reference_obj[this.doi] == 'undefined') { // dfd if this is == versus === it makes a big difference
+console.log( 'returned for undefined doi ('+this.doi+'): '+this.user_input);
+// 			        return;
+			    } else {
+console.log( 'good doi ('+this.doi+'): '+this.user_input);		    
 			    }
                 const c  = ['tomato','black'];                
                 var temp_stringToShow = "";
@@ -207,6 +212,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
                 document.getElementById('reference_'+this.user_input).innerHTML = reference_obj[this.doi].apa; 
                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
+// console.log( 'update_input called (end): '+this.user_input);
             } catch(err) {
     		    console.log('*error in update ref, for: ');
     		    console.log( this.user_input);
@@ -1105,9 +1111,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-Gronau, Q. F., Van Erp, S., Heck, D. W., Cesario, J., Jonas, K. J., & Wagenmakers, E. J. (2017). A Bayesian model-averaged meta-analysis of the power 
-
-pose effect with informed and default priors: The case of felt power. Comprehensive Results in Social Psychology, 2, 123–138. https://doi.org/10.1080/23743603.2017.1326760
+Dougherty, M. R., Scheck, P., Nelson, T. O., & Narens, L. (2005). Using the past to predict the future. Memory & Cognition, 33, 1096–1115. https://doi.org/10.3758/BF03193216
 
 Hechler, S., Neyer, F. J., & Kessler, T. (2016). The infamous among us: Enhanced reputational memory for uncooperative ingroup members. Cognition, 157, 1–13. https://doi.org/10.1016/j.cognition.2016.08.001
 </textarea>
