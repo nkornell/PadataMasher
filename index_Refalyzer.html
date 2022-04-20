@@ -158,7 +158,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             }
 
 		    if (this.search_status != 'done' && input_search_status == 'done') {
-		    	console.log( 'done: '+this.doi)
+// 		    	console.log( 'done: '+this.doi)
 // 		    	console.log( reference_obj[this.doi.toLowerCase()].apa)
 				to_do_list_input_string.splice(to_do_list_input_string.indexOf(this.user_input),1); // remove it from to do list because it's done
 		    }
@@ -171,9 +171,9 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             if (input_search_status == 'incorrect doi entered; searching again') {
                 this.doi_type = 'not_found_yet';
             }
-            console.log( 'this.doi='+this.doi);			
+
 			if (typeof reference_obj[this.doi] != 'undefined') { 
-				console.log('reference_obj exists : '+this.doi)
+// 				console.log('reference_obj exists : '+this.doi)
 				// compute scores and statuses
 				const temp_apa_no_html = reference_obj[this.doi].apa_no_html;
 				temp_ref_to_show = reference_obj[this.doi].apa;
@@ -206,13 +206,16 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 					this.notes = '';
 				}
 			} else {
-				console.log( 'no obj: '+this.doi)
+// 				console.log( 'no obj: '+this.doi)
 				this.match_status = 'unknown';
-				temp_ref_to_show = 'bb';
+				temp_ref_to_show = '';
+				if (this.search_status == 'done') {
+				    this.notes = "not found";
+				}
 			}
 
             
-		    if (this.match_status == 'unknown') {
+		    if (this.match_status == 'unknown' || this.match_status == 'correct') {
 		        var temp_match_status_to_show = '';
 		    } else {
     		    var temp_match_status_to_show = '<div style="color:' + cc[this.match_status]  + ';">' + this.match_status + '</div>';
@@ -221,14 +224,12 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		        var temp_search_status_to_show = '';
 		    } else {
 		        var temp_search_status_to_show = this.search_status;
-
 		    }
-		    try {
-    			document.getElementById('notes_'+this.user_input).innerHTML = temp_search_status_to_show + temp_match_status_to_show; 
-    		} catch(err) {
-    		    console.log( '*error, did not update notes because getElementById did not find: '+this.user_input);
-    		}
-    		
+		    
+            if (this.notes == '') {
+                this.notes = temp_search_status_to_show + temp_match_status_to_show; 
+            }
+ 
     		updateProgress();
     		
     		// plan: put scores and stuff in hte text object, give its update function just one parameter, search status. i'll figure out match status on its own. 
@@ -236,7 +237,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             try { 
                 // update html
                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
-//                 console.log( 'it='+temp_ref_to_show)
                 document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show; 
                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
             } catch(err) {
@@ -244,7 +244,6 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     		    console.log( this.user_input);
     		    console.log( err);
             }
-
 		}
 	}
 	
@@ -334,51 +333,53 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 // 		already decided that x shouldn't be shown. And stuff. This is why the program does all the  
 //		rows that have dois before starting on the ones that don't. 
         
-        var ignore_doi = false;
+// If this function finds a doi in crossref, it recursively calls itself and returns. 
+// This is wasteful because it means going to a server to find JSON that's already 
+// been found, but I need the JSON in the format Cite uses, which is called Citation 
+// Style Language (CSL). And I couldn't figure out any other way. 
+
+        var temp_ignore_doi = false;
+        var temp_search_string = '';
         
         if (text_obj[input_string].search_status == "not started") {
        		text_obj[input_string].update_input('searching');
         } else if (text_obj[input_string].search_status == 'incorrect doi entered; searching again') {
        		text_obj[input_string].update_input('searching');
-            ignore_doi = true;
+            temp_ignore_doi = true;
         }
         
 		var stringToSend = '';
 		var inputDOI = text_obj[input_string].doi;
-		
-		try {
-			if (inputDOI === "" || ignore_doi == true) {
-				// If this function finds a doi in crossref, it recursively calls itself and returns. 
-				// This is wasteful because it means going to a server to find JSON that's already 
-				// been found, but I need the JSON in the format Cite uses, which is called Citation 
-				// Style Language (CSL). And I couldn't figure out any other way. 
 
-                if (ignore_doi == true) {
-                    var temp_search_string = remove_doi_from_string(input_string, inputDOI);
+		try {
+			if (inputDOI === "" || temp_ignore_doi == true) {
+                // if we're not using a doi (either there isn't on or it's bad), search crossref w/o a doi
+                if (temp_ignore_doi == true) {
+                    temp_search_string = remove_doi_from_string(input_string, inputDOI);
                     // maybe check if it's an empty string and if so, abandon ship?
                 } else {
                     temp_search_string = input_string;
     			}
 
-// 	       		pagelog( 'getOneURL  [no doi]: '+temp_search_string)
+// 	       		pagelog( 'getOneURL [no doi]: '+temp_search_string)
    				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
-// 				document.getElementById('reference_' + input_string).innerHTML = "searching"; 
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
 				if (typeof myJSON.message.items[0] === 'undefined') { // if it's not in the database
 					if (duplicate_input_text.indexOf(input_string) < 0) { // if it's not a duplicate
 					    // this happens when a doi is bad	
 		                text_obj[input_string].update_input('done');
+					    console.log( "** found a doi that's bad, trying again (yay, delete this line)");
 					} else {
 					    console.log( "** 823 i didn't' think THIS HAPPENING WAS POSSIBLE");
 					}
 				} else {
 					// if a doi was found, run this thing again but with the doi in the parameter, so Cite will work.
 					text_obj[input_string].doi = myJSON.message.items[0].DOI;
-// 					console.log('calling getoneurl recursively with doi=' + text_obj[input_string].doi)
 					getOneURL(input_string);
 					return;
 				}
-			} else { // if a doi was found
+			} else { 
+			    // if a doi was found and we're using it (for now at least, unless we find out it's bad)
 // 	       		pagelog( 'getOneURL [yes doi]: '+input_string)
 				let myJSON = await Cite.async(inputDOI);
 				let bibliography = myJSON.format ('bibliography', {
@@ -388,7 +389,8 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 				if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
 					// create new reference
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
-					console.log( 'blarg should be gooard: '+ reference_obj[myJSON.data[0].DOI].doi)
+// 					console.log( 'blarg should be gooard: '+ reference_obj[myJSON.data[0].DOI].doi)
+					text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
 					text_obj[input_string].update_input('done');
 
 					decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], -1);
@@ -412,11 +414,11 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		catch(err) {
 			if (err == "Error: Server responded with status code 404") {
 			    //if it tried a doi that isn't correct, search again without the doi this time
-// 				console.log( "failed to find DOI " + inputDOI)
+				pagelog( "failed to find DOI " + inputDOI)
 				if (text_obj[input_string].search_status == 'searching') {
             		text_obj[input_string].update_input('incorrect doi entered; searching again');
-	    			getOneURL(input_string); // the second parameter being true means the search ignores the user's doi
-	    		} // dfd get rid of second parameter above, and add third parameter to line 2 above?
+	    			getOneURL(input_string); 
+	    		} 
 	    		   			
 			} else if (err == 'Error: This format is not supported or recognized') { 
 			    // if it found a doi that is correct, but the citation can't be found by Cite, give up.
@@ -654,7 +656,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 //                     console.log( 'in combine rows, both have dois. ')
 //                     console.log( '   input obj score='+ reference_obj[text_obj[input_string].doi].score)
 //                     console.log( '   reference obj score='+input_reference_obj.score)
-                    if (text_obj[input_string].score > text_obj[input_reference_obj.user_input].score) { dfdd
+                    if (text_obj[input_string].score > text_obj[input_reference_obj.user_input].score) {
                         console.log( '***should backweardsyl') //dfd make it treat the other one as the target
                     } else if (text_obj[input_string].score == text_obj[input_reference_obj.user_input].score) {
                         //the stuff below happens when a single reference is split into multiple lines. nothingn to worry about. 
@@ -1134,9 +1136,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-Dougherty, M. R., Scheck, P., Nelson, T. O., & Narens, L. (2005). Using the past to predict the future. Memory & Cognition, 33, 1096–1115. https://doi.org/10.3758/BF03193216
-
-Hechler, S., Neyer, F. J., & Kessler, T. (2016). The infamous among us: Enhanced reputational memory for uncooperative ingroup members. Cognition, 157, 1–13. https://doi.org/10.1016/j.cognition.2016.08.001
+Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the future: Object and source memory for real and imagined events. Applied Cognitive Psychology, 13, 373–390. https://doi.org/10.1002/(SICI)1099-0720(199908)13:4<373::AID- ACP605>3.0.CO;2-F
 </textarea>
 
 <!-- 
