@@ -561,9 +561,9 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 //     try to combine
 
 
-	    // dfd don't do this
+	    // dfd ideally I wouldn't do this, see above for a better idea
 		if (text_obj[input_reference_obj.user_input].match_status == "wrong") {
-        	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input) 
+//         	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input) 
 			return;
 		}
 
@@ -679,7 +679,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             if (shouldCombine == true) {
                 remove_row(input_string);
                 change_user_input(input_reference_obj, bestcombo);
-//                 pagelog('[combination] '+bestcombo+"<br>[should match] "+input_reference_obj.apa_no_html);
+                pagelog('[combination] '+bestcombo);
                 return true;
             } else {
                 return false;
@@ -1136,7 +1136,25 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the future: Object and source memory for real and imagined events. Applied Cognitive Psychology, 13, 373–390. https://doi.org/10.1002/(SICI)1099-0720(199908)13:4<373::AID- ACP605>3.0.CO;2-F
+Heck, D. W., Gronau, F. Q., & Wagenmakers &, E.-J. (2019). metaBMA: Bayesian Model
+
+Averaging for Random and Fixed Effects Meta-Analysis. https://CRAN.R-
+
+project.org/package=metaBMA.
+
+Henkel, L. A., Johnson, M. K., & De Leonardis, D. M. (1998). Aging and source monitoring:
+
+Cognitive processes and neuropsychological correlates. Journal of Experimental
+
+Psychology: General, 127, 251–268. https://doi.org/10.1037/0096-3445.127.3.251 Hicks, J. L., & Cockman, D. W. (2003). The effect of general knowledge on source memory
+
+and decision processes. Journal of Memory and Language, 48, 489–501.
+
+https://doi.org/10.1016/S0749-596X(02)00537-5
+
+Johnson, M. K., Hashtroudi, S., & Lindsay, D. S. (1993). Source monitoring. Psychological
+
+Bulletin, 114, 3–28. https://doi.org/10.1037/0033-2909.114.1.3
 </textarea>
 
 <!-- 
