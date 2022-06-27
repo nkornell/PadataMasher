@@ -1,9 +1,3 @@
-<!--
-Basic procedure is, go through everything 2x. 
-// Step 1: take care of all of the user-input DOIs. 
-// Step 2: search crossref for DOIs and then take care of those. 
--->
-
 <!-- 
 dfd To do: 
 
@@ -88,7 +82,12 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
     removed, just write an above/below function that returns the next viable item)
  -->
 
- 
+ <!--
+Basic procedure is, go through everything 2x. 
+// Step 1: take care of all of the user-input DOIs. 
+// Step 2: search crossref for DOIs and then take care of those. 
+-->
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -503,37 +502,35 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             // if it's already removed, don't remove it. 
             if (to_do_list_input_string.indexOf(input_string) >= 0) {
                 // But before returning, check if it's still in the to do list, and if it is, remove it. (This can happen because exact duplicate rows need to be removed from the to do list more than once.)
-//                 console.log( 'splicing '+to_do_list_input_string.indexOf(input_string));
+                console.log( 'splicing '+to_do_list_input_string.indexOf(input_string));
                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
             }
             return;
         } else {
             try {
+                if (text_obj[input_string].doi != '') {
+                    console.log( '[removing row with a known doi] '+ input_string + ' [' + text_obj[input_string].doi + ']');
+                }
+
                 if (text_obj[input_string].match_status == "correct") {
                     console.log('removing a "correct" row');
                 }
 
-				var shouldRemoveFromTable = true;                
-                if (shouldRemoveFromTable) {
-					var row_to_remove = document.getElementById(input_string).rowIndex;
-					document.getElementById("article_table").deleteRow(row_to_remove);
-				}
+                var row_to_remove = document.getElementById(input_string).rowIndex;
+                document.getElementById("article_table").deleteRow(row_to_remove);
 				
 //                 console.log( 'spli-sing '+to_do_list_input_string.indexOf(input_string))
                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
         
                 text_obj[input_string].removed = true; // I think I did this rather than deleting it because get URL might be looking for it later. 
         
-//                 if (text_obj[input_string].doi != '') {
-//                     console.log( 'removing row with a doi in it: '+ text_obj[input_string].doi);
-//                 }
             }
             catch(err) {
                 console.log( '*error in remove_row. input_string='+ input_string + " [error next line]");
                 console.log( err);
             }
         }
-//         pagelog('Removed: '+input_string)
+//         console.log('[Removed] '+input_string)
         updateProgress();
 	}
 
@@ -614,7 +611,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	    // The one it keeps is the input reference obj.  
 	    
         var shouldCombine = false;
-//         console.log( 
+        var shouldChangeUserInput = false;
 
         try {
             if (text_obj[input_string].removed) {
@@ -628,7 +625,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 
             if (input_reference_obj.doi == text_obj[input_string].doi) {
                 // if it finds the same reference twice, combine them
-//                 console.log( 'found the same doi twice')
+                console.log( 'found the same doi twice')
                 shouldCombine = true;
             } else if (text_obj[input_string].search_status == "searching") {
                 // if it's still searching for a row, return. it'll try again with that row later. 
@@ -645,7 +642,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
                 // if both have good dois already
                 if (text_obj[input_string].doi !== input_reference_obj.doi) {
                     // if the two dois are not the same
-//                     console.log( 'tried to combine two "correct" rows with different dois. returning.')
+                    console.log( 'tried to combine two "correct" rows with different dois. returning.')
                     return false;
                 }
             }
@@ -673,13 +670,16 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             // if the best match is the combo, combine them. 
             if (input_reference_obj.user_input !== bestcombo) {
                 shouldCombine = true;
+                shouldChangeUserInput = true;
             }
 
             // if appropriate, remove the row
             if (shouldCombine == true) {
                 remove_row(input_string);
-                change_user_input(input_reference_obj, bestcombo);
-                pagelog('[combination] '+bestcombo);
+                if (shouldChangeUserInput == true) {
+                    change_user_input(input_reference_obj, bestcombo); 
+                }
+//                 console.log('[bestcombo] '+bestcombo); // dfd bestcombo is coming out wrong when part of it is incorrect
                 return true;
             } else {
                 return false;
@@ -735,6 +735,9 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		var addition_Score_percent = compute_letter_match_percentage(user_input_addition, goal);
 		if (addition_Score_percent < good_match_threshold) {
 // 			console.log("[returning no change] addition score percent "+addition_Score_percent+" < good match threshold")
+// 			console.log('targ='+ user_input_target)
+// 			console.log('addition='+ user_input_addition)
+// 			console.log('goal='+goal)
 			return user_input_target;
 		}
 
@@ -758,7 +761,7 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
             // maybe to really be smart, it should look at where the fragment is (in the goal string). If it's the end, don't add 
             // something after it; if it's the start, don't add something before it. 
             
-            if (verbose) {
+            if (verbose == true) {
                 console.log( '--running best combination--');
                 console.log('a = ['+text_obj[aText].search_status+', '+text_obj[aText].match_status+'] ' + aText)
                 console.log('b = ['+text_obj[bText].search_status+', '+text_obj[bText].match_status+'] ' + bText)
@@ -776,16 +779,16 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
         reverse_comboScore = 0; // doing this makes it so reverse can't win. 
 		maxScore = Math.max(aScore,bScore,comboScore,reverse_comboScore);
 		if (maxScore == comboScore) {
-		    if (verbose) {console.log( 'winner=comboText');}
+		    if (verbose == true) {console.log( 'winner=comboText');}
 			return comboText;
 		} else if (maxScore == reverse_comboScore) {
-		    if (verbose) {console.log( 'winner=reverse comboText');}
+		    if (verbose == true) {console.log( 'winner=reverse comboText');}
 			return reverse_comboText;
 		} else if (maxScore == aScore) {
-		    if (verbose) {console.log( 'winner=returning earlier table entry');}
+		    if (verbose == true) {console.log( 'winner=returning earlier table entry');}
 			return aText;
 		} else if (maxScore == bScore) {
-		    if (verbose) {console.log( 'winner=returning later table entry');}
+		    if (verbose == true) {console.log( 'winner=returning later table entry');}
 			return bText;
 		}
 	}
@@ -1070,10 +1073,12 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 	function start() {
 		author_obj = [];
 		reference_obj = [];
-		to_do_list_input_string = [];
 		text_obj = [];
-		startTime = Date.now();
+		to_do_list_input_string = [];
 		duplicate_input_text = [];
+		started_notFoundYet = false;
+		startTime = Date.now();
+		
 		document.getElementById("outputText").innerHTML = "";
     
 		showBoxes();
@@ -1114,8 +1119,22 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
 		    started_notFoundYet = true;
 			remove_duplicate_rows();
             getAllUrls('not_found_yet');
-        }   
+        }
+        
+//         move_progress_bar(100*rows_done/rows_total);
+        var elem = document.getElementById("myBar");
+        elem.style.width = 100*rows_done/rows_total + "%";
+
 	}
+	
+//     function move_progress_bar(percent) {
+//         var elem = document.getElementById("myBar");
+//         var id = setInterval(frame, 10);
+//         function frame() {
+//            elem.style.width = percent + "%";
+//         }
+//         return;
+//     }
 
 </script>
 </head>
@@ -1136,25 +1155,17 @@ bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgmen
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-Heck, D. W., Gronau, F. Q., & Wagenmakers &, E.-J. (2019). metaBMA: Bayesian Model
+Besken, M. (2016). Picture-perfect is not perfect for metamemory: 
+Testing the perceptual fluency hypothesis with degraded images. 
+Journal of Experimental Psychology: Learning, Memory, and Cognition, 
+42, 1417–1433. 
 
-Averaging for Random and Fixed Effects Meta-Analysis. https://CRAN.R-
+https://doi.org/10.1037/0278-7393.34.3.460
 
-project.org/package=metaBMA.
-
-Henkel, L. A., Johnson, M. K., & De Leonardis, D. M. (1998). Aging and source monitoring:
-
-Cognitive processes and neuropsychological correlates. Journal of Experimental
-
-Psychology: General, 127, 251–268. https://doi.org/10.1037/0096-3445.127.3.251 Hicks, J. L., & Cockman, D. W. (2003). The effect of general knowledge on source memory
-
-and decision processes. Journal of Memory and Language, 48, 489–501.
-
-https://doi.org/10.1016/S0749-596X(02)00537-5
-
-Johnson, M. K., Hashtroudi, S., & Lindsay, D. S. (1993). Source monitoring. Psychological
-
-Bulletin, 114, 3–28. https://doi.org/10.1037/0033-2909.114.1.3
+Besken, M., & Mulligan, N. W. (2013). Easily perceived, easily 
+remembered? Perceptual interference produces a double dissociation 
+between metamemory and memory performance. Memory & Cognition, 41, 
+897–903. 
 </textarea>
 
 <!-- 
@@ -1181,8 +1192,13 @@ https://doi.org/10.1016/S0749-596X(02)00537-5
 	<div class='boxAroundTable' style="min-width: 300px">
 		<div class='heading' id='progressHeader'>Progress</div>
 		<div id='progressText'></div>
+		<br>
+        <div id="myProgress">
+          <div id="myBar"></div>
+        </div>
 	</div>
 </div>
+
 
 
 <!-- 	Article table 	-->
