@@ -12,8 +12,6 @@ Combining rows
 Instead of Memory & Cognition it returns Memory &amp; Cognition
 
 Author table
-- instead of re-building the table, have it update the table. to do this, it should check 
-whether a row for the author exists. Then either add it, or change the citation count and co-authors
 - Look for cases where it's the same author but the name is different (e.g., Bjork, E. L. and Bjork, 
 Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring case
 
@@ -22,7 +20,7 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 <!-- 
 stuff to test
 ~~~
-test this because it combines way too much and even brings the stuff from below the doi to above!?
+test this because it does different things different times but often fails to combine stuff that it should
 
 Besken, M. (2016). Picture-perfect is not perfect for metamemory: 
 Testing the perceptual fluency hypothesis with degraded images. 
@@ -214,7 +212,6 @@ Basic procedure is, go through everything 2x.
 				    this.notes = "not found";
 				}
 			}
-
             
 		    if (this.match_status == 'unknown' || this.match_status == 'correct') {
 		        var temp_match_status_to_show = '';
@@ -232,9 +229,7 @@ Basic procedure is, go through everything 2x.
             }
  
     		updateProgress();
-    		
-    		// plan: put scores and stuff in hte text object, give its update function just one parameter, search status. i'll figure out match status on its own. 
-    		
+    		    		
             try { 
                 // update html
                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
@@ -258,30 +253,7 @@ Basic procedure is, go through everything 2x.
         this.table_row_number = function() {
             return document.getElementById(this.user_input).rowIndex;
         }
- 
-//  		this.update_ref = function() {
-// 			// update score and status
-// 			if (text_obj[this.user_input].removed) {
-//                 console.log( 'update_ref called for .removed object (returned instead): '+this.user_input);
-// 			    return;
-// 			}
-// 			this.score = compute_score(this.apa_no_html, this.user_input); // order has to be database version, user version 
-// 			this.letter_match = compute_letter_match(this.apa_no_html, this.user_input);
-// 		    this.letter_match_percentage = compute_letter_match_percentage(this.user_input, this.apa_no_html); // order has to be user, database
-//             if (this.score > good_match_threshold) {
-//                 this.good_match = true;
-// 		        text_obj[this.user_input].update_input('done','correct');
-//             } else {
-//                 if (this.letter_match_percentage > good_match_threshold) {
-//                     this.good_match = true;
-//                     text_obj[this.user_input].update_input('done','fragment');
-//                 } else {
-//                     this.good_match = false;
-//                     text_obj[this.user_input].update_input('done','wrong');
-//                 }
-//             }
-// 		};
-	}
+ 	}
 
 	function Author_object(input_familyname, input_firstname) {
 		// this creates instances of an author object, which is how I keep track of authors. 
@@ -334,10 +306,10 @@ Basic procedure is, go through everything 2x.
 // 		already decided that x shouldn't be shown. And stuff. This is why the program does all the  
 //		rows that have dois before starting on the ones that don't. 
         
-// If this function finds a doi in crossref, it recursively calls itself and returns. 
-// This is wasteful because it means going to a server to find JSON that's already 
-// been found, but I need the JSON in the format Cite uses, which is called Citation 
-// Style Language (CSL). And I couldn't figure out any other way. 
+	// If this function finds a doi in crossref, it recursively calls itself and returns. 
+	// This is wasteful because it means going to a server to find JSON that's already 
+	// been found, but I need the JSON in the format Cite uses, which is called Citation 
+	// Style Language (CSL). And I couldn't figure out any other way. 
 
         var temp_ignore_doi = false;
         var temp_search_string = '';
@@ -362,7 +334,7 @@ Basic procedure is, go through everything 2x.
                     temp_search_string = input_string;
     			}
 
-// 	       		pagelog( 'getOneURL [no doi]: '+temp_search_string)
+	       		pagelog( 'getOneURL [no doi]: '+temp_search_string)
    				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
 				if (typeof myJSON.message.items[0] === 'undefined') { // if it's not in the database
@@ -402,14 +374,12 @@ Basic procedure is, go through everything 2x.
 // 					    console.log( 'splicing '+to_do_list_input_string.indexOf(input_string))
 						to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
 					}
-					parse_JSON_for_authors(myJSON.data[0]); // dfd this assumes the json remains correct. Does the whole author thing adjust for removed rows? The author things should happen at the end.
 				} else { 
 					// if it finds a doi that already has a reference obj (i.e., that's been found before).
 					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); 
 				}
 			}
 
-            build_author_table();
 			updateProgress();
 		}
 		catch(err) {
@@ -874,25 +844,29 @@ Basic procedure is, go through everything 2x.
 		var temp_list_of_co_authors_from_this_article = [];
 				
 		// figure out author stuff (for author table)
-		if (typeof input_json.author === 'undefined') { // if crossref didn't find it, ignore it 
-// 			console.log('no authors found ' + input_json.DOI);
-		} else {
-			for (a = 0; a < input_json.author.length; a++) {
-			    if (input_json.author[a].family !== undefined && input_json.author[a].family !== null) {
-                    temp_firstname = input_json.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim();
-                    tempAuthor_full = input_json.author[a].family + ", " + temp_firstname;
-                    
-                    // keep track of how many times this author has appeared for the table of authors
-                    if (author_obj[tempAuthor_full] === undefined) {
-                        author_obj[tempAuthor_full] = new Author_object(input_json.author[a].family, temp_firstname);
-                    } else {
-                        author_obj[tempAuthor_full].citation_count++;
-                    }
-                    temp_list_of_co_authors_from_this_article.push(tempAuthor_full);
-                }
-			}
+		try {
+			if (typeof input_json.author === 'undefined') { // if crossref didn't find it, ignore it 
+				console.log('no authors found ' + input_json.DOI);
+			} else {
+				for (a = 0; a < input_json.author.length; a++) {
+					if (input_json.author[a].family !== undefined && input_json.author[a].family !== null) {
+						temp_firstname = input_json.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim();
+						tempAuthor_full = input_json.author[a].family + ", " + temp_firstname;
+					
+						// keep track of how many times this author has appeared for the table of authors
+						if (author_obj[tempAuthor_full] === undefined) {
+							author_obj[tempAuthor_full] = new Author_object(input_json.author[a].family, temp_firstname);
+						} else {
+							author_obj[tempAuthor_full].citation_count++;
+						}
+						temp_list_of_co_authors_from_this_article.push(tempAuthor_full);
+					}
+				}
 
-			connect_coauthors(temp_list_of_co_authors_from_this_article);
+				connect_coauthors(temp_list_of_co_authors_from_this_article);
+			}
+		} catch(err) {
+			console.log( 'error in parse_JSON_for_authors');
 		}
 	}
 
@@ -1039,8 +1013,26 @@ Basic procedure is, go through everything 2x.
 
 	
     function build_author_table() {
-        var authorTableText = "";
+		// Figure out the authors and build a table with all of them in it. This happens after all the articles are parsed.
+		console.log( 'calling build author table')
 
+		var i = 0;
+		author_obj = [];
+
+        // parse authors
+        var rows_total = document.getElementById('article_table').rows.length - 1;
+		for (i = 1; i <= rows_total; i++) { // start at 1 to skip header row
+			try {
+				temp_row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
+				temp_DOI = text_obj[temp_row_text].doi;
+				parse_JSON_for_authors(reference_obj[temp_DOI].json)
+			} catch(err) {
+				console.log( 'could not parse author: ' + temp_row_text)
+			}
+		}
+
+		// build table
+        var authorTableText = "";
         // create the html table 
         authorTableText = "<table><tr>";
         authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes"'+")' title='Click to Sort'>Highlight</th>";
@@ -1066,14 +1058,13 @@ Basic procedure is, go through everything 2x.
 	function showBoxes() {
 		var x = document.getElementById("refalyzerArticleListBox");
 		x.style.display = "flex";
-		x = document.getElementById("refalyzerAuthorsBox");
-		x.style.display = "flex";
+// 		x = document.getElementById("refalyzerAuthorsBox");
+// 		x.style.display = "flex";
 		x = document.getElementById("progressBox");
 		x.style.display = "flex";
 	}
 	
 	function start() {
-		author_obj = [];
 		reference_obj = [];
 		text_obj = [];
 		to_do_list_input_string = [];
@@ -1083,6 +1074,7 @@ Basic procedure is, go through everything 2x.
 		
 		document.getElementById("outputText").innerHTML = "";
         document.getElementById("myProgress").style = "display: flex;"
+        document.getElementById("refalyzerAuthorsBox").style = "display: none;"
 
 		showBoxes();
 		parse_user_input();
@@ -1115,10 +1107,9 @@ Basic procedure is, go through everything 2x.
 		document.getElementById('progressText').innerHTML = '&nbsp;'; // this space is just so it looks good
 
 		if (rows_done >= rows_total) {
-			document.getElementById('progressHeader').innerHTML = "Done ";
-     		document.getElementById('progressText').innerHTML = '&nbsp;' + rows_total + " rows (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
-     		document.getElementById("myProgress").style = "display: none;"
-
+			// dfd it's possible for this stuff to happen twice (or more?). In other words, updateProgress can find this to be true more than once and do this stuff. 
+			// It'd probably be better if that wasn't the case, though I'm not sure it does a lot of harm. 
+			finish(rows_total);
 		} else if (rows_done == rows_with_user_dois_total && started_notFoundYet == false) {
 		    started_notFoundYet = true;
 			remove_duplicate_rows();
@@ -1127,6 +1118,14 @@ Basic procedure is, go through everything 2x.
         
         // update progress bar
         document.getElementById("myBar").style.width = 100*rows_done/rows_total + "%";
+	}
+	
+	function finish(tot) {
+		document.getElementById('progressHeader').innerHTML = "Done ";
+		document.getElementById('progressText').innerHTML = '&nbsp;' + tot + " rows (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
+		document.getElementById("myProgress").style = "display: none;"
+		build_author_table();
+		document.getElementById("refalyzerAuthorsBox").style = "display: flex;"	
 	}
 	
 
