@@ -402,7 +402,7 @@ Basic procedure is, go through everything 2x.
 // 					    console.log( 'splicing '+to_do_list_input_string.indexOf(input_string))
 						to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
 					}
-					parse_JSON_for_authors(myJSON.data[0]); // dfd this assumes the json is still correct. Does the whole author thing adjust for removed rows? maybe it should happen at the end?
+					parse_JSON_for_authors(myJSON.data[0]); // dfd this assumes the json remains correct. Does the whole author thing adjust for removed rows? The author things should happen at the end.
 				} else { 
 					// if it finds a doi that already has a reference obj (i.e., that's been found before).
 					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); 
@@ -545,7 +545,8 @@ Basic procedure is, go through everything 2x.
 			console.log( '*in decide whether to combine... null found for '+input_reference_obj.user_input)
 			return;
 		}
-	
+// dfd it's risky, but maybe using a lowercase first letter as a clue would be smart? and also looking at the number of characters per row.
+
 // dfdd
 // if this is a fragment
 //     try to combine. 
@@ -651,7 +652,7 @@ Basic procedure is, go through everything 2x.
 
             // assume input reference obj is correct (i.e., that's the apa string target)
             if (text_obj[input_string].doi != '') {
-                if (typeof reference_obj[text_obj[input_string].doi] != "unknown" && reference_obj[text_obj[input_string].doi] != null) { // dfd shouldn't unknown be undefined??
+                if (typeof reference_obj[text_obj[input_string].doi] != "undefined" && reference_obj[text_obj[input_string].doi] != null) {
 //                     console.log( 'in combine rows, both have dois. ')
 //                     console.log( '   input obj score='+ reference_obj[text_obj[input_string].doi].score)
 //                     console.log( '   reference obj score='+input_reference_obj.score)
@@ -681,7 +682,6 @@ Basic procedure is, go through everything 2x.
                 if (shouldChangeUserInput == true) {
                     change_user_input(input_reference_obj, bestcombo); 
                 }
-//                 console.log('[bestcombo] '+bestcombo); // dfd bestcombo is coming out wrong when part of it is incorrect
                 return true;
             } else {
                 return false;
@@ -1084,7 +1084,6 @@ Basic procedure is, go through everything 2x.
 		document.getElementById("outputText").innerHTML = "";
         document.getElementById("myProgress").style = "display: flex;"
 
-    
 		showBoxes();
 		parse_user_input();
 		getAllUrls('from_user');
