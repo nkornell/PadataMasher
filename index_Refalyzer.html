@@ -9,6 +9,8 @@ Combining rows
 - With two non-user-doi rows, there are 4 possiblities, the first one is right, the 2nd is right, both are wrong but the combo is right, or nothing is right. 
 - Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
 
+Instead of Memory & Cognition it returns Memory &amp; Cognition
+
 Author table
 - instead of re-building the table, have it update the table. to do this, it should check 
 whether a row for the author exists. Then either add it, or change the citation count and co-authors
@@ -916,7 +918,7 @@ Basic procedure is, go through everything 2x.
 	
 	function parse_user_input() {
 		var inputText = document.getElementById("myText").value;
-		inputText = inputText.replace(/[&\\#$~%'"*?{}]/g, ''); // remove illegal characters
+		inputText = inputText.replace(/[&\\#$~%'"*?{}]/g, ''); // remove illegal characters. note: taking out the ampersand causes errors. so I take it out even though it does change the input in a meaningful way. If you want to make things 100% perfect, leave it in the input but do not send it to the server.
 		inputText = inputText.replaceAll("- ","-"); 
 		
 		var urlSuffix = inputText.split(/\r\n|\r|\n/g);
@@ -1080,6 +1082,8 @@ Basic procedure is, go through everything 2x.
 		startTime = Date.now();
 		
 		document.getElementById("outputText").innerHTML = "";
+        document.getElementById("myProgress").style = "display: flex;"
+
     
 		showBoxes();
 		parse_user_input();
@@ -1108,33 +1112,24 @@ Basic procedure is, go through everything 2x.
             console.log( err);
         }
 
-// 	    console.log( 'called update Progress: '+rows_done + ' of ' + rows_total + "(" + rows_with_user_dois_total + ")")
-
 		document.getElementById('progressHeader').innerHTML = "Working... ";
-		document.getElementById('progressText').innerHTML = '&nbsp;' + rows_done + ' of ' + rows_total + " (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
+		document.getElementById('progressText').innerHTML = '&nbsp;'; // this space is just so it looks good
 
 		if (rows_done >= rows_total) {
 			document.getElementById('progressHeader').innerHTML = "Done ";
+     		document.getElementById('progressText').innerHTML = '&nbsp;' + rows_total + " rows (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
+     		document.getElementById("myProgress").style = "display: none;"
+
 		} else if (rows_done == rows_with_user_dois_total && started_notFoundYet == false) {
 		    started_notFoundYet = true;
 			remove_duplicate_rows();
             getAllUrls('not_found_yet');
         }
         
-//         move_progress_bar(100*rows_done/rows_total);
-        var elem = document.getElementById("myBar");
-        elem.style.width = 100*rows_done/rows_total + "%";
-
+        // update progress bar
+        document.getElementById("myBar").style.width = 100*rows_done/rows_total + "%";
 	}
 	
-//     function move_progress_bar(percent) {
-//         var elem = document.getElementById("myBar");
-//         var id = setInterval(frame, 10);
-//         function frame() {
-//            elem.style.width = percent + "%";
-//         }
-//         return;
-//     }
 
 </script>
 </head>
@@ -1190,8 +1185,8 @@ https://doi.org/10.1016/S0749-596X(02)00537-5
 
 <div class='bigBox' id='progressBox' style="display: none;">
 	<div class='boxAroundTable' style="min-width: 300px">
-		<div class='heading' id='progressHeader'>Progress</div>
-		<div id='progressText'></div>
+		<div class='heading' id='progressHeader'></div>
+		<div id='progressText'>Working </div>
 		<br>
         <div id="myProgress">
           <div id="myBar"></div>
