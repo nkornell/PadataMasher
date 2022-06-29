@@ -228,7 +228,7 @@ Basic procedure is, go through everything 2x.
                 this.notes = temp_search_status_to_show + temp_match_status_to_show; 
             }
  
-    		updateProgress();
+    		update_progress();
     		    		
             try { 
                 // update html
@@ -369,18 +369,19 @@ Basic procedure is, go through everything 2x.
 					if (to_do_list_input_string.indexOf(input_string) > -1) {
 						to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
 					}
-dfd if the last thing it finds is the last row and it's wrong, it'll never get fixed. 
-maybe smarter to just go through everything one last time at the end. or, just do the whole thing at the end
+// dfd if the last thing it finds is the last row and it's wrong, it'll never get fixed. 
+// maybe smarter to just go through everything one last time at the end. or, just do the whole thing at the end
+
 				} else { 
 					// if it finds a doi that already has a reference obj (i.e., that's been found before).
 //                     pagelog ('this happened for '+reference_obj[myJSON.data[0].DOI].user_input)
 					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); // dfd this is redundant... unless the same doi comes up twice with other stuff in between. test that situation to see if this works and/or is necessary. 
 				}
-                decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], -1);
-                decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], 1);
+//                 decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], -1);
+//                 decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], 1);
 			}
 
-			updateProgress();
+			update_progress();
 		}
 		catch(err) {
 			if (err == "Error: Server responded with status code 404") {
@@ -481,7 +482,7 @@ maybe smarter to just go through everything one last time at the end. or, just d
         } else {
             try {
                 if (text_obj[input_string].doi != '') {
-                    console.log( '[removing row with a known doi] '+ input_string + ' [' + text_obj[input_string].doi + ']');
+//                     console.log( '[removing row with a known doi] '+ input_string + ' [' + text_obj[input_string].doi + ']');
                 }
 
                 if (text_obj[input_string].match_status == "correct") {
@@ -503,7 +504,52 @@ maybe smarter to just go through everything one last time at the end. or, just d
             }
         }
 //         console.log('[Removed] '+input_string)
-        updateProgress();
+        update_progress();
+	}
+
+	function check_table_for_combinations() {
+		console.log( '--checking table for combinations--')
+		var i = 0;
+        var run_me_again = false;
+        
+		for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
+			try {
+				temp_row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
+			} catch(err) {
+				console.log( '*error setting temprowtext (i='+i+'): '+err);
+				continue;
+			}
+			
+			try {
+                if (typeof text_obj[temp_row_text] == "undefined" || text_obj[temp_row_text] == null) {
+                	// if the text obj can't be found, go to the next one (continue goes back up to the for loop)
+					console.log( 'text_obj not found for '+temp_row_text);
+                	continue;
+                }
+                
+				temp_DOI = text_obj[temp_row_text].doi;
+                if (temp_DOI == '') {
+                	continue;
+                } 
+                if (typeof reference_obj[temp_DOI] == "undefined" || reference_obj[temp_DOI] == null) {
+                	console.log( '[ref_obj not found] '+temp_row_text);
+                	continue;
+                }
+				
+				console.log( ']'+temp_row_text+'[')
+				if (decide_whether_to_combine_rows(reference_obj[temp_DOI],-1) == true) {
+					run_me_again = true;
+				}
+				if (decide_whether_to_combine_rows(reference_obj[temp_DOI],1) == true) {
+					run_me_again = true;
+				}
+			} catch(err) {
+ 				console.log( '*error could not run decide whether...: ' + temp_row_text)
+			}
+		}
+		if (run_me_again) {
+			check_table_for_combinations();
+		}
 	}
 
 	function decide_whether_to_combine_rows(input_reference_obj, shift) {  
@@ -513,11 +559,11 @@ maybe smarter to just go through everything one last time at the end. or, just d
 	    
 		if (document.getElementById(input_reference_obj.user_input) == null) { // this can happen when the user_input has changed but the reference obj hasn't)
 			console.log( '*in decide whether to combine... null found for '+input_reference_obj.user_input)
-			return;
+			return false;
 		}
 // dfd maybe using a lowercase first letter as a clue would be smart? and also looking at the number of characters per row? (these can both be misleading at times, tho)
 
-// dfdd
+// dfd
 // if this is a fragment
 //     try to combine. 
 //     if the other has no doi, then just regular try to combine
@@ -538,10 +584,10 @@ maybe smarter to just go through everything one last time at the end. or, just d
 
         // don't try it if it would go outside the table
     	if (otherRow_index < 1) { // it's 1 because row 0 is the table header
-    	    return;
+    	    return false;
     	} else if (otherRow_index >= document.getElementById("article_table").rows.length) {
 //     	    console.log( 'PASSED END OF TABLE with shift='+shift +', '+input_reference_obj.user_input)
-    	    return;
+    	    return false;
     	}
         
         try {
@@ -549,15 +595,15 @@ maybe smarter to just go through everything one last time at the end. or, just d
 // 	        var otherRow_input_string = document.getElementById("article_table").rows[otherRow_index].cells[0].innerHTML;
 	    } catch(err) {
 	    	console.log( "**error: in decide whether... can't find this row: " + otherRow_index)
-	    	return;
+	    	return false;
 	    }
 	    
 	    if (text_obj[otherRow_input_string].removed) {
 	        console.log( 'returning because otherRow has been removed: '+ otherRow_input_string)
-	        return;
+	        return false;
 	    }
 	    
-        console.log('[decide whether called] '+input_reference_obj.user_input)
+//         console.log('[decide whether called] '+input_reference_obj.user_input)
 
 	    // look at the other row to see if it has a doi
 	    var otherRow_has_doi = false;
@@ -569,7 +615,7 @@ maybe smarter to just go through everything one last time at the end. or, just d
 	    
 		if (text_obj[input_reference_obj.user_input].match_status == "wrong" && otherRow_has_doi == false) {
         	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input + ' and other row has a doi') 
-			return;
+			return false;
 		}
         
         try {
@@ -579,7 +625,7 @@ maybe smarter to just go through everything one last time at the end. or, just d
                 // do nothing ie let the combine happen
             } else if (text_obj[otherRow_input_string].match_status == "correct") {
                 // what this should do is the reverse combine (i.e., try to combine with otherRow as the dominator). But maybe that's the responsibility of combine_rows... 
-                return;
+                return false;
             }
         } catch(err) {
             console.log( "*error palm frond for "+otherRow_input_string)
@@ -587,12 +633,13 @@ maybe smarter to just go through everything one last time at the end. or, just d
         }
         
         if (combine_rows(otherRow_input_string, input_reference_obj) == true) { 
-            console.log('calling decide again');
-//             decide_whether_to_combine_rows(input_reference_obj, shift); // do it again recursively
-            // It's changed, so new we need to check whether to combine it all over again.
-            decide_whether_to_combine_rows(input_reference_obj, -1);
-            decide_whether_to_combine_rows(input_reference_obj, 1);
-            return;
+//             console.log('calling decide again');
+//             // It's changed, so new we need to check whether to combine it all over again.
+//             decide_whether_to_combine_rows(input_reference_obj, -1);
+//             decide_whether_to_combine_rows(input_reference_obj, 1);
+            return true;
+        } else {
+        	return false;
         }
 	}
 
@@ -650,14 +697,14 @@ maybe smarter to just go through everything one last time at the end. or, just d
                 if (typeof reference_obj[text_obj[input_string].doi] != "undefined" && reference_obj[text_obj[input_string].doi] != null) {
 //                     console.log( 'in combine rows, both have dois. ')
                     if (text_obj[input_string].score > text_obj[input_reference_obj.user_input].score) {
-                        console.log( '***should backweardsyl') //dfd make it treat the other one as the target
-                        var bestcombo_other = best_combination(input_reference_obj.user_input, input_string, reference_obj[text_obj[input_string].doi].apa_no_html);
-//                         console.log(input_reference_obj.user_input, input_string, reference_obj[text_obj[input_string].doi].apa_no_html);
-                        console.log('bestcombo_other='+bestcombo_other)
-                        var s1 = compute_letter_match(bestcombo, input_reference_obj.apa_no_html);
-                        var s2 = compute_letter_match(bestcombo_other, reference_obj[text_obj[input_string].doi].apa_no_html);
-                        console.log( '   bestcombo score= ' + s1 + ' for: ' + bestcombo)
-                        console.log( '   bestcombo_other score= ' + s2 + ' for: ' + bestcombo_other)
+//                         console.log( '***should backweardsyl') //dfd make it treat the other one as the target
+//                         var bestcombo_other = best_combination(input_reference_obj.user_input, input_string, reference_obj[text_obj[input_string].doi].apa_no_html);
+// //                         console.log(input_reference_obj.user_input, input_string, reference_obj[text_obj[input_string].doi].apa_no_html);
+//                         console.log('bestcombo_other='+bestcombo_other)
+//                         var s1 = compute_letter_match(bestcombo, input_reference_obj.apa_no_html);
+//                         var s2 = compute_letter_match(bestcombo_other, reference_obj[text_obj[input_string].doi].apa_no_html);
+//                         console.log( '   bestcombo score= ' + s1 + ' for: ' + bestcombo)
+//                         console.log( '   bestcombo_other score= ' + s2 + ' for: ' + bestcombo_other)
                     }
                 }
             }
@@ -711,7 +758,7 @@ maybe smarter to just go through everything one last time at the end. or, just d
             
             text_obj[to_string].update_input('');
 
-            updateProgress();
+            update_progress();
         }
         catch(err) {
             console.log( '*error in change user input, from = '+from_string+' to = '+to_string+' error:')
@@ -1102,10 +1149,10 @@ maybe smarter to just go through everything one last time at the end. or, just d
 		showBoxes();
 		parse_user_input();
 		getAllUrls('from_user');
-		updateProgress();
+		update_progress();
 	}
 
-	function updateProgress() {
+	function update_progress() {
 	    var row_text = '';
 	    var rows_done = 0;
 	    var rows_with_user_dois_total = 0;
@@ -1130,12 +1177,16 @@ maybe smarter to just go through everything one last time at the end. or, just d
 		document.getElementById('progressText').innerHTML = '&nbsp;'; // this space is just so it looks good
 
 		if (rows_done >= rows_total) {
-			// dfd it's possible for this stuff to happen twice (or more?). In other words, updateProgress can find this to be true more than once and do this stuff. 
+			// dfd it's possible for this stuff to happen twice (or more?). In other words, updateprogress can find this to be true more than once and do this stuff. 
 			// It'd probably be better if that wasn't the case, though I'm not sure it does a lot of harm. 
-			finish(rows_total);
+			console.log( '$$$done with all of them$$$')
+// 			check_table_for_combinations(); // dfd put these two lines back (eventually)
+// 			finish();
 		} else if (rows_done == rows_with_user_dois_total && started_notFoundYet == false) {
+			console.log( '$$$done with the ones that have dois$$$')
 		    started_notFoundYet = true;
 			remove_duplicate_rows();
+			check_table_for_combinations();
             getAllUrls('not_found_yet');
         }
         
@@ -1143,9 +1194,10 @@ maybe smarter to just go through everything one last time at the end. or, just d
         document.getElementById("myBar").style.width = 100*rows_done/rows_total + "%";
 	}
 	
-	function finish(tot) {
+	function finish() {
+        var rows_total = document.getElementById('article_table').rows.length - 1;
 		document.getElementById('progressHeader').innerHTML = "Done ";
-		document.getElementById('progressText').innerHTML = '&nbsp;' + tot + " rows (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
+		document.getElementById('progressText').innerHTML = '&nbsp;' + rows_total + " rows (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
 		document.getElementById("myProgress").style = "display: none;"
 		build_author_table();
 		document.getElementById("refalyzerAuthorsBox").style = "display: flex;"	
@@ -1182,6 +1234,13 @@ Besken, M., & Mulligan, N. W. (2013). Easily perceived, easily
 remembered? Perceptual interference produces a double dissociation 
 between metamemory and memory performance. Memory & Cognition, 41, 
 897–903. 
+
+Gronau, Q. F., Van Erp, S., Heck, D. W., Cesario, J., Jonas, K. J., & 
+Wagenmakers, E. J. (2017). A Bayesian model-averaged meta-analysis of the power 
+pose effect with informed and default priors: The case of felt power. 
+Comprehensive Results in Social Psychology, 2, 123–138. 
+https://doi.org/10.1080/23743603.2017.1326760
+
 </textarea>
 
 <!-- 
@@ -1203,6 +1262,9 @@ https://doi.org/10.1016/S0749-596X(02)00537-5
 <p id="outputText"></p>
 
 <p><button onclick="start()">Run</button>
+<p><button onclick="check_table_for_combinations()">look for combos</button>
+<p><button onclick="finish()">clean up</button>
+
 
 <div class='bigBox' id='progressBox' style="display: none;">
 	<div class='boxAroundTable' style="min-width: 300px">
