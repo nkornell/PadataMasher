@@ -2,14 +2,10 @@
 dfd To do: 
 
 Combining rows
-- if the row above and below are done, then this row is done. 
-- if something is done and perfect, don't mark it as "don't try to combine me with other crap." Or maybe such items are already being ignored when trying to combine? 
-- when something is done and good but not perfect, check above it and below it and suck that stuff in if appropriate. 
 - if it has the first half of the reference, maybe it shouldn't be trying to find something above itself? 
-- With two non-user-doi rows, there are 4 possiblities, the first one is right, the 2nd is right, both are wrong but the combo is right, or nothing is right. 
+- With two non-user-doi rows, it's possible that neither doi it finds is right, but it could find the right doi if they were cobmined. As of now the program doesn't check the database for the combo. 
 - Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
 
-Instead of Memory & Cognition it returns Memory &amp; Cognition
 
 Author table
 - Look for cases where it's the same author but the name is different (e.g., Bjork, E. L. and Bjork, 
@@ -19,36 +15,6 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 
 <!-- 
 stuff to test
-~~~
-test this because it does different things different times but often fails to combine stuff that it should
-
-Besken, M. (2016). Picture-perfect is not perfect for metamemory: 
-Testing the perceptual fluency hypothesis with degraded images. 
-Journal of Experimental Psychology: Learning, Memory, and Cognition, 
-42, 1417–1433. 
-
-https://doi.org/10.1037/0278-7393.34.3.460
-
-Besken, M., & Mulligan, N. W. (2013). Easily perceived, easily 
-remembered? Perceptual interference produces a double dissociation 
-between metamemory and memory performance. Memory & Cognition, 41, 
-897–903. 
-
-~~~
-test this because it's got a couple stinkers in it
-
-Carroll, M., Mazzoni, G., Andrews, S., & Pocock, P. (1999). Monitoring the future: Object and source memory for real and imagined events. Applied Cognitive Psychology, 13, 373–390. https://doi.org/10.1002/(SICI)1099-0720(199908)13:4<373::AID- ACP605>3.0.CO;2-F
-
-Dodson, C. S., Darragh, J., & Williams, A. (2008). Stereotypes and retrieval-provoked illusory source recollections. Journal of Experimental Psychology: Learning, Memory, and Cognition, 34, 460–477. https://doi.org/10.1037/0278-7393.34.3.460
-
-Heck, D. W., Gronau, F. Q., & Wagenmakers &, E.-J. (2019). metaBMA: Bayesian Model
-
-Averaging for Random and Fixed Effects Meta-Analysis. https://CRAN.R-
-
-project.org/package=metaBMA.
-
-Dougherty, M. R., Scheck, P., Nelson, T. O., & Narens, L. (2005). Using the past to predict the future. Memory & Cognition, 33, 1096–1115. https://doi.org/10.3758/BF03193216
-
 ~~~
 
 test this and see if it still causes an error. having the same reference appear twice (with or without doi) causes a breakdown where some references aren't found at all
@@ -65,27 +31,21 @@ Experimental Psychology, 60, 1015–1040. https://doi.org/10.1080/17470210600875
 
 Psychological Science, 18, 159-163. https://doi.org/10.1111/j.1467-8721.2009.01628.x 
 
--- also --
+~~~
 if there are duplicate lines but they're good, it gets rid of both. maybe it should keep one. to do this, I could
 have it run the duplicate line array through the database and see if anything good comes out
 
 aDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgments of learning (JOL) and the delayed-JOL effect. Memory & Cognition, 20(4), 374–380.
 aklsdkjf
 bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgments of learning (JOL) and the delayed-JOL effect. Memory & Cognition, 20(4), 374–380.
+~~~
 
--- decided not to do this-- 
- reference table
-- don't have the table itself be important to the functioning of the program. because what if I change how the table looks?
-- don't add stuff to the table that's not correct. only add stuff that's done. And only add reference_objs to the good table. add the bad stuff to a different table. 
-- have each text_obj know what its initial row number was, so it's easy to try to combine it with above and below. (note, 
-    if a row has been removed, the numbering will get messed up. instead of trying to update the other rows when one is
-    removed, just write an above/below function that returns the next viable item)
  -->
 
- <!--
-Basic procedure is, go through everything 2x. 
-// Step 1: take care of all of the user-input DOIs. 
-// Step 2: search crossref for DOIs and then take care of those. 
+<!--
+Basic procedure:
+// Step 1: take care of all of the user-input DOIs. Then try to combine.
+// Step 2: search crossref for DOIs. Once they're all returned, try to combine.
 -->
 
 
@@ -93,9 +53,9 @@ Basic procedure is, go through everything 2x.
 <html lang="en">
 
 <head>
-	<title>Reference Analyzer</title>
+	<title>Citation Fixer</title>
 	<meta charset="utf-8" />
-	<meta name="description" content="looking at academic references">
+	<meta name="description" content="format citations">
 	<meta name="keywords" content="program">
 	<meta name="author" content="Nate Kornell">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -117,6 +77,7 @@ Basic procedure is, go through everything 2x.
 	var articleTableText = "";
 	var startTime = 0;
 	var started_notFoundYet = false;
+	var completelyDone = false;
 	var doi_pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/gi; // doi_pattern is used to find a DOI within the input string. note: I added in the g, which makes it return all of the DOIs instead of just 1
     const cc = [];
     cc['fragment'] = 'blue';
@@ -141,6 +102,7 @@ Basic procedure is, go through everything 2x.
 		this.score = 0;
 		this.letter_match = 0;
 		this.letter_match_percentage = 0;
+		
         
         to_do_list_input_string.push(input_userInput);
         
@@ -157,8 +119,6 @@ Basic procedure is, go through everything 2x.
             }
 
 		    if (this.search_status != 'done' && input_search_status == 'done') {
-// 		    	console.log( 'done: '+this.doi)
-// 		    	console.log( reference_obj[this.doi.toLowerCase()].apa)
 				to_do_list_input_string.splice(to_do_list_input_string.indexOf(this.user_input),1); // remove it from to do list because it's done
 		    }
 		    
@@ -172,10 +132,10 @@ Basic procedure is, go through everything 2x.
             }
 
 			if (typeof reference_obj[this.doi] != 'undefined') { 
-// 				console.log('reference_obj exists : '+this.doi)
 				// compute scores and statuses
 				const temp_apa_no_html = reference_obj[this.doi].apa_no_html;
 				temp_ref_to_show = reference_obj[this.doi].apa;
+				temp_ref_to_show = temp_ref_to_show.replace('&#38;amp;', "&"); // otherwise it shows &amp; in place of the & character
 				this.score = compute_score(temp_apa_no_html, this.user_input); // order has to be database version, user version 
 				this.letter_match = compute_letter_match(temp_apa_no_html, this.user_input);
 				this.letter_match_percentage = compute_letter_match_percentage(this.user_input, temp_apa_no_html); // order has to be user, database
@@ -369,19 +329,14 @@ Basic procedure is, go through everything 2x.
 					if (to_do_list_input_string.indexOf(input_string) > -1) {
 						to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
 					}
-// dfd if the last thing it finds is the last row and it's wrong, it'll never get fixed. 
-// maybe smarter to just go through everything one last time at the end. or, just do the whole thing at the end
 
 				} else { 
 					// if it finds a doi that already has a reference obj (i.e., that's been found before).
-//                     pagelog ('this happened for '+reference_obj[myJSON.data[0].DOI].user_input)
 					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); // dfd this is redundant... unless the same doi comes up twice with other stuff in between. test that situation to see if this works and/or is necessary. 
 				}
-//                 decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], -1);
-//                 decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], 1);
+    			update_progress();
 			}
 
-			update_progress();
 		}
 		catch(err) {
 			if (err == "Error: Server responded with status code 404") {
@@ -508,7 +463,7 @@ Basic procedure is, go through everything 2x.
 	}
 
 	function check_table_for_combinations() {
-		console.log( '--checking table for combinations--')
+		console.log( '--checking for combinations--')
 		var i = 0;
         var run_me_again = false;
         
@@ -529,14 +484,16 @@ Basic procedure is, go through everything 2x.
                 
 				temp_DOI = text_obj[temp_row_text].doi;
                 if (temp_DOI == '') {
+                    // this should happen a lot, it just means this item doesn't have a doi yet
                 	continue;
                 } 
                 if (typeof reference_obj[temp_DOI] == "undefined" || reference_obj[temp_DOI] == null) {
-                	console.log( '[ref_obj not found] '+temp_row_text);
+                    // this will happen when there's one it just can't find (it should be rare but it's fine I think)
+//                 	console.log( '[ref_obj not found] '+temp_row_text);
                 	continue;
                 }
 				
-				console.log( ']'+temp_row_text+'[')
+// 				console.log( ']'+temp_row_text+'[')
 				if (decide_whether_to_combine_rows(reference_obj[temp_DOI],-1) == true) {
 					run_me_again = true;
 				}
@@ -552,16 +509,11 @@ Basic procedure is, go through everything 2x.
 		}
 	}
 
-	function decide_whether_to_combine_rows(input_reference_obj, shift) {  
-        // dfd But if the doi isn't trustworthy and the score is low,
-        // it will need to be more sophisticated about comparing possible situations (e.g., it found 2 dois
-        // but by combining them it get's a third doi that's better). 
-	    
+	function decide_whether_to_combine_rows(input_reference_obj, shift) {  	    
 		if (document.getElementById(input_reference_obj.user_input) == null) { // this can happen when the user_input has changed but the reference obj hasn't)
 			console.log( '*in decide whether to combine... null found for '+input_reference_obj.user_input)
 			return false;
 		}
-// dfd maybe using a lowercase first letter as a clue would be smart? and also looking at the number of characters per row? (these can both be misleading at times, tho)
 
 // dfd
 // if this is a fragment
@@ -576,23 +528,17 @@ Basic procedure is, go through everything 2x.
 // if this is correct
 //     try to combine
 
-// dfd
-// if something gets combined, it needs to have decide whether get called again
-
-
        	var otherRow_index = input_reference_obj.table_row_number() + shift;
 
         // don't try it if it would go outside the table
     	if (otherRow_index < 1) { // it's 1 because row 0 is the table header
     	    return false;
     	} else if (otherRow_index >= document.getElementById("article_table").rows.length) {
-//     	    console.log( 'PASSED END OF TABLE with shift='+shift +', '+input_reference_obj.user_input)
     	    return false;
     	}
         
         try {
 	        var otherRow_input_string = document.getElementById("article_table").rows[otherRow_index].cells[0].textContent;
-// 	        var otherRow_input_string = document.getElementById("article_table").rows[otherRow_index].cells[0].innerHTML;
 	    } catch(err) {
 	    	console.log( "**error: in decide whether... can't find this row: " + otherRow_index)
 	    	return false;
@@ -603,8 +549,6 @@ Basic procedure is, go through everything 2x.
 	        return false;
 	    }
 	    
-//         console.log('[decide whether called] '+input_reference_obj.user_input)
-
 	    // look at the other row to see if it has a doi
 	    var otherRow_has_doi = false;
 	    var otherRow_doi = '';
@@ -619,12 +563,10 @@ Basic procedure is, go through everything 2x.
 		}
         
         try {
-            // don't try to combine with rows that are already settled. 
-            // dfd put in something here that says, if they have the same doi, combine them
             if (otherRow_doi == input_reference_obj.doi) {
-                // do nothing ie let the combine happen
+                // if they have the same doi, do nothing (ie let the combine happen)
             } else if (text_obj[otherRow_input_string].match_status == "correct") {
-                // what this should do is the reverse combine (i.e., try to combine with otherRow as the dominator). But maybe that's the responsibility of combine_rows... 
+                // if the other one is correct, then don't combine based on this one. when the other one gets its chance, it'll combine with this (using its reference, not this one's)
                 return false;
             }
         } catch(err) {
@@ -633,10 +575,6 @@ Basic procedure is, go through everything 2x.
         }
         
         if (combine_rows(otherRow_input_string, input_reference_obj) == true) { 
-//             console.log('calling decide again');
-//             // It's changed, so new we need to check whether to combine it all over again.
-//             decide_whether_to_combine_rows(input_reference_obj, -1);
-//             decide_whether_to_combine_rows(input_reference_obj, 1);
             return true;
         } else {
         	return false;
@@ -644,12 +582,6 @@ Basic procedure is, go through everything 2x.
 	}
 
 	function combine_rows(input_string, input_reference_obj) {
-// dfd
-// in best combination
-// - it should take two targets as parameters and return which combination/target fit is best. 
-// in combine_ rows, 
-// - when both rows that are being combined have a doi, it needs to learn to prioritize. I think right now it's just whichever it comes to first. 
-
 	    // This figures out the best combination and then, if appropriate, it merges the two rows and then deletes the extra one.
 	    // The one it keeps is the input reference obj.  
 	    
@@ -663,24 +595,16 @@ Basic procedure is, go through everything 2x.
             if (text_obj[input_reference_obj.user_input].removed) {
                 console.log( '*tried to combine with a removed reference obj: '+input_reference_obj.user_input); 
                 return false;
-                // dfd if this happens, it should maybe see if that removed reference was better...
             }
 
             if (input_reference_obj.doi == text_obj[input_string].doi) {
                 // if it finds the same reference twice, combine them
-//                 console.log( 'found the same doi twice')
                 shouldCombine = true;
             } else if (text_obj[input_string].search_status == "searching") {
                 // if it's still searching for a row, return. it'll try again with that row later. 
-//                 console.log('search status = searching: ' + input_string + ' [returning in combine rows]');
                 return false; 
             }
             
-//             console.log('in combine rows, reference obj match status='+text_obj[input_reference_obj.user_input].match_status)
-//             console.log('in combine rows, reference obj search status = ' + text_obj[input_reference_obj.user_input].search_status);
-//             console.log('search status = ' + text_obj[input_string].search_status + ' for input obj in combine rows');
-
-
             if (text_obj[input_reference_obj.user_input].match_status == "correct" && text_obj[input_string].match_status == 'correct') {
                 // if both have good dois already
                 if (text_obj[input_string].doi !== input_reference_obj.doi) {
@@ -695,16 +619,7 @@ Basic procedure is, go through everything 2x.
             // assume input reference obj is correct (i.e., that's the apa string target)
             if (text_obj[input_string].doi != '') {
                 if (typeof reference_obj[text_obj[input_string].doi] != "undefined" && reference_obj[text_obj[input_string].doi] != null) {
-//                     console.log( 'in combine rows, both have dois. ')
                     if (text_obj[input_string].score > text_obj[input_reference_obj.user_input].score) {
-//                         console.log( '***should backweardsyl') //dfd make it treat the other one as the target
-//                         var bestcombo_other = best_combination(input_reference_obj.user_input, input_string, reference_obj[text_obj[input_string].doi].apa_no_html);
-// //                         console.log(input_reference_obj.user_input, input_string, reference_obj[text_obj[input_string].doi].apa_no_html);
-//                         console.log('bestcombo_other='+bestcombo_other)
-//                         var s1 = compute_letter_match(bestcombo, input_reference_obj.apa_no_html);
-//                         var s2 = compute_letter_match(bestcombo_other, reference_obj[text_obj[input_string].doi].apa_no_html);
-//                         console.log( '   bestcombo score= ' + s1 + ' for: ' + bestcombo)
-//                         console.log( '   bestcombo_other score= ' + s2 + ' for: ' + bestcombo_other)
                     }
                 }
             }
@@ -1140,6 +1055,7 @@ Basic procedure is, go through everything 2x.
 		to_do_list_input_string = [];
 		duplicate_input_text = [];
 		started_notFoundYet = false;
+		completelyDone = false;
 		startTime = Date.now();
 		
 		document.getElementById("outputText").innerHTML = "";
@@ -1153,6 +1069,10 @@ Basic procedure is, go through everything 2x.
 	}
 
 	function update_progress() {
+	    if (completelyDone) {
+	        return;
+	    }
+	    
 	    var row_text = '';
 	    var rows_done = 0;
 	    var rows_with_user_dois_total = 0;
@@ -1176,14 +1096,13 @@ Basic procedure is, go through everything 2x.
 		document.getElementById('progressHeader').innerHTML = "Working... ";
 		document.getElementById('progressText').innerHTML = '&nbsp;'; // this space is just so it looks good
 
-		if (rows_done >= rows_total) {
-			// dfd it's possible for this stuff to happen twice (or more?). In other words, updateprogress can find this to be true more than once and do this stuff. 
-			// It'd probably be better if that wasn't the case, though I'm not sure it does a lot of harm. 
-			console.log( '$$$done with all of them$$$')
-// 			check_table_for_combinations(); // dfd put these two lines back (eventually)
-// 			finish();
+		if (rows_done >= rows_total && completelyDone == false) {
+			console.log( '$$ finished all $$')
+			completelyDone = true;
+			check_table_for_combinations(); 
+			finish();
 		} else if (rows_done == rows_with_user_dois_total && started_notFoundYet == false) {
-			console.log( '$$$done with the ones that have dois$$$')
+			console.log( '$ finished dois $')
 		    started_notFoundYet = true;
 			remove_duplicate_rows();
 			check_table_for_combinations();
@@ -1262,8 +1181,10 @@ https://doi.org/10.1016/S0749-596X(02)00537-5
 <p id="outputText"></p>
 
 <p><button onclick="start()">Run</button>
+<!-- 
 <p><button onclick="check_table_for_combinations()">look for combos</button>
 <p><button onclick="finish()">clean up</button>
+ -->
 
 
 <div class='bigBox' id='progressBox' style="display: none;">
