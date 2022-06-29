@@ -334,7 +334,7 @@ Basic procedure is, go through everything 2x.
                     temp_search_string = input_string;
     			}
 
-	       		pagelog( 'getOneURL [no doi]: '+temp_search_string)
+// 	       		pagelog( 'getOneURL [no doi]: '+temp_search_string)
    				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
 				if (typeof myJSON.message.items[0] === 'undefined') { // if it's not in the database
@@ -366,18 +366,18 @@ Basic procedure is, go through everything 2x.
 					text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
 					text_obj[input_string].update_input('done');
 
-					decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], -1);
-					if (text_obj[reference_obj[myJSON.data[0].DOI].user_input].removed == false) {
-    					decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], 1);
-    				}
 					if (to_do_list_input_string.indexOf(input_string) > -1) {
-// 					    console.log( 'splicing '+to_do_list_input_string.indexOf(input_string))
 						to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
 					}
+dfd if the last thing it finds is the last row and it's wrong, it'll never get fixed. 
+maybe smarter to just go through everything one last time at the end. or, just do the whole thing at the end
 				} else { 
 					// if it finds a doi that already has a reference obj (i.e., that's been found before).
-					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); 
+//                     pagelog ('this happened for '+reference_obj[myJSON.data[0].DOI].user_input)
+					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); // dfd this is redundant... unless the same doi comes up twice with other stuff in between. test that situation to see if this works and/or is necessary. 
 				}
+                decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], -1);
+                decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], 1);
 			}
 
 			updateProgress();
@@ -506,7 +506,7 @@ Basic procedure is, go through everything 2x.
         updateProgress();
 	}
 
-	function decide_whether_to_combine_rows(input_reference_obj, shift) {        
+	function decide_whether_to_combine_rows(input_reference_obj, shift) {  
         // dfd But if the doi isn't trustworthy and the score is low,
         // it will need to be more sophisticated about comparing possible situations (e.g., it found 2 dois
         // but by combining them it get's a third doi that's better). 
@@ -515,7 +515,7 @@ Basic procedure is, go through everything 2x.
 			console.log( '*in decide whether to combine... null found for '+input_reference_obj.user_input)
 			return;
 		}
-// dfd it's risky, but maybe using a lowercase first letter as a clue would be smart? and also looking at the number of characters per row.
+// dfd maybe using a lowercase first letter as a clue would be smart? and also looking at the number of characters per row? (these can both be misleading at times, tho)
 
 // dfdd
 // if this is a fragment
@@ -530,12 +530,9 @@ Basic procedure is, go through everything 2x.
 // if this is correct
 //     try to combine
 
+// dfd
+// if something gets combined, it needs to have decide whether get called again
 
-	    // dfd ideally I wouldn't do this, see above for a better idea
-		if (text_obj[input_reference_obj.user_input].match_status == "wrong") {
-//         	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input) 
-			return;
-		}
 
        	var otherRow_index = input_reference_obj.table_row_number() + shift;
 
@@ -554,12 +551,34 @@ Basic procedure is, go through everything 2x.
 	    	console.log( "**error: in decide whether... can't find this row: " + otherRow_index)
 	    	return;
 	    }
+	    
+	    if (text_obj[otherRow_input_string].removed) {
+	        console.log( 'returning because otherRow has been removed: '+ otherRow_input_string)
+	        return;
+	    }
+	    
+        console.log('[decide whether called] '+input_reference_obj.user_input)
+
+	    // look at the other row to see if it has a doi
+	    var otherRow_has_doi = false;
+	    var otherRow_doi = '';
+	    if (text_obj[otherRow_input_string].doi != '') {
+	        otherRow_has_doi = true;
+	        otherRow_doi = text_obj[otherRow_input_string].doi;
+	    }
+	    
+		if (text_obj[input_reference_obj.user_input].match_status == "wrong" && otherRow_has_doi == false) {
+        	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input + ' and other row has a doi') 
+			return;
+		}
         
         try {
             // don't try to combine with rows that are already settled. 
             // dfd put in something here that says, if they have the same doi, combine them
-            if (text_obj[otherRow_input_string].match_status == "correct") {
-//                     console.log( "tried to combine this and a row with status=correct, so returned instead. other row: "+ otherRow_input_string)
+            if (otherRow_doi == input_reference_obj.doi) {
+                // do nothing ie let the combine happen
+            } else if (text_obj[otherRow_input_string].match_status == "correct") {
+                // what this should do is the reverse combine (i.e., try to combine with otherRow as the dominator). But maybe that's the responsibility of combine_rows... 
                 return;
             }
         } catch(err) {
@@ -568,7 +587,11 @@ Basic procedure is, go through everything 2x.
         }
         
         if (combine_rows(otherRow_input_string, input_reference_obj) == true) { 
-            decide_whether_to_combine_rows(input_reference_obj, shift); // do it again recursively
+            console.log('calling decide again');
+//             decide_whether_to_combine_rows(input_reference_obj, shift); // do it again recursively
+            // It's changed, so new we need to check whether to combine it all over again.
+            decide_whether_to_combine_rows(input_reference_obj, -1);
+            decide_whether_to_combine_rows(input_reference_obj, 1);
             return;
         }
 	}
@@ -598,7 +621,7 @@ Basic procedure is, go through everything 2x.
 
             if (input_reference_obj.doi == text_obj[input_string].doi) {
                 // if it finds the same reference twice, combine them
-                console.log( 'found the same doi twice')
+//                 console.log( 'found the same doi twice')
                 shouldCombine = true;
             } else if (text_obj[input_string].search_status == "searching") {
                 // if it's still searching for a row, return. it'll try again with that row later. 
@@ -620,26 +643,26 @@ Basic procedure is, go through everything 2x.
                 }
             }
 
+            var bestcombo = best_combination(input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
+
             // assume input reference obj is correct (i.e., that's the apa string target)
             if (text_obj[input_string].doi != '') {
                 if (typeof reference_obj[text_obj[input_string].doi] != "undefined" && reference_obj[text_obj[input_string].doi] != null) {
 //                     console.log( 'in combine rows, both have dois. ')
-//                     console.log( '   input obj score='+ reference_obj[text_obj[input_string].doi].score)
-//                     console.log( '   reference obj score='+input_reference_obj.score)
                     if (text_obj[input_string].score > text_obj[input_reference_obj.user_input].score) {
                         console.log( '***should backweardsyl') //dfd make it treat the other one as the target
-                    } else if (text_obj[input_string].score == text_obj[input_reference_obj.user_input].score) {
-                        //the stuff below happens when a single reference is split into multiple lines. nothingn to worry about. 
-//                         if (reference_obj[text_obj[input_string].doi].user_input == input_reference_obj.user_input) {
-//                             console.log( '*combining with itself for '+input_reference_obj.user_input)
-//                         } else {
-//                             console.log( '*combining strings with the same score '+reference_obj[text_obj[input_string].doi].user_input+ '----and-- reference obj='+input_reference_obj.user_input)
-//                         }
+                        var bestcombo_other = best_combination(input_reference_obj.user_input, input_string, reference_obj[text_obj[input_string].doi].apa_no_html);
+//                         console.log(input_reference_obj.user_input, input_string, reference_obj[text_obj[input_string].doi].apa_no_html);
+                        console.log('bestcombo_other='+bestcombo_other)
+                        var s1 = compute_letter_match(bestcombo, input_reference_obj.apa_no_html);
+                        var s2 = compute_letter_match(bestcombo_other, reference_obj[text_obj[input_string].doi].apa_no_html);
+                        console.log( '   bestcombo score= ' + s1 + ' for: ' + bestcombo)
+                        console.log( '   bestcombo_other score= ' + s2 + ' for: ' + bestcombo_other)
                     }
                 }
             }
-            var bestcombo = best_combination(input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
-        
+            
+
             // if the best match is the combo, combine them. 
             if (input_reference_obj.user_input !== bestcombo) {
                 shouldCombine = true;
@@ -699,7 +722,7 @@ Basic procedure is, go through everything 2x.
 	
 	function best_combination(user_input_addition, user_input_target, goal) {
 	    // tries the first two input parameters alone and in combination, to see which one matches the 3rd parameter best.
-	    // the order of the first two parameters doesn't matter because it reorders them in terms of where they appear in the table. 
+	    // the order of the first two parameters only matters because checks its percentage at the start
 		var out = "";
     	var verbose = false;
 
@@ -846,7 +869,7 @@ Basic procedure is, go through everything 2x.
 		// figure out author stuff (for author table)
 		try {
 			if (typeof input_json.author === 'undefined') { // if crossref didn't find it, ignore it 
-				console.log('no authors found ' + input_json.DOI);
+// 				console.log('no authors found ' + input_json.DOI);
 			} else {
 				for (a = 0; a < input_json.author.length; a++) {
 					if (input_json.author[a].family !== undefined && input_json.author[a].family !== null) {
@@ -866,7 +889,7 @@ Basic procedure is, go through everything 2x.
 				connect_coauthors(temp_list_of_co_authors_from_this_article);
 			}
 		} catch(err) {
-			console.log( 'error in parse_JSON_for_authors');
+// 			console.log( 'error in parse_JSON_for_authors');
 		}
 	}
 
@@ -1014,7 +1037,7 @@ Basic procedure is, go through everything 2x.
 	
     function build_author_table() {
 		// Figure out the authors and build a table with all of them in it. This happens after all the articles are parsed.
-		console.log( 'calling build author table')
+// 		console.log( 'calling build author table')
 
 		var i = 0;
 		author_obj = [];
@@ -1027,7 +1050,7 @@ Basic procedure is, go through everything 2x.
 				temp_DOI = text_obj[temp_row_text].doi;
 				parse_JSON_for_authors(reference_obj[temp_DOI].json)
 			} catch(err) {
-				console.log( 'could not parse author: ' + temp_row_text)
+// 				console.log( 'could not parse author: ' + temp_row_text)
 			}
 		}
 
