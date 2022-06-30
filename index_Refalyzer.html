@@ -114,9 +114,12 @@ Basic procedure:
 		this.letter_match = 0;
 		this.letter_match_percentage = 0;
 		
-        
         to_do_list_input_string.push(input_userInput);
         
+        this.table_row_number = function() {
+            return document.getElementById(this.user_input).rowIndex;
+        }
+
 		this.update_input = function(input_search_status) {
 			var temp_ref_to_show = '';
 		    // possible search status values:
@@ -341,8 +344,10 @@ Basic procedure:
 
 				} else { 
 					// if it finds a doi that already has a reference obj (i.e., that's been found before).
-					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); // dfd this is necessary, but unfortunately it prevents me from combining decide whether with combine rows... unless the same doi comes up twice with other stuff in between. test that situation to see if this works and/or is necessary. 
-                    console.log('))) this happened: '+input_string);
+                    console.log('))) this happened: '+input_string)
+                    console.log( 'og  pos= '+reference_obj[myJSON.data[0].DOI].table_row_number());
+                    console.log( 'new pos= '+text_obj[input_string].table_row_number())
+					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); // dfdd this is necessary, but unfortunately it prevents me from combining decide whether with combine rows... unless the same doi comes up twice with other stuff in between. test that situation to see if this works and/or is necessary. 
 				}
     			update_progress();
 			}
@@ -473,7 +478,6 @@ Basic procedure:
 	}
 
 	function check_table_for_combinations() {
-		console.log( '--checking for combinations--')
 		var i = 0;
         var run_me_again = false;
         
@@ -509,40 +513,32 @@ Basic procedure:
 					run_me_again = true;
 				}
 			} catch(err) {
- 				console.log( '*error could not run decide whether...: ' + temp_row_text)
+ 				console.log( '*error could not run decide whether...: ')
+ 				console.log( '   '+temp_row_text)
+ 				console.log( '   '+err)
 			}
 		}
 		if (run_me_again) {
 			check_table_for_combinations();
+		} else {
+			console.log( '--done checking for combinations--')			
 		}
 	}
 
-	function decide_whether_to_combine_rows(input_reference_obj, shift) {  	    
-// dfd: 
-// first, check whether these rules still make sense. 
-// second, see whether they're being implemented
-
-// if this is a fragment
-//     try to combine. 
-//     if the other has no doi, then just regular try to combine
-//     if the other has a  doi, then 
-//         if the dois are the same, combo is normal
-//         if the dois are different, best combo should consider both dois and only combine if the combination is better than both. 
-// if this is wrong
-//      if the other one is still searching, return. we'll come back to it when the other gets its doi. 
-//      if it's not searching then ...
-//      if they both have dois, try to combine, but with the four option approach (a, b, ab, or none). because probably, both dois are wrong. 
-// if this is correct
-//     try to combine
-
-
+	function decide_whether_to_combine_rows(input_reference_obj, shift) {
         // make sure we're looking at two legitimate rows
 		if (document.getElementById(input_reference_obj.user_input) == null) { // this can happen when the user_input has changed but the reference obj hasn't)
 			console.log( '**error: in decide whether to combine... null found for '+input_reference_obj.user_input)
 			return false;
 		}
 
-       	var otherRow_index = input_reference_obj.table_row_number() + shift;
+		var otherRow_index = input_reference_obj.table_row_number() + shift;
+		
+// 		if (Number.isInteger(shift)) {
+// 			console.log( 'oh good '+ 'dfdd')
+//        	} else {
+// 			console.log( "uh oh");       	
+//        	}
 
         // don't try it if it would go outside the table
     	if (otherRow_index < 1) { // it's 1 because row 0 is the table header
@@ -570,6 +566,27 @@ Basic procedure:
 	        otherRow_has_doi = true;
 	        otherRow_doi = text_obj[otherRow_input_string].doi;
 	    }
+
+// dfd: 
+// first, check whether these rules still make sense. 
+// second, see whether they're being implemented
+
+//note change it so that if it's searching, it returns. This is already in combine_rows
+// if this is a fragment
+//     try to combine. 
+//     if the other has no doi, then just regular try to combine
+//     if the other has a  doi, then 
+//         if the dois are the same, combo is normal
+//         if the dois are different, best combo should consider both dois and only combine if the combination is better than both. 
+// if this is wrong
+//      if the other one is still searching, return. we'll come back to it when the other gets its doi. 
+//      if it's not searching then ...
+//      if they both have dois, try to combine, but with the four option approach (a, b, ab, or none). because probably, both dois are wrong. 
+// if this is correct
+//     try to combine
+
+
+	    // decide what to do
 	    
 		if (text_obj[input_reference_obj.user_input].match_status == "wrong" && otherRow_has_doi == false) {
         	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input + ' and other row has a doi') 
@@ -588,6 +605,7 @@ Basic procedure:
             console.log( err);
         }
         
+        // call combine
         if (combine_rows(otherRow_input_string, input_reference_obj) == true) { 
             return true;
         } else {
@@ -1144,6 +1162,7 @@ Basic procedure:
 		document.getElementById("myProgress").style = "display: none;"
 		build_author_table();
 		document.getElementById("refalyzerAuthorsBox").style = "display: flex;"	
+		console.log( '---------finish----------')
 	}
 	
 
@@ -1166,23 +1185,11 @@ Basic procedure:
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-Besken, M. (2016). Picture-perfect is not perfect for metamemory: 
-Testing the perceptual fluency hypothesis with degraded images. 
-Journal of Experimental Psychology: Learning, Memory, and Cognition, 
-42, 1417–1433. 
+Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. https://doi.org/10.1037/xlm0000246
 
-https://doi.org/10.1037/0278-7393.34.3.460
+Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL effect”. Memory, 26, 771–783. https://doi.org/10.1080/09658211.2017.1406523
 
-Besken, M., & Mulligan, N. W. (2013). Easily perceived, easily 
-remembered? Perceptual interference produces a double dissociation 
-between metamemory and memory performance. Memory & Cognition, 41, 
-897–903. 
-
-Gronau, Q. F., Van Erp, S., Heck, D. W., Cesario, J., Jonas, K. J., & 
-Wagenmakers, E. J. (2017). A Bayesian model-averaged meta-analysis of the power 
-pose effect with informed and default priors: The case of felt power. 
-Comprehensive Results in Social Psychology, 2, 123–138. 
-https://doi.org/10.1080/23743603.2017.1326760
+Besken, M. (2016). Picre-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433.
 
 </textarea>
 
