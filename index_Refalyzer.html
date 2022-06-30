@@ -210,9 +210,12 @@ Basic procedure:
                 document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show; 
                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
             } catch(err) {
+                console.log( '---------')
     		    console.log('*error in update ref, for: ');
     		    console.log( this.user_input);
+    		    console.log( temp_ref_to_show);
     		    console.log( err);
+                console.log( '---------')
             }
 		}
 	}
@@ -343,15 +346,14 @@ Basic procedure:
 					}
 
 				} else { 
-					// if it finds a doi that already has a reference obj (i.e., that's been found before).
-                    console.log('))) this happened: '+input_string)
-                    console.log( 'og  pos= '+reference_obj[myJSON.data[0].DOI].table_row_number());
-                    console.log( 'new pos= '+text_obj[input_string].table_row_number())
-					combine_rows(input_string, reference_obj[myJSON.data[0].DOI]); // dfdd this is necessary, but unfortunately it prevents me from combining decide whether with combine rows... unless the same doi comes up twice with other stuff in between. test that situation to see if this works and/or is necessary. 
+					// if it finds a doi that already has a reference obj (i.e., that's been found before), combine them. 
+					// first figure out where each one is, then call decide whether with the appropriate shift
+                    const og_row = reference_obj[myJSON.data[0].DOI].table_row_number();
+                    const new_row = text_obj[input_string].table_row_number();
+                    decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], new_row - og_row);
 				}
     			update_progress();
 			}
-
 		}
 		catch(err) {
 			if (err == "Error: Server responded with status code 404") {
@@ -473,7 +475,6 @@ Basic procedure:
                 console.log( err);
             }
         }
-//         console.log('[Removed] '+input_string)
         update_progress();
 	}
 
@@ -514,8 +515,8 @@ Basic procedure:
 				}
 			} catch(err) {
  				console.log( '*error could not run decide whether...: ')
- 				console.log( '   '+temp_row_text)
- 				console.log( '   '+err)
+ 				console.log( ' *'+temp_row_text)
+ 				console.log( ' *'+err)
 			}
 		}
 		if (run_me_again) {
@@ -532,14 +533,13 @@ Basic procedure:
 			return false;
 		}
 
+         if (text_obj[input_reference_obj.user_input].removed) {
+            console.log( '*tried to combine with a removed reference obj: '+input_reference_obj.user_input); 
+            return false;
+        }
+
 		var otherRow_index = input_reference_obj.table_row_number() + shift;
 		
-// 		if (Number.isInteger(shift)) {
-// 			console.log( 'oh good '+ 'dfdd')
-//        	} else {
-// 			console.log( "uh oh");       	
-//        	}
-
         // don't try it if it would go outside the table
     	if (otherRow_index < 1) { // it's 1 because row 0 is the table header
     	    return false;
@@ -560,107 +560,57 @@ Basic procedure:
 	    }
 	    
 	    // see if the other row has a doi
-	    var otherRow_has_doi = false;
-	    var otherRow_doi = '';
-	    if (text_obj[otherRow_input_string].doi != '') {
-	        otherRow_has_doi = true;
-	        otherRow_doi = text_obj[otherRow_input_string].doi;
-	    }
-
-// dfd: 
-// first, check whether these rules still make sense. 
-// second, see whether they're being implemented
-
-//note change it so that if it's searching, it returns. This is already in combine_rows
-// if this is a fragment
-//     try to combine. 
-//     if the other has no doi, then just regular try to combine
-//     if the other has a  doi, then 
-//         if the dois are the same, combo is normal
-//         if the dois are different, best combo should consider both dois and only combine if the combination is better than both. 
-// if this is wrong
-//      if the other one is still searching, return. we'll come back to it when the other gets its doi. 
-//      if it's not searching then ...
-//      if they both have dois, try to combine, but with the four option approach (a, b, ab, or none). because probably, both dois are wrong. 
-// if this is correct
-//     try to combine
-
+	    var otherRow_doi = text_obj[otherRow_input_string].doi;
 
 	    // decide what to do
-	    
-		if (text_obj[input_reference_obj.user_input].match_status == "wrong" && otherRow_has_doi == false) {
-        	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input + ' and other row has a doi') 
-			return false;
+	    	    
+        var shouldCombine = false;
+        var shouldChangeUserInput = false;
+
+		if (text_obj[input_reference_obj.user_input].match_status == "wrong") {
+		    // this is where it would be smart to check whether the other one is also wrong, and if it is, join the strings and send that to the database. 
+//         	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input) 
+			return false; 
 		}
         
         try {
             if (otherRow_doi == input_reference_obj.doi) {
-                // if they have the same doi, do nothing (ie let the combine happen)
+                // if they have the same doi
+                shouldCombine = true;
+            } else if (text_obj[otherRow_input_string].search_status == "searching") {
+                // if it's still searching for the other row, return. it'll try again with that row later. 
+                return false; 
             } else if (text_obj[otherRow_input_string].match_status == "correct") {
-                // if the other one is correct, then don't combine based on this one. when the other one gets its chance, it'll combine with this (using its reference, not this one's)
+                // if the other one is correct (and we already know the dois are different), return. when the other one gets its chance, it'll combine with this one (if appropriate)
                 return false;
             }
         } catch(err) {
             console.log( "*error palm frond for "+otherRow_input_string)
             console.log( err);
         }
-        
-        // call combine
-        if (combine_rows(otherRow_input_string, input_reference_obj) == true) { 
-            return true;
-        } else {
-        	return false;
-        }
-	}
-
-	function combine_rows(input_string, input_reference_obj) {
-	    // This figures out the best combination and then, if appropriate, it merges the two rows and then deletes the extra one.
-	    // The one it keeps is the input reference obj.  
-	    
-        var shouldCombine = false;
-        var shouldChangeUserInput = false;
 
         try {
-            if (text_obj[input_string].removed) {
-                return false;
-            } 
-            if (text_obj[input_reference_obj.user_input].removed) {
-                console.log( '*tried to combine with a removed reference obj: '+input_reference_obj.user_input); 
-                return false;
-            }
 
-            if (input_reference_obj.doi == text_obj[input_string].doi) {
-                // if it finds the same reference twice, combine them
-                shouldCombine = true;
-            } else if (text_obj[input_string].search_status == "searching") {
-                // if it's still searching for a row, return. it'll try again with that row later. 
-                return false; 
-            }
-            
-            if (text_obj[input_reference_obj.user_input].match_status == "correct" && text_obj[input_string].match_status == 'correct') {
-                // if both have good dois already
-                if (text_obj[input_string].doi !== input_reference_obj.doi) {
-                    // if the two dois are not the same
-                    console.log( 'tried to combine two "correct" rows with different dois. returning.')
-                    return false;
-                }
-            }
-
-            var bestcombo = best_combination(input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
+            var bestcombo = best_combination(otherRow_input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
 
             // assume input reference obj is correct (i.e., that's the apa string target)
-            if (text_obj[input_string].doi != '') {
-                if (typeof reference_obj[text_obj[input_string].doi] != "undefined" && reference_obj[text_obj[input_string].doi] != null) {
-                    if (text_obj[input_string].score > text_obj[input_reference_obj.user_input].score) {
-//                         console.log( '***should backweardsyl') //dfd make it treat the other one as the target
-//                         var bestcombo_other = best_combination(input_reference_obj.user_input, input_string, reference_obj[text_obj[input_string].doi].apa_no_html);
-// //                         console.log(input_reference_obj.user_input, input_string, reference_obj[text_obj[input_string].doi].apa_no_html);
+            if (otherRow_doi != '') {
+                if (typeof reference_obj[otherRow_doi] != "undefined" && reference_obj[otherRow_doi] != null) {
+//                     if (text_obj[otherRow_input_string].score > text_obj[input_reference_obj.user_input].score) {
+                        var bestcombo_other = best_combination(input_reference_obj.user_input, otherRow_input_string, reference_obj[otherRow_doi].apa_no_html);
 //                         console.log('bestcombo_other='+bestcombo_other)
-//                         var s1 = compute_letter_match(bestcombo, input_reference_obj.apa_no_html);
-//                         var s2 = compute_letter_match(bestcombo_other, reference_obj[text_obj[input_string].doi].apa_no_html);
-//                         console.log( '   bestcombo score= ' + s1 + ' for: ' + bestcombo)
-//                         console.log( '   bestcombo_other score= ' + s2 + ' for: ' + bestcombo_other)
-                    }
+                        var s1 = compute_letter_match(bestcombo, input_reference_obj.apa_no_html);
+                        var s2 = compute_letter_match(bestcombo_other, reference_obj[otherRow_doi].apa_no_html);
+                        if (s2 > s1) {
+                            console.log( 'the reverse is better!!!')
+//                             console.log( ' bestcombo score= ' + s1 + ' for: ' + bestcombo)
+//                             console.log( ' bestcombo_other score= ' + s2 + ' for: ' + bestcombo_other)
+//                            return false; // dfd doing this makes it so the thing doesn't finish! I still want to return false but I'm not sure if I can. 
+                           // dfdd
+                        } else {
+//                             console.log( 'the reverese is not better')    
+                        }
+//                     }
                 }
             }
             
@@ -673,9 +623,12 @@ Basic procedure:
 
             // if appropriate, remove the row
             if (shouldCombine == true) {
-                remove_row(input_string);
+                remove_row(otherRow_input_string);
                 if (shouldChangeUserInput == true) {
                     change_user_input(input_reference_obj, bestcombo); 
+                } else {
+                    console.log( "[didn't change user input] "+bestcombo)
+                    // dfd if there are three lines, with no doi, it cuts out one of them. (maybe also if there are two?) this happens instead. but it shouldn't. 
                 }
                 return true;
             } else {
@@ -683,8 +636,8 @@ Basic procedure:
             }
         }
         catch(err) {
-            console.log('*error in combine rows, input_string:')
-            console.log( input_string);
+            console.log('*error in combine rows, otherRow_input_string:')
+            console.log( otherRow_input_string);
             console.log( err)
         }
 	}
@@ -731,10 +684,6 @@ Basic procedure:
 		// if the new piece by itself is not a good percentage match for the target, don't combine
 		var addition_Score_percent = compute_letter_match_percentage(user_input_addition, goal);
 		if (addition_Score_percent < good_match_threshold) {
-// 			console.log("[returning no change] addition score percent "+addition_Score_percent+" < good match threshold")
-// 			console.log('targ='+ user_input_target)
-// 			console.log('addition='+ user_input_addition)
-// 			console.log('goal='+goal)
 			return user_input_target;
 		}
 
@@ -1185,11 +1134,15 @@ Basic procedure:
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. https://doi.org/10.1037/xlm0000246
+Hicks, J. L., & Cockman, D. W. (2003). The effect of general knowledge on source memory
 
-Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL effect”. Memory, 26, 771–783. https://doi.org/10.1080/09658211.2017.1406523
+and decision processes. Journal of Memory and Language, 48, 489–501.
 
-Besken, M. (2016). Picre-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433.
+https://doi.org/10.1016/S0749-596X(02)00537-5
+
+Johnson, M. K., Hashtroudi, S., & Lindsay, D. S. (1993). Source monitoring. Psychological
+
+Bulletin, 114, 3–28. https://doi.org/10.1037/0033-2909.114.1.3
 
 </textarea>
 
