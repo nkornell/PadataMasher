@@ -1,9 +1,13 @@
 <!-- 
 dfd To do: 
 
-Combining rows
-- if it has the first half of the reference, maybe it shouldn't be trying to find something above itself? 
-- With two non-user-doi rows, it's possible that neither doi it finds is right, but it could find the right doi if they were cobmined. As of now the program doesn't check the database for the combo. 
+- Make decide_whether and combine the same function.
+- Change try to combine so that it's part of (i.e., a function in) the reference obj? 
+- See whether status etc is being used to the full extent possible? And do the dfd stuff in decide whether.
+- It would speed things up to not wait for all of the lines to come in before trying to combine. Maybe if an obj is correct it should try to combine right away?
+- Why is it returning errors?
+- Why is it checking for combinations so many times and a) is that bad or good b) can it be changed?
+- With two non-user-doi rows, it's possible that neither doi it finds is right. In this case, maybe it could find the right doi if they were combined and then sent to the server, but as of now the program doesn't check the database for the combo. 
 - Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
 
 
@@ -15,6 +19,13 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 
 <!-- 
 stuff to test
+~~
+When you do this one of the lines ('remembered?...') gets deleted from user input
+Besken, M., & Mulligan, N. W. (2013). Easily perceived, easily 
+remembered? Perceptual interference produces a double dissociation 
+between metamemory and memory performance. Memory & Cognition, 41, 
+897–903. 
+
 ~~~
 
 test this and see if it still causes an error. having the same reference appear twice (with or without doi) causes a breakdown where some references aren't found at all
@@ -515,7 +526,10 @@ Basic procedure:
 			return false;
 		}
 
-// dfd
+// dfd: 
+// first, check whether these rules still make sense. 
+// second, see whether they're being implemented
+
 // if this is a fragment
 //     try to combine. 
 //     if the other has no doi, then just regular try to combine
@@ -620,6 +634,14 @@ Basic procedure:
             if (text_obj[input_string].doi != '') {
                 if (typeof reference_obj[text_obj[input_string].doi] != "undefined" && reference_obj[text_obj[input_string].doi] != null) {
                     if (text_obj[input_string].score > text_obj[input_reference_obj.user_input].score) {
+//                         console.log( '***should backweardsyl') //dfd make it treat the other one as the target
+//                         var bestcombo_other = best_combination(input_reference_obj.user_input, input_string, reference_obj[text_obj[input_string].doi].apa_no_html);
+// //                         console.log(input_reference_obj.user_input, input_string, reference_obj[text_obj[input_string].doi].apa_no_html);
+//                         console.log('bestcombo_other='+bestcombo_other)
+//                         var s1 = compute_letter_match(bestcombo, input_reference_obj.apa_no_html);
+//                         var s2 = compute_letter_match(bestcombo_other, reference_obj[text_obj[input_string].doi].apa_no_html);
+//                         console.log( '   bestcombo score= ' + s1 + ' for: ' + bestcombo)
+//                         console.log( '   bestcombo_other score= ' + s2 + ' for: ' + bestcombo_other)
                     }
                 }
             }
@@ -877,7 +899,9 @@ Basic procedure:
 	
 	function parse_user_input() {
 		var inputText = document.getElementById("myText").value;
-		inputText = inputText.replace(/[&\\#$~%'"*?{}]/g, ''); // remove illegal characters. note: taking out the ampersand causes errors. so I take it out even though it does change the input in a meaningful way. If you want to make things 100% perfect, leave it in the input but do not send it to the server.
+		// dfd: below, not taking out the ampersand causes errors. so I take it out even though it does change the input in a meaningful way. If you want to make things 100% perfect, leave it in the input but do not send it to the server.
+		// also, I took out the question mark (it used to be /[&\\#$~%'"*?{}]/g) but that seems to work just fine.
+		inputText = inputText.replace(/[&\\#$~%'"*{}]/g, ''); // remove illegal characters. 
 		inputText = inputText.replaceAll("- ","-"); 
 		
 		var urlSuffix = inputText.split(/\r\n|\r|\n/g);
