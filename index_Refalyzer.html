@@ -201,22 +201,22 @@ Basic procedure:
             if (this.notes == '') {
                 this.notes = temp_search_status_to_show + temp_match_status_to_show; 
             }
- 
-    		update_progress();
-    		    		
+//             console.log( this.user_input)
+     		    		
             try { 
                 // update html
                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
                 document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show; 
                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
             } catch(err) {
-                console.log( '---------')
-    		    console.log('*error in update ref, for: ');
+                console.log( '<---------')
+    		    console.log('*error in update input, for: ');
     		    console.log( this.user_input);
     		    console.log( temp_ref_to_show);
     		    console.log( err);
-                console.log( '---------')
+                console.log( '--------->')
             }
+    		update_progress(); // if this comes before the update html above, it causes errors (at least in the console). I failed to figure out why. 
 		}
 	}
 	
@@ -366,7 +366,6 @@ Basic procedure:
 	    		   			
 			} else if (err == 'Error: This format is not supported or recognized') { 
 			    // if it found a doi that is correct, but the citation can't be found by Cite, give up.
-                console.log( 'time to give up')
                 text_obj[input_string].update_input('done');
 			} else {
 			    console.log( '*error in get one url: '+input_string);
@@ -432,7 +431,9 @@ Basic procedure:
                 }
             }
         }
-        console.log('--removed '+foof+' duplicate rows--');
+        if (foof > 0) {
+            console.log('--removed '+foof+' duplicate rows--');
+        }
 	}
 	
 	
@@ -577,6 +578,7 @@ Basic procedure:
             if (otherRow_doi == input_reference_obj.doi) {
                 // if they have the same doi
                 shouldCombine = true;
+                console.log( 'is this correlated with problems??????????')
             } else if (text_obj[otherRow_input_string].search_status == "searching") {
                 // if it's still searching for the other row, return. it'll try again with that row later. 
                 return false; 
@@ -607,8 +609,6 @@ Basic procedure:
 //                             console.log( ' bestcombo_other score= ' + s2 + ' for: ' + bestcombo_other)
 //                            return false; // dfd doing this makes it so the thing doesn't finish! I still want to return false but I'm not sure if I can. 
                            // dfdd
-                        } else {
-//                             console.log( 'the reverese is not better')    
                         }
 //                     }
                 }
@@ -627,8 +627,12 @@ Basic procedure:
                 if (shouldChangeUserInput == true) {
                     change_user_input(input_reference_obj, bestcombo); 
                 } else {
-                    console.log( "[didn't change user input] "+bestcombo)
-                    // dfd if there are three lines, with no doi, it cuts out one of them. (maybe also if there are two?) this happens instead. but it shouldn't. 
+                    if (input_reference_obj.user_input == bestcombo) {
+                        console.log( "[didn't change user input] they're the same")
+                    } else {
+                        console.log( "[didn't change user input] "+input_reference_obj.user_input + " != "+bestcombo)
+                        // dfd if there are three lines, with no doi, it cuts out one of them. (maybe also if there are two?) this happens instead. but it shouldn't. 
+                    }
                 }
                 return true;
             } else {
@@ -1084,8 +1088,10 @@ Basic procedure:
             console.log( err);
         }
 
-		document.getElementById('progressHeader').innerHTML = "Working... ";
-		document.getElementById('progressText').innerHTML = '&nbsp;'; // this space is just so it looks good
+        if (document.getElementById('progressHeader').innerHTML != "Working... ") {
+            document.getElementById('progressHeader').innerHTML = "Working... ";
+            document.getElementById('progressText').innerHTML = '&nbsp;'; // this space is just so it looks good
+		}
 
 		if (rows_done >= rows_total && completelyDone == false) {
 			console.log( '$$ finished all $$')
@@ -1111,7 +1117,8 @@ Basic procedure:
 		document.getElementById("myProgress").style = "display: none;"
 		build_author_table();
 		document.getElementById("refalyzerAuthorsBox").style = "display: flex;"	
-		console.log( '---------finish----------')
+		console.log( '---------finished----------')
+		console.log( '')
 	}
 	
 
