@@ -1,9 +1,8 @@
 <!-- 
 dfd To do: 
 
+- I'd like to get rid of the to_do_list to the extent possible. 
 - Make decide_whether and combine the same function.
-- Change try to combine so that it's part of (i.e., a function in) the reference obj? 
-- See whether status etc is being used to the full extent possible? And do the dfd stuff in decide whether.
 - It would speed things up to not wait for all of the lines to come in before trying to combine. Maybe if an obj is correct it should try to combine right away?
 - Why is it returning errors?
 - Why is it checking for combinations so many times and a) is that bad or good b) can it be changed?
@@ -132,11 +131,9 @@ Basic procedure:
                 console.log( 'update_input called for .removed object (returned instead): '+this.user_input);
                 return;
             }
-why is an index showing up that's -1? Maybe I should check the value of the thing being spliced, not jsut its number
+
 		    if (this.search_status != 'done' && input_search_status == 'done') {
-				if (to_do_list_input_string.indexOf(this.user_input) > -1) {
-					to_do_list_input_string.splice(to_do_list_input_string.indexOf(this.user_input),1); // remove it from to do list because it's done
-				}
+                to_do_list_input_string.splice(to_do_list_input_string.indexOf(this.user_input),1); // remove it from to do list because it's done
 		    }
 		    
 		    if (input_search_status != '') {
@@ -262,9 +259,7 @@ why is an index showing up that's -1? Maybe I should check the value of the thin
         var row_queue = [];
         var i = 0;
 
-//  		for (i = to_do_list_input_string.length - 1; i >= 0; i--) { // this would from the bottom up
  		for (i = 0; i < to_do_list_input_string.length; i++) {
-//  		    console.log( 'row que ++ loop: '+text_obj[to_do_list_input_string[i]].user_input+' status: '+text_obj[to_do_list_input_string[i]].search_status)
             if (text_obj[to_do_list_input_string[i]].doi_type === doi_type_to_handle) {
                 if (text_obj[to_do_list_input_string[i]].search_status === 'not started' || text_obj[to_do_list_input_string[i]].search_status === 'incorrect doi entered; searching again') {
     			    row_queue.push(to_do_list_input_string[i]); 
@@ -276,6 +271,7 @@ why is an index showing up that's -1? Maybe I should check the value of the thin
 		for (i = 0; i < row_queue.length; i++) {
    			getOneURL(row_queue[i]); 
 		}
+		console.log( '--done calling getOneURL--')
 	}
 
 	
@@ -345,7 +341,7 @@ why is an index showing up that's -1? Maybe I should check the value of the thin
 					text_obj[input_string].update_input('done');
 
 					if (to_do_list_input_string.indexOf(input_string) > -1) {
-						console.log( ' i horpe this doesnt happen')
+						console.log( '**error i horpe this doesnt happen')
 						to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
 					}
 
@@ -450,29 +446,22 @@ why is an index showing up that's -1? Maybe I should check the value of the thin
 		
         if (text_obj[input_string].removed) {
             // if it's already removed, don't remove it. 
-            if (to_do_list_input_string.indexOf(input_string) >= 0) {
+            if (to_do_list_input_string.indexOf(input_string) >= 0) { // 
                 // But before returning, check if it's still in the to do list, and if it is, remove it. (This can happen because exact duplicate rows need to be removed from the to do list more than once.)
                 console.log( 'splicing '+to_do_list_input_string.indexOf(input_string));
                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
             }
             return;
         } else {
-			console.log( '[remove row] '+input_string)
             try {
-                if (text_obj[input_string].doi != '') {
-//                     console.log( '[removing row with a known doi] '+ input_string + ' [' + text_obj[input_string].doi + ']');
-                }
-
                 if (text_obj[input_string].match_status == "correct") {
                     console.log('removing a "correct" row');
                 }
-
-				text_obj[input_string].update_input('done'); // dfd: I added this. I'm not sure why it should matter, but it seems to cause a problem. 
-
+                
                 var row_to_remove = document.getElementById(input_string).rowIndex;
                 document.getElementById("article_table").deleteRow(row_to_remove);
-				
-//                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); 
+
+				text_obj[input_string].search_status = 'done';				
                 text_obj[input_string].removed = true; // I think I did this rather than deleting it because get URL might be looking for it later. 
         
             }
@@ -482,7 +471,6 @@ why is an index showing up that's -1? Maybe I should check the value of the thin
             }
 	        update_progress();
         }
-        console.log( '[done rr]')
 	}
 
 	function check_table_for_combinations() {
@@ -614,7 +602,6 @@ why is an index showing up that's -1? Maybe I should check the value of the thin
 //                             console.log( ' bestcombo score= ' + s1 + ' for: ' + bestcombo)
 //                             console.log( ' bestcombo_other score= ' + s2 + ' for: ' + bestcombo_other)
 //                            return false; // dfd doing this makes it so the thing doesn't finish! I still want to return false but I'm not sure if I can. 
-                           // dfdd
                         }
 //                     }
                 }
@@ -673,7 +660,11 @@ why is an index showing up that's -1? Maybe I should check the value of the thin
             text_obj[to_string].user_input = to_string;
             
             // change to do list
-            to_do_list_input_string[to_do_list_input_string.indexOf(from_string)] = to_string;
+            if (to_do_list_input_string.indexOf(from_string) > -1) {
+                to_do_list_input_string[to_do_list_input_string.indexOf(from_string)] = to_string;
+            } else {
+//                 console.log( 'from isnt in to do list (i.e., index < 0)')
+            }
         
             // update reference obj (i.e., from obj)
             from_obj.user_input = to_string;
@@ -880,7 +871,7 @@ why is an index showing up that's -1? Maybe I should check the value of the thin
 	
 	function parse_user_input() {
 		var inputText = document.getElementById("myText").value;
-		// dfd: below, not taking out the ampersand causes errors. so I take it out even though it does change the input in a meaningful way. If you want to make things 100% perfect, leave it in the input but do not send it to the server.
+		// below, not taking out the ampersand causes errors. so I take it out even though it does change the input in a meaningful way. If you want to make things 100% perfect, leave it in the input but do not send it to the server.
 		// also, I took out the question mark (it used to be /[&\\#$~%'"*?{}]/g) but that seems to work just fine.
 		inputText = inputText.replace(/[&\\#$~%'"*{}]/g, ''); // remove illegal characters. 
 		inputText = inputText.replaceAll("- ","-"); 
@@ -1103,12 +1094,12 @@ why is an index showing up that's -1? Maybe I should check the value of the thin
             document.getElementById('progressText').innerHTML = '&nbsp;'; // this space is just so it looks good
 		}
 
-		if (to_do_list_input_string.length > up) {
-			console.log( 'up went up');
-			console.log(to_do_list_input_string)
-		}
-		up = to_do_list_input_string.length
-		console.log('update progress '+up)
+// 		if (to_do_list_input_string.length > up) {
+// 			console.log( 'up went up');
+// 			console.log(to_do_list_input_string)
+// 		}
+// 		up = to_do_list_input_string.length
+// 		console.log('update progress '+up)
 		
 		if (rows_done >= rows_total && completelyDone == false) {
 			console.log( '$$ finished all $$')
@@ -1168,6 +1159,14 @@ https://doi.org/10.1016/S0749-596X(02)00537-5
 Johnson, M. K., Hashtroudi, S., & Lindsay, D. S. (1993). Source monitoring. Psychological
 
 Bulletin, 114, 3–28. https://doi.org/10.1037/0033-2909.114.1.3
+
+
+Dunlosky, J., & Nelson, T. O. (1997). Similarity between the cue for judgments of 
+
+learning (JOL) and the cue for test is not the primary determinant of JOL 
+
+accuracy. Journal of Memory and Language, 36, 34–49. 
+
 
 </textarea>
 
