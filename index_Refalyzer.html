@@ -94,6 +94,7 @@ Basic procedure:
     cc['fragment'] = 'blue';
     cc['wrong'] = 'red';
     var good_match_threshold = 80;
+    var up = 0;
 
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
 // 	var doi_pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
@@ -131,9 +132,11 @@ Basic procedure:
                 console.log( 'update_input called for .removed object (returned instead): '+this.user_input);
                 return;
             }
-
+why is an index showing up that's -1? Maybe I should check the value of the thing being spliced, not jsut its number
 		    if (this.search_status != 'done' && input_search_status == 'done') {
-				to_do_list_input_string.splice(to_do_list_input_string.indexOf(this.user_input),1); // remove it from to do list because it's done
+				if (to_do_list_input_string.indexOf(this.user_input) > -1) {
+					to_do_list_input_string.splice(to_do_list_input_string.indexOf(this.user_input),1); // remove it from to do list because it's done
+				}
 		    }
 		    
 		    if (input_search_status != '') {
@@ -342,6 +345,7 @@ Basic procedure:
 					text_obj[input_string].update_input('done');
 
 					if (to_do_list_input_string.indexOf(input_string) > -1) {
+						console.log( ' i horpe this doesnt happen')
 						to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
 					}
 
@@ -453,6 +457,7 @@ Basic procedure:
             }
             return;
         } else {
+			console.log( '[remove row] '+input_string)
             try {
                 if (text_obj[input_string].doi != '') {
 //                     console.log( '[removing row with a known doi] '+ input_string + ' [' + text_obj[input_string].doi + ']');
@@ -462,12 +467,12 @@ Basic procedure:
                     console.log('removing a "correct" row');
                 }
 
+				text_obj[input_string].update_input('done'); // dfd: I added this. I'm not sure why it should matter, but it seems to cause a problem. 
+
                 var row_to_remove = document.getElementById(input_string).rowIndex;
                 document.getElementById("article_table").deleteRow(row_to_remove);
 				
-//                 console.log( 'spli-sing '+to_do_list_input_string.indexOf(input_string))
-                to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
-        
+//                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); 
                 text_obj[input_string].removed = true; // I think I did this rather than deleting it because get URL might be looking for it later. 
         
             }
@@ -475,8 +480,9 @@ Basic procedure:
                 console.log( '*error in remove_row. input_string='+ input_string + " [error next line]");
                 console.log( err);
             }
+	        update_progress();
         }
-        update_progress();
+        console.log( '[done rr]')
 	}
 
 	function check_table_for_combinations() {
@@ -649,8 +655,12 @@ Basic procedure:
 	function change_user_input(from_obj, to_string) {
 	    // this changes the user input in: the table, the reference obj, the to do list, and...
 	    // it also deletes the input obj and creates a new one in its place.
-
+	
         try {
+			if (text_obj[from_obj.user_input].removed == true) {
+				console.log( '**error: trying to change user input for a removed thing;)')
+			}
+		
             var from_string = from_obj.user_input;
         
             change_elementIDs(from_string, to_string);
@@ -1093,6 +1103,13 @@ Basic procedure:
             document.getElementById('progressText').innerHTML = '&nbsp;'; // this space is just so it looks good
 		}
 
+		if (to_do_list_input_string.length > up) {
+			console.log( 'up went up');
+			console.log(to_do_list_input_string)
+		}
+		up = to_do_list_input_string.length
+		console.log('update progress '+up)
+		
 		if (rows_done >= rows_total && completelyDone == false) {
 			console.log( '$$ finished all $$')
 			completelyDone = true;
@@ -1118,6 +1135,7 @@ Basic procedure:
 		build_author_table();
 		document.getElementById("refalyzerAuthorsBox").style = "display: flex;"	
 		console.log( '---------finished----------')
+		console.log( to_do_list_input_string[-1])
 		console.log( '')
 	}
 	
