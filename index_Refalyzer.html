@@ -1,8 +1,9 @@
 <!-- 
 dfd To do: 
 
-- I'd like to get rid of the to_do_list to the extent possible. 
-- Make decide_whether and combine the same function.
+- update progress should be smarter about when it is actually finished. (And don't call update progress so often.)
+- this should also fix the abcabc problem I think
+
 - It would speed things up to not wait for all of the lines to come in before trying to combine. Maybe if an obj is correct it should try to combine right away?
 - Why is it returning errors?
 - Why is it checking for combinations so many times and a) is that bad or good b) can it be changed?
@@ -19,6 +20,16 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 <!-- 
 stuff to test
 ~~
+this causes ABCABC to get messed up. I think basically, if there's only dois plus duplicates, it's a problem. 
+
+Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL effect”. Memory, 26, 771–783. https://doi.org/10.1080/09658211.2017.1406523
+
+DELAYED JUDGMENTS IN SOURCE MONITORING 53
+
+
+DELAYED JUDGMENTS IN SOURCE MONITORING 54
+~~~
+
 When you do this one of the lines ('remembered?...') gets deleted from user input
 Besken, M., & Mulligan, N. W. (2013). Easily perceived, easily 
 remembered? Perceptual interference produces a double dissociation 
@@ -82,7 +93,7 @@ Basic procedure:
 	var author_obj = [];
 	var reference_obj = [];
 	var text_obj = []
-	var to_do_list_input_string = [];
+// 	var to_do_list_input_string = [];
 	var duplicate_input_text = [];
 	var articleTableText = "";
 	var startTime = 0;
@@ -114,7 +125,7 @@ Basic procedure:
 		this.letter_match = 0;
 		this.letter_match_percentage = 0;
 		
-        to_do_list_input_string.push(input_userInput);
+//         to_do_list_input_string.push(input_userInput);
         
         this.table_row_number = function() {
             return document.getElementById(this.user_input).rowIndex;
@@ -132,9 +143,9 @@ Basic procedure:
                 return;
             }
 
-		    if (this.search_status != 'done' && input_search_status == 'done') {
-                to_do_list_input_string.splice(to_do_list_input_string.indexOf(this.user_input),1); // remove it from to do list because it's done
-		    }
+// 		    if (this.search_status != 'done' && input_search_status == 'done') {
+//                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(this.user_input),1); // remove it from to do list because it's done
+// 		    }
 		    
 		    if (input_search_status != '') {
     		    this.search_status = input_search_status;
@@ -259,19 +270,34 @@ Basic procedure:
         var row_queue = [];
         var i = 0;
 
- 		for (i = 0; i < to_do_list_input_string.length; i++) {
-            if (text_obj[to_do_list_input_string[i]].doi_type === doi_type_to_handle) {
-                if (text_obj[to_do_list_input_string[i]].search_status === 'not started' || text_obj[to_do_list_input_string[i]].search_status === 'incorrect doi entered; searching again') {
-    			    row_queue.push(to_do_list_input_string[i]); 
-    		    }
+
+//  		for (i = 0; i < to_do_list_input_string.length; i++) {
+//             if (text_obj[to_do_list_input_string[i]].doi_type === doi_type_to_handle) {
+//                 if (text_obj[to_do_list_input_string[i]].search_status === 'not started' || text_obj[to_do_list_input_string[i]].search_status === 'incorrect doi entered; searching again') {
+//     			    row_queue.push(to_do_list_input_string[i]); 
+// 
+//     		    }
+//             }
+// 		}
+        
+        
+		for (let key in text_obj) { // this loops through all of text_obj
+		    // if it's the right kind of doi, and has the right search status, add it to the row queue. 
+            if (text_obj[key].doi_type === doi_type_to_handle) {
+                if (text_obj[key].search_status === 'not started' || text_obj[key].search_status === 'incorrect doi entered; searching again') {
+                    row_queue.push(text_obj[key].user_input);
+                    if (text_obj[key].removed) {
+                        console.log('**error: getting url for removed row: ' + text_obj[key].user_input)
+                    }
+                }
             }
 		}
-        
-        console.log('--getting ' + row_queue.length + ' rows ('+doi_type_to_handle+')--')   
+
+        console.log('-A- getting ' + row_queue.length + ' rows ('+doi_type_to_handle+')--')   
+
 		for (i = 0; i < row_queue.length; i++) {
    			getOneURL(row_queue[i]); 
 		}
-		console.log( '--done calling getOneURL--')
 	}
 
 	
@@ -340,17 +366,18 @@ Basic procedure:
 					text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
 					text_obj[input_string].update_input('done');
 
-					if (to_do_list_input_string.indexOf(input_string) > -1) {
-						console.log( '**error i horpe this doesnt happen')
-						to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
-					}
+                    // i don't know what's going on here... hopefully it never happens and I can just delete this mofo
+// 					if (to_do_list_input_string.indexOf(input_string) > -1) {
+// 						console.log( '**error i horpe this doesnt happen')
+// 						to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
+// 					}
 
 				} else { 
 					// if it finds a doi that already has a reference obj (i.e., that's been found before), combine them. 
 					// first figure out where each one is, then call decide whether with the appropriate shift
-                    const og_row = reference_obj[myJSON.data[0].DOI].table_row_number();
+                    const original_row = reference_obj[myJSON.data[0].DOI].table_row_number();
                     const new_row = text_obj[input_string].table_row_number();
-                    decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], new_row - og_row);
+                    decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], new_row - original_row);
 				}
     			update_progress();
 			}
@@ -386,11 +413,47 @@ Basic procedure:
 		var tempScore = 0;
 		var target_has_been_found = false;
 		var foof = 0;
+		var local_list = [];
+		var temp_row_text = '';
 		
+// 		for (let key in text_obj) { // this loops through all of text_obj
+//             if (text_obj[key].search_status === 'not started' || text_obj[key].search_status === 'incorrect doi entered; searching again') {
+//                 local_list.push(text_obj[key].user_input);
+//                 if (text_obj[key].removed) {
+//                     console.log('**error: in remove duplicate rows, found removed row: ' + text_obj[key].user_input)
+//                 }
+//             }
+//         }
+        
+        // go through the table and create an array that needs to be checked for whether it contains duplicates. 
+		for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
+			try {
+				temp_row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
+			} catch(err) {
+			    console.log( "error 99833")
+			}
+           if (text_obj[temp_row_text].search_status === 'not started' || text_obj[temp_row_text].search_status === 'incorrect doi entered; searching again') {
+                local_list.push(text_obj[temp_row_text].user_input);
+                if (text_obj[temp_row_text].removed) {
+                    console.log('**error: in remove duplicate rows, found removed row: ' + text_obj[temp_row_text].user_input)
+                }
+            }		
+		}
+		
+		
+        //dfdd
+//         if (local_list.toString() != to_do_list_input_string.toString()) {
+//             console.log( '*error #2044 in remove duplicate rows')
+//             console.log( local_list)
+//             console.log( local_list.toString())
+//             console.log( to_do_list_input_string)
+//             console.log( to_do_list_input_string.toString())
+//         }
+
 		// find duplicate rows
-        for (target = 0; target < to_do_list_input_string.length; target++) {
+        for (target = 0; target < local_list.length; target++) {
             target_has_been_found = false;
-            target_string = to_do_list_input_string[target];
+            target_string = local_list[target];
             for (i = 0; i < duplicate_input_text.length-1; i++) {
                 tempScore = compute_letter_match(target_string, duplicate_input_text[i]);
                 if (tempScore > 90) { // if it's the same as a previous row
@@ -404,11 +467,11 @@ Basic procedure:
             if (target_has_been_found) {
                 continue; // skip the rest of this loop and start with the next value (i.e., target+1). Because this target is already labelled a duplicate.
             } else {           
-                for (i = target + 1; i < to_do_list_input_string.length; i++) {
-                    tempScore = compute_letter_match(target_string, to_do_list_input_string[i]);
+                for (i = target + 1; i < local_list.length; i++) {
+                    tempScore = compute_letter_match(target_string, local_list[i]);
                     if (tempScore > 90) { // if it's the same as a previous row
-                        if (duplicate_input_text.includes(to_do_list_input_string[i]) == false) {
-                          duplicate_input_text.push(to_do_list_input_string[i]);
+                        if (duplicate_input_text.includes(local_list[i]) == false) {
+                          duplicate_input_text.push(local_list[i]);
                         }
 
                         if (text_obj[target_string].match_status !== 'correct') {
@@ -422,11 +485,11 @@ Basic procedure:
         }
         
         // remove duplicate rows
-        for (i = to_do_list_input_string.length - 1; i >= 0; i--) {
-            if (duplicate_input_text.includes(to_do_list_input_string[i])) {
-                if (text_obj[to_do_list_input_string[i]].doi_type != 'from_user') { // don't remove if it has a doi
-//                     pagelog('[removing] ' + to_do_list_input_string[i]+' doi type='+text_obj[to_do_list_input_string[i]].doi_type)
-                    remove_row(to_do_list_input_string[i]);                
+        for (i = local_list.length - 1; i >= 0; i--) {
+            if (duplicate_input_text.includes(local_list[i])) {
+                if (text_obj[local_list[i]].doi_type != 'from_user') { // don't remove if it has a doi
+//                     pagelog('[removing] ' + local_list[i]+' doi type='+text_obj[local_list[i]].doi_type)
+                    remove_row(local_list[i]);                
                     foof++;
                 }
             }
@@ -446,11 +509,11 @@ Basic procedure:
 		
         if (text_obj[input_string].removed) {
             // if it's already removed, don't remove it. 
-            if (to_do_list_input_string.indexOf(input_string) >= 0) { // 
-                // But before returning, check if it's still in the to do list, and if it is, remove it. (This can happen because exact duplicate rows need to be removed from the to do list more than once.)
-                console.log( 'splicing '+to_do_list_input_string.indexOf(input_string));
-                to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
-            }
+//             if (to_do_list_input_string.indexOf(input_string) >= 0) { // 
+//                 // But before returning, check if it's still in the to do list, and if it is, remove it. (This can happen because exact duplicate rows need to be removed from the to do list more than once.)
+//                 console.log( 'splicing '+to_do_list_input_string.indexOf(input_string));
+//                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
+//             }
             return;
         } else {
             try {
@@ -517,7 +580,7 @@ Basic procedure:
 		if (run_me_again) {
 			check_table_for_combinations();
 		} else {
-			console.log( '--done checking for combinations--')			
+			console.log( '-C-checked for combinations--')			
 		}
 	}
 
@@ -660,11 +723,11 @@ Basic procedure:
             text_obj[to_string].user_input = to_string;
             
             // change to do list
-            if (to_do_list_input_string.indexOf(from_string) > -1) {
-                to_do_list_input_string[to_do_list_input_string.indexOf(from_string)] = to_string;
-            } else {
-//                 console.log( 'from isnt in to do list (i.e., index < 0)')
-            }
+//             if (to_do_list_input_string.indexOf(from_string) > -1) {
+//                 to_do_list_input_string[to_do_list_input_string.indexOf(from_string)] = to_string;
+//             } else {
+// //                 console.log( 'from isnt in to do list (i.e., index < 0)')
+//             }
         
             // update reference obj (i.e., from obj)
             from_obj.user_input = to_string;
@@ -915,8 +978,15 @@ Basic procedure:
             if (tempDOIsFoundSoFar.includes(tempDOI)) { // if the doi has already been found in the user input
                 console.log( 'duplicate doi found in user input. not added: ' + tempDOI);
             } else {
-                // if there's no doi, or the doi is new, use it. 
-                text_obj[urlSuffix[i]] = new Text_object(urlSuffix[i], tempDOI, tempDOItype, i);
+                if (typeof text_obj[urlSuffix[i]] != 'undefined' ) {
+                    console.log( "**error: adding text_obj that already exists: "+urlSuffix[i])
+                    // dfd here's a known issue: If two rows are identical (and don't have a doi), there's a problem. 
+                    // text_obj only knows about one of the rows, because when it gets created (here), it creates two objects with the same index. 
+                    // so only one gets added to the html table. basically, the second one (and beyond) kinda disappears. 
+                    // And you won't see a problem in the output, necessarily, because the disappeared line doesn't get processed. 
+                    // And btw, I don't want to just disappear it because it's possible that the same line appearing twice is correct, whereas with dois, disappearing a duplicate is fine. 
+                }
+                text_obj[urlSuffix[i]] = new Text_object(urlSuffix[i], tempDOI, tempDOItype, i); // if there's no doi, or the doi is new, use it. 
                 if (tempDOI.length > 0) {
                     tempDOIsFoundSoFar.push(tempDOI);
                 }
@@ -934,8 +1004,7 @@ Basic procedure:
     	articleTableText += '<th style="width:40%">Article found</th>';
     	articleTableText += '<th style="width:20%">Notes</th></tr>';
     	
-		for (let key in text_obj) {
-		// this loops through all of text_obj
+		for (let key in text_obj) { // this loops through all of text_obj
             s = text_obj[key].user_input;
             articleTableText += "<tr id='"+s+"'>";
             articleTableText += "<td id='inputText_"+ s +"'>"+ s +"</td>";
@@ -1048,12 +1117,15 @@ Basic procedure:
 	function start() {
 		reference_obj = [];
 		text_obj = [];
-		to_do_list_input_string = [];
+// 		to_do_list_input_string = [];
 		duplicate_input_text = [];
 		started_notFoundYet = false;
 		completelyDone = false;
 		startTime = Date.now();
 		
+		console.log( '')
+		console.log( '---------start----------')
+
 		document.getElementById("outputText").innerHTML = "";
         document.getElementById("myProgress").style = "display: flex;"
         document.getElementById("refalyzerAuthorsBox").style = "display: none;"
@@ -1093,21 +1165,15 @@ Basic procedure:
             document.getElementById('progressHeader').innerHTML = "Working... ";
             document.getElementById('progressText').innerHTML = '&nbsp;'; // this space is just so it looks good
 		}
-
-// 		if (to_do_list_input_string.length > up) {
-// 			console.log( 'up went up');
-// 			console.log(to_do_list_input_string)
-// 		}
-// 		up = to_do_list_input_string.length
-// 		console.log('update progress '+up)
 		
 		if (rows_done >= rows_total && completelyDone == false) {
-			console.log( '$$ finished all $$')
-			completelyDone = true;
+		    // if it's totally done
+			console.log( '-B- checked all--')
 			check_table_for_combinations(); 
 			finish();
-		} else if (rows_done == rows_with_user_dois_total && started_notFoundYet == false) {
-			console.log( '$ finished dois $')
+		} else if (rows_done == rows_with_user_dois_total && started_notFoundYet == false  && completelyDone == false) {
+		    // if it's done with user-entered dois
+			console.log( '-B- checked dois--')
 		    started_notFoundYet = true;
 			remove_duplicate_rows();
 			check_table_for_combinations();
@@ -1119,15 +1185,17 @@ Basic procedure:
 	}
 	
 	function finish() {
+        if (completelyDone) {
+            console.log( '* called finish() when already completely done')
+        }
+        completelyDone = true;
         var rows_total = document.getElementById('article_table').rows.length - 1;
 		document.getElementById('progressHeader').innerHTML = "Done ";
 		document.getElementById('progressText').innerHTML = '&nbsp;' + rows_total + " rows (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
 		document.getElementById("myProgress").style = "display: none;"
 		build_author_table();
 		document.getElementById("refalyzerAuthorsBox").style = "display: flex;"	
-		console.log( '---------finished----------')
-		console.log( to_do_list_input_string[-1])
-		console.log( '')
+		console.log( '---------finish----------')
 	}
 	
 
@@ -1150,6 +1218,32 @@ Basic procedure:
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
+
+
+Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL effect”. Memory, 26, 771–783. https://doi.org/10.1080/09658211.2017.1406523
+
+DELAYED JUDGMENTS IN SOURCE MONITORING 53
+
+Dodson, C. S., Darragh, J., & Williams, A. (2008). Stereotypes and retrieval-provoked illusory source recollections. Journal of Experimental Psychology: Learning, Memory, and Cognition, 34, 460–477. https://doi.org/10.1037/0278-7393.34.3.460
+
+Dougherty, M. R., Scheck, P., Nelson, T. O., & Narens, L. (2005). Using the past to predict the future. Memory & Cognition, 33, 1096–1115. https://doi.org/10.3758/BF03193216
+
+Dunlosky, J., & Hertzog, C. (2000). Updating knowledge about encoding strategies: A componential analysis of learning about strategy effectiveness from task experience. Psychology and Aging, 15, 462–474. https://doi.org/10.1037//0882-7974.15.3.462
+
+Erdfelder, E., & Bredenkamp, J. (1998). Recognition of script-typical versus script-atypical information: Effects of cognitive elaboration. Memory & Cognition, 26, 922–938. https://doi.org/10.3758/BF03201173
+
+Finley, J. R., Tullis, J. G., & Benjamin, A. S. (2010). Metacognitive control of learning and remembering. In M. S. Knine & I. M. Saleh (Eds.), New Science of Learning (pp. 109– 131). New York, NY: Springer. https://doi.org/10.1007/978-1-4419-5716-0_6
+
+DELAYED JUDGMENTS IN SOURCE MONITORING 54
+
+Finn, B., & Metcalfe, J. (2007). The role of memory for past test in the underconfidence with practice effect. Journal of Experimental Psychology: Learning, Memory, and Cognition, 33, 238–244. https://doi.org/10.1037/0278-7393.33.1.238
+
+Finn, B., & Metcalfe, J. (2008). Judgments of learning are influenced by memory for past test. Journal of Memory and Language, 58, 19–34. https://doi.org/10.1016/j.jml.2007.03.006
+
+
+</textarea>
+
+<!-- 
 Hicks, J. L., & Cockman, D. W. (2003). The effect of general knowledge on source memory
 
 and decision processes. Journal of Memory and Language, 48, 489–501.
@@ -1166,9 +1260,8 @@ Dunlosky, J., & Nelson, T. O. (1997). Similarity between the cue for judgments o
 learning (JOL) and the cue for test is not the primary determinant of JOL 
 
 accuracy. Journal of Memory and Language, 36, 34–49. 
+ -->
 
-
-</textarea>
 
 <!-- 
 Heck, D. W., Gronau, F. Q., & Wagenmakers &, E.-J. (2019). metaBMA: Bayesian Model
@@ -1189,11 +1282,6 @@ https://doi.org/10.1016/S0749-596X(02)00537-5
 <p id="outputText"></p>
 
 <p><button onclick="start()">Run</button>
-<!-- 
-<p><button onclick="check_table_for_combinations()">look for combos</button>
-<p><button onclick="finish()">clean up</button>
- -->
-
 
 <div class='bigBox' id='progressBox' style="display: none;">
 	<div class='boxAroundTable' style="min-width: 300px">
