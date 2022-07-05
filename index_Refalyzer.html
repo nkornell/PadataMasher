@@ -98,13 +98,12 @@ Basic procedure:
 	var articleTableText = "";
 	var startTime = 0;
 	var started_notFoundYet = false;
-	var completelyDone = false;
 	var doi_pattern = /10.\d{4,9}\/[-._;()/:A-Z0-9<>]+/gi; // doi_pattern is used to find a DOI within the input string. note: I added in the g, which makes it return all of the DOIs instead of just 1
     const cc = [];
     cc['fragment'] = 'blue';
     cc['wrong'] = 'red';
     var good_match_threshold = 80;
-    var up = 0;
+    var current_mode = '';
 
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
 // 	var doi_pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
@@ -119,6 +118,7 @@ Basic procedure:
         this.input_order = input_ord;
         this.search_status = "not started";
         this.match_status = "unknown";
+        this.combine_status = "not done";
 		this.notes = "";
 		this.removed = false;
 		this.score = 0;
@@ -139,7 +139,7 @@ Basic procedure:
 		    //    unknown, wrong, fragment, correct
 		    
             if (this.removed) {
-                console.log( 'update_input called for .removed object (returned instead): '+this.user_input);
+                console.log( 'updateinput called for .removed object (returned instead): '+this.user_input);
                 return;
             }
 
@@ -190,10 +190,12 @@ Basic procedure:
 					this.notes = '';
 				}
 			} else {
+			    // it wasn't found
 // 				console.log( 'no obj: '+this.doi)
 				this.match_status = 'unknown';
 				temp_ref_to_show = '';
 				if (this.search_status == 'done') {
+				    this.combine_status = 'cannot be combined';
 				    this.notes = "not found";
 				}
 			}
@@ -227,6 +229,7 @@ Basic procedure:
     		    console.log( err);
                 console.log( '--------->')
             }
+//             console.log( 'up this.updateinput')
     		update_progress(); // if this comes before the update html above, it causes errors (at least in the console). I failed to figure out why. 
 		}
 	}
@@ -293,10 +296,12 @@ Basic procedure:
             }
 		}
 
-        console.log('-A- getting ' + row_queue.length + ' rows ('+doi_type_to_handle+')--')   
-
-		for (i = 0; i < row_queue.length; i++) {
-   			getOneURL(row_queue[i]); 
+        if (row_queue.length > 0) {
+            console.log('-A- getting ' + row_queue.length + ' rows ('+doi_type_to_handle+')--')
+		    current_mode = "searching for dois"
+            for (i = 0; i < row_queue.length; i++) {
+                getOneURL(row_queue[i]); 
+            }
 		}
 	}
 
@@ -378,8 +383,8 @@ Basic procedure:
                     const original_row = reference_obj[myJSON.data[0].DOI].table_row_number();
                     const new_row = text_obj[input_string].table_row_number();
                     decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], new_row - original_row);
+        			update_progress();
 				}
-    			update_progress();
 			}
 		}
 		catch(err) {
@@ -440,16 +445,6 @@ Basic procedure:
             }		
 		}
 		
-		
-        //dfdd
-//         if (local_list.toString() != to_do_list_input_string.toString()) {
-//             console.log( '*error #2044 in remove duplicate rows')
-//             console.log( local_list)
-//             console.log( local_list.toString())
-//             console.log( to_do_list_input_string)
-//             console.log( to_do_list_input_string.toString())
-//         }
-
 		// find duplicate rows
         for (target = 0; target < local_list.length; target++) {
             target_has_been_found = false;
@@ -540,6 +535,8 @@ Basic procedure:
 		var i = 0;
         var run_me_again = false;
         
+	    current_mode = "checking combos"
+
 		for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
 			try {
 				temp_row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
@@ -571,6 +568,12 @@ Basic procedure:
 				if (decide_whether_to_combine_rows(reference_obj[temp_DOI],1) == true) {
 					run_me_again = true;
 				}
+// 				console.log( text_obj[temp_row_text].user_input)
+// 				console.log( text_obj[reference_obj[temp_DOI].user_input].user_input)
+				if (run_me_again == false) {
+                    text_obj[temp_row_text].combine_status = 'done';
+//                     console.log( 'set cs to done: '+text_obj[temp_row_text].doi)
+                }
 			} catch(err) {
  				console.log( '*error could not run decide whether...: ')
  				console.log( ' *'+temp_row_text)
@@ -580,7 +583,9 @@ Basic procedure:
 		if (run_me_again) {
 			check_table_for_combinations();
 		} else {
-			console.log( '-C-checked for combinations--')			
+			console.log( '-C-checked for combinations--')
+		    current_mode = "done combining"
+		    update_progress();
 		}
 	}
 
@@ -1108,8 +1113,6 @@ Basic procedure:
 	function showBoxes() {
 		var x = document.getElementById("refalyzerArticleListBox");
 		x.style.display = "flex";
-// 		x = document.getElementById("refalyzerAuthorsBox");
-// 		x.style.display = "flex";
 		x = document.getElementById("progressBox");
 		x.style.display = "flex";
 	}
@@ -1117,32 +1120,42 @@ Basic procedure:
 	function start() {
 		reference_obj = [];
 		text_obj = [];
-// 		to_do_list_input_string = [];
 		duplicate_input_text = [];
 		started_notFoundYet = false;
-		completelyDone = false;
+		current_mode = "searching for dois"
 		startTime = Date.now();
 		
 		console.log( '')
 		console.log( '---------start----------')
+
 
 		document.getElementById("outputText").innerHTML = "";
         document.getElementById("myProgress").style = "display: flex;"
         document.getElementById("refalyzerAuthorsBox").style = "display: none;"
 
 		showBoxes();
+		
+        if (document.getElementById('progressHeader').innerHTML != "Working... ") {
+            document.getElementById('progressHeader').innerHTML = "Working... ";
+            document.getElementById('progressText').innerHTML = '&nbsp;'; // this space is just so it looks good
+		}
+
 		parse_user_input();
 		getAllUrls('from_user');
 		update_progress();
 	}
 
 	function update_progress() {
-	    if (completelyDone) {
-	        return;
+	    console.log('current mode: ' + current_mode)
+	
+	    if (current_mode == "completely done") {
+	        console.log( ' called up when completely done')
+// 	        return; // dfd put back
 	    }
 	    
 	    var row_text = '';
-	    var rows_done = 0;
+	    var rows_searched = 0;
+	    var rows_combined = 0;
 	    var rows_with_user_dois_total = 0;
 	    
         var rows_total = document.getElementById('article_table').rows.length - 1;
@@ -1150,52 +1163,56 @@ Basic procedure:
             for (i = 1; i <= rows_total; i++) { // start at 1 to skip header row
                 row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
                 if (text_obj[row_text].search_status == "done") {
-                    rows_done++;
+                    rows_searched++;
                 }
                 if (text_obj[row_text].doi_type == "from_user") {
                     rows_with_user_dois_total++;
-                }                
+                }
+                if (text_obj[row_text].combine_status == "done" || text_obj[row_text].combine_status == 'cannot be combined') {
+                    rows_combined++;
+                }
             }
         } catch (err) {
             console.log('*error in update progress: '+row_text);
             console.log( err);
         }
-
-        if (document.getElementById('progressHeader').innerHTML != "Working... ") {
-            document.getElementById('progressHeader').innerHTML = "Working... ";
-            document.getElementById('progressText').innerHTML = '&nbsp;'; // this space is just so it looks good
-		}
 		
-		if (rows_done >= rows_total && completelyDone == false) {
-		    // if it's totally done
-			console.log( '-B- checked all--')
-			check_table_for_combinations(); 
+		if (rows_combined >= rows_total && current_mode == "done combining") {
+		    // it's already attempted to combine all rows
+		    current_mode = "wrap up"
 			finish();
-		} else if (rows_done == rows_with_user_dois_total && started_notFoundYet == false  && completelyDone == false) {
-		    // if it's done with user-entered dois
-			console.log( '-B- checked dois--')
+		} else if (rows_searched >= rows_total && current_mode == "searching for dois") {
+		    // if done searching for all dois
+			console.log( '-B- searched all--')
+			check_table_for_combinations(); 
+		} else if (rows_searched == rows_with_user_dois_total && started_notFoundYet == false  && current_mode == "searching for dois") {
+		    // if it's done searching for user-entered dois
+			console.log( '-B- searched dois--')
 		    started_notFoundYet = true;
 			remove_duplicate_rows();
 			check_table_for_combinations();
             getAllUrls('not_found_yet');
         }
+//         console.log( 'upd_prog: done,combined,total= '+ rows_searched+', '+rows_combined+', '+rows_total)
         
         // update progress bar
-        document.getElementById("myBar").style.width = 100*rows_done/rows_total + "%";
+        document.getElementById("myBar").style.width = 100*rows_searched/rows_total + "%";
 	}
 	
 	function finish() {
-        if (completelyDone) {
-            console.log( '* called finish() when already completely done')
+        if (current_mode == 'completely done') {
+            console.log( '*error called finish() when already completely done [returning]')
+            return;
         }
-        completelyDone = true;
+        current_mode = 'completely done'
         var rows_total = document.getElementById('article_table').rows.length - 1;
-		document.getElementById('progressHeader').innerHTML = "Done ";
+		document.getElementById('progressHeader').innerHTML = 'Done ';
 		document.getElementById('progressText').innerHTML = '&nbsp;' + rows_total + " rows (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
 		document.getElementById("myProgress").style = "display: none;"
 		build_author_table();
 		document.getElementById("refalyzerAuthorsBox").style = "display: flex;"	
 		console.log( '---------finish----------')
+		console.log( '')
 	}
 	
 
@@ -1218,25 +1235,7 @@ Basic procedure:
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-
-
 Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL effect”. Memory, 26, 771–783. https://doi.org/10.1080/09658211.2017.1406523
-
-DELAYED JUDGMENTS IN SOURCE MONITORING 53
-
-Dodson, C. S., Darragh, J., & Williams, A. (2008). Stereotypes and retrieval-provoked illusory source recollections. Journal of Experimental Psychology: Learning, Memory, and Cognition, 34, 460–477. https://doi.org/10.1037/0278-7393.34.3.460
-
-Dougherty, M. R., Scheck, P., Nelson, T. O., & Narens, L. (2005). Using the past to predict the future. Memory & Cognition, 33, 1096–1115. https://doi.org/10.3758/BF03193216
-
-Dunlosky, J., & Hertzog, C. (2000). Updating knowledge about encoding strategies: A componential analysis of learning about strategy effectiveness from task experience. Psychology and Aging, 15, 462–474. https://doi.org/10.1037//0882-7974.15.3.462
-
-Erdfelder, E., & Bredenkamp, J. (1998). Recognition of script-typical versus script-atypical information: Effects of cognitive elaboration. Memory & Cognition, 26, 922–938. https://doi.org/10.3758/BF03201173
-
-Finley, J. R., Tullis, J. G., & Benjamin, A. S. (2010). Metacognitive control of learning and remembering. In M. S. Knine & I. M. Saleh (Eds.), New Science of Learning (pp. 109– 131). New York, NY: Springer. https://doi.org/10.1007/978-1-4419-5716-0_6
-
-DELAYED JUDGMENTS IN SOURCE MONITORING 54
-
-Finn, B., & Metcalfe, J. (2007). The role of memory for past test in the underconfidence with practice effect. Journal of Experimental Psychology: Learning, Memory, and Cognition, 33, 238–244. https://doi.org/10.1037/0278-7393.33.1.238
 
 Finn, B., & Metcalfe, J. (2008). Judgments of learning are influenced by memory for past test. Journal of Memory and Language, 58, 19–34. https://doi.org/10.1016/j.jml.2007.03.006
 
@@ -1282,6 +1281,7 @@ https://doi.org/10.1016/S0749-596X(02)00537-5
 <p id="outputText"></p>
 
 <p><button onclick="start()">Run</button>
+<p><button onclick="update_progress()">update_progress</button>
 
 <div class='bigBox' id='progressBox' style="display: none;">
 	<div class='boxAroundTable' style="min-width: 300px">
