@@ -265,10 +265,10 @@ Basic procedure:
 			return temp.substring(0, temp.length-2); // removes the final ";"
 		};
 	}
-	
 
- 	async function getAllUrls(doi_type_to_handle) {
-	    // this gets called twice. First, for rows that have a doi. Then, when they're done, for rows that don't. 
+
+	async function getAllUrls(doi_type_to_handle) {
+		// this gets called twice. First, for rows that have a doi. Then, when they're done, for rows that don't. 
         
         var row_queue = [];
         var i = 0;
@@ -554,22 +554,20 @@ Basic procedure:
                 
 				temp_DOI = text_obj[temp_row_text].doi;
                 if (temp_DOI == '') {
-                    // this should happen a lot, it just means this item doesn't have a doi yet
+                    // this just means this item doesn't have a doi yet
                 	continue;
                 } 
                 if (typeof reference_obj[temp_DOI] == "undefined" || reference_obj[temp_DOI] == null) {
                     // this will happen when there's one it just can't find (it should be rare but it's fine I think)
                 	continue;
                 }
-				
+				console.log( 'deciding about: '+temp_DOI)
 				if (decide_whether_to_combine_rows(reference_obj[temp_DOI],-1) == true) {
 					run_me_again = true;
 				}
 				if (decide_whether_to_combine_rows(reference_obj[temp_DOI],1) == true) {
 					run_me_again = true;
 				}
-// 				console.log( text_obj[temp_row_text].user_input)
-// 				console.log( text_obj[reference_obj[temp_DOI].user_input].user_input)
 				if (run_me_again == false) {
                     text_obj[temp_row_text].combine_status = 'done';
 //                     console.log( 'set cs to done: '+text_obj[temp_row_text].doi)
@@ -582,6 +580,7 @@ Basic procedure:
 		}
 		if (run_me_again) {
 			check_table_for_combinations();
+			console.log( 'again;')
 		} else {
 			console.log( '-C-checked for combinations--')
 		    current_mode = "done combining"
@@ -675,6 +674,7 @@ Basic procedure:
                 }
             }
             
+                        // dfd if there are three lines, with no doi, it cuts out one of them. Or mixes up the order. (maybe also if there are two?)
 
             // if the best match is the combo, combine them. 
             if (input_reference_obj.user_input !== bestcombo) {
@@ -690,9 +690,10 @@ Basic procedure:
                 } else {
                     if (input_reference_obj.user_input == bestcombo) {
                         console.log( "[didn't change user input] they're the same")
+                        return false;
                     } else {
                         console.log( "[didn't change user input] "+input_reference_obj.user_input + " != "+bestcombo)
-                        // dfd if there are three lines, with no doi, it cuts out one of them. (maybe also if there are two?) this happens instead. but it shouldn't. 
+                        return false;
                     }
                 }
                 return true;
@@ -1146,7 +1147,7 @@ Basic procedure:
 	}
 
 	function update_progress() {
-	    console.log('current mode: ' + current_mode)
+// 	    console.log('current mode: ' + current_mode)
 	
 	    if (current_mode == "completely done") {
 	        console.log( ' called up when completely done')
@@ -1215,7 +1216,7 @@ Basic procedure:
 		console.log( '')
 	}
 	
-
+//dfd if there's only refs without a doi, then it doesn't say -a- but it says -b- and -c- in the console. Not sure this matters but maybe check. 
 </script>
 </head>
 
@@ -1235,10 +1236,11 @@ Basic procedure:
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL effect”. Memory, 26, 771–783. https://doi.org/10.1080/09658211.2017.1406523
+Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning 
 
-Finn, B., & Metcalfe, J. (2008). Judgments of learning are influenced by memory for past test. Journal of Memory and Language, 58, 19–34. https://doi.org/10.1016/j.jml.2007.03.006
+(JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL 
 
+effect”. Memory, 26, 771–783. 
 
 </textarea>
 
