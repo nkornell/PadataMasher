@@ -241,9 +241,9 @@ Basic procedure:
 		this.apa_no_html = jQuery(input_apa).text().trim(); // apa without the html tags
 		this.doi = this.json.DOI;
         		
-        this.table_row_number = function() {
-            return document.getElementById(this.user_input).rowIndex;
-        }
+//         this.table_row_number = function() {
+//             return document.getElementById(this.user_input).rowIndex;
+//         }
  	}
 
 	function Author_object(input_familyname, input_firstname) {
@@ -420,11 +420,12 @@ Basic procedure:
 			    console.log( "error 1974")
 			    continue;
 			}
+			
 			if (temp_doi_array.includes(temp_doi)) {
                 const r1 = temp_doi_array.indexOf(temp_doi) + 1;
                 const r2 = i;
 			    console.log( 'found a duplicate doi in rows '+r1+', '+r2+': ' + temp_doi)
-                if (decide_whether_to_combine_rows(reference_obj[temp_doi], r2 - r1) == true) {
+                if (decide_whether_to_combine_rows(temp_row_text, r2 - r1) == true) {
                     console.log( 'combined refs');
                 } else {
                     console.log( 'did not ocmbine refs;')
@@ -584,12 +585,12 @@ Basic procedure:
                 	continue;
                 }
 // 				console.log( 'deciding about: '+temp_DOI)
-				if (decide_whether_to_combine_rows(reference_obj[temp_DOI],-1) == true) {
+				if (decide_whether_to_combine_rows(temp_row_text,-1) == true) {
 					run_me_again = true;
                     break; // exit this loop
 
 				}
-				if (decide_whether_to_combine_rows(reference_obj[temp_DOI],1) == true) {
+				if (decide_whether_to_combine_rows(temp_row_text, 1) == true) {
 					run_me_again = true;
                     break; // exit this loop
 				}
@@ -613,32 +614,33 @@ Basic procedure:
 		}
 	}
 
-	function decide_whether_to_combine_rows(input_reference_obj, shift) {
+	function decide_whether_to_combine_rows(input_string, shift) {
 //     	console.log( 'shift='+shift)
         // make sure we're looking at two legitimate rows
-		if (document.getElementById(input_reference_obj.user_input) == null) { // this can happen when the user_input has changed but the reference obj hasn't)
-			console.log( '**error: in decide whether to combine... null found for '+input_reference_obj.user_input)
+		if (document.getElementById(input_string) == null) { // this can happen when the user_input has changed but the reference obj hasn't)
+			console.log( '**error: in decide whether to combine... null found for '+input_string)
 			return false;
 		}
 
-         if (text_obj[input_reference_obj.user_input].removed) {
-            console.log( '*tried to combine with a removed reference obj: '+input_reference_obj.user_input); 
+         if (text_obj[input_string].removed) {
+            console.log( '*tried to combine with a removed reference obj: '+input_string); 
             return false;
         }
-        dfdd change this funciton so it takes the user input as parameter, not the reference obj. and maybe i can get rid of the table_row_number thing from reference_obj
-		var otherRow_index = input_reference_obj.table_row_number() + shift;
+//         dfdd change this funciton so it takes the user input as parameter, not the reference obj. and maybe i can get rid of the table_row_number thing from reference_obj
+        var row_index = text_obj[input_string].table_row_number();
+		var other_row_index = text_obj[input_string].table_row_number() + shift;
 		
         // don't try it if it would go outside the table
-    	if (otherRow_index < 1) { // it's 1 because row 0 is the table header
+    	if (other_row_index < 1) { // it's 1 because row 0 is the table header
     	    return false;
-    	} else if (otherRow_index >= document.getElementById("article_table").rows.length) {
+    	} else if (other_row_index >= document.getElementById("article_table").rows.length) {
     	    return false;
     	}
         
         try {
-	        var otherRow_input_string = document.getElementById("article_table").rows[otherRow_index].cells[0].textContent;
+	        var otherRow_input_string = document.getElementById("article_table").rows[other_row_index].cells[0].textContent;
 	    } catch(err) {
-	    	console.log( "**error: in decide whether... can't find this row: " + otherRow_index)
+	    	console.log( "**error: in decide whether... can't find this row: " + other_row_index)
 	    	return false;
 	    }
 	    
@@ -646,8 +648,10 @@ Basic procedure:
 	        console.log( 'returning because otherRow has been removed: '+ otherRow_input_string)
 	        return false;
 	    }
-	    console.log( 'deciding about rows '+input_reference_obj.table_row_number()+', ' +otherRow_index)
+	    
+	    console.log( 'deciding about rows '+row_index+', ' +other_row_index)
 	    // see if the other row has a doi
+	    var this_row_doi = text_obj[input_string].doi;
 	    var otherRow_doi = text_obj[otherRow_input_string].doi;
 
 	    // decide what to do
@@ -655,14 +659,13 @@ Basic procedure:
         var shouldCombine = false;
         var shouldChangeUserInput = false;
 
-		if (text_obj[input_reference_obj.user_input].match_status == "wrong") {
-		    // this is where it would be smart to check whether the other one is also wrong, and if it is, join the strings and send that to the database. 
-//         	console.log('[returning] decide whether to combine has match status = "wrong" for ' + input_reference_obj.user_input) 
+		if (text_obj[input_string].match_status == "wrong") {
+		    // this is where it would be smart to check whether the other one is also wrong, and if it is, join the strings and send that to the database.  
 			return false; 
 		}
         
         try {
-            if (otherRow_doi == input_reference_obj.doi) {
+            if (otherRow_doi == text_obj[input_string].doi) {
                 // if they have the same doi
                 shouldCombine = true;
                 console.log( 'is this correlated with problems??????????')
@@ -681,15 +684,14 @@ Basic procedure:
 
         try {
 
-            var bestcombo = best_combination(otherRow_input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
+            var bestcombo = best_combination(otherRow_input_string, input_string, reference_obj[this_row_doi].apa_no_html);
  
             // assume input reference obj is correct (i.e., that's the apa string target)
             if (otherRow_doi != '') {
                 if (typeof reference_obj[otherRow_doi] != "undefined" && reference_obj[otherRow_doi] != null) {
-//                     if (text_obj[otherRow_input_string].score > text_obj[input_reference_obj.user_input].score) {
-                        var bestcombo_other = best_combination(input_reference_obj.user_input, otherRow_input_string, reference_obj[otherRow_doi].apa_no_html);
+                        var bestcombo_other = best_combination(input_string, otherRow_input_string, reference_obj[otherRow_doi].apa_no_html);
 //                         console.log('bestcombo_other='+bestcombo_other)
-                        var s1 = compute_letter_match(bestcombo, input_reference_obj.apa_no_html);
+                        var s1 = compute_letter_match(bestcombo, reference_obj[this_row_doi].apa_no_html);
                         var s2 = compute_letter_match(bestcombo_other, reference_obj[otherRow_doi].apa_no_html);
                         if (s2 > s1) {
                             console.log( 'the reverse is better!!!')
@@ -706,7 +708,7 @@ Basic procedure:
 
 
             // if the best match is the combo, combine them. 
-            if (input_reference_obj.user_input !== bestcombo) {
+            if (input_string !== bestcombo) {
                 shouldCombine = true;
                 shouldChangeUserInput = true;
             }
@@ -719,13 +721,13 @@ Basic procedure:
                         console.log( '...when completely done')
                         return false; // dfd put back
                     }
-                    change_user_input(input_reference_obj, bestcombo); 
+                    change_user_input(reference_obj[this_row_doi], bestcombo); 
                 } else {
-                    if (input_reference_obj.user_input == bestcombo) {
+                    if (input_string == bestcombo) {
                         console.log( "[didn't change user input] they're the same")
                         return false;
                     } else {
-                        console.log( "[didn't change user input] "+input_reference_obj.user_input + " != "+bestcombo)
+                        console.log( "[didn't change user input] "+input_string + " != "+bestcombo)
                         return false;
                     }
                 }
@@ -741,7 +743,7 @@ Basic procedure:
         }
 	}
 	
-	function change_user_input(from_obj, to_string) {
+	function change_user_input(from_obj, to_string) { // dfdd this shouldn't use from_obj, it should use a string
 	    // this changes the user input in: the table, the reference obj, the to do list, and...
 	    // it also deletes the input obj and creates a new one in its place.
 	
