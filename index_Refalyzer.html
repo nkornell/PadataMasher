@@ -240,10 +240,6 @@ Basic procedure:
 		this.apa = input_apa; // maybe this should be figured out here, not passed as a parameter?
 		this.apa_no_html = jQuery(input_apa).text().trim(); // apa without the html tags
 		this.doi = this.json.DOI;
-        		
-//         this.table_row_number = function() {
-//             return document.getElementById(this.user_input).rowIndex;
-//         }
  	}
 
 	function Author_object(input_familyname, input_firstname) {
@@ -273,17 +269,6 @@ Basic procedure:
         var row_queue = [];
         var i = 0;
 
-
-//  		for (i = 0; i < to_do_list_input_string.length; i++) {
-//             if (text_obj[to_do_list_input_string[i]].doi_type === doi_type_to_handle) {
-//                 if (text_obj[to_do_list_input_string[i]].search_status === 'not started' || text_obj[to_do_list_input_string[i]].search_status === 'incorrect doi entered; searching again') {
-//     			    row_queue.push(to_do_list_input_string[i]); 
-// 
-//     		    }
-//             }
-// 		}
-        
-        
 		for (let key in text_obj) { // this loops through all of text_obj
 		    // if it's the right kind of doi, and has the right search status, add it to the row queue. 
             if (text_obj[key].doi_type === doi_type_to_handle) {
@@ -340,8 +325,7 @@ Basic procedure:
                 } else {
                     temp_search_string = input_string;
     			}
-
-// 	       		pagelog( 'getOneURL [no doi]: '+temp_search_string)
+	       		pagelog( 'getOneURL [no doi]: '+temp_search_string)
    				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
 				if (typeof myJSON.message.items[0] === 'undefined') { // if it's not in the database
@@ -360,21 +344,25 @@ Basic procedure:
 				}
 			} else { 
 			    // if a doi was found and we're using it (for now at least, unless we find out it's bad)
-				let myJSON = await Cite.async(inputDOI);
-				let bibliography = myJSON.format ('bibliography', {
-					format: 'html'
-				});
+				try {
+					let myJSON = await Cite.async(inputDOI);
+					let bibliography = myJSON.format ('bibliography', {
+						format: 'html'
+					});
 				
-				if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
-					// create new reference
-					reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
-				} else { 
-					// if it finds a doi that already has a reference obj (i.e., that's been found before), 
-					// don't create a new reference obj. (but it will create a new text_obj)
-//         			update_progress();
+					if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
+						// create new reference
+						reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
+					} else { 
+						// if it finds a doi that already has a reference obj (i.e., that's been found before), 
+						// don't create a new reference obj. (but it will create a new text_obj)
+	//         			update_progress();
+					}
+					text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
+					text_obj[input_string].update_input('done');
+				} catch(err) {
+					console.log( '*error 234: '+input_string)
 				}
-                text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
-                text_obj[input_string].update_input('done');
 			}
 		}
 		catch(err) {
@@ -397,7 +385,7 @@ Basic procedure:
 	}	
 	
 	function remove_duplicate_references() {
-        //dfdd
+        // dfd could this whole function be merged with remove duplicate rows?
         var i = 0;
         var temp_doi = '';
         var temp_doi_array = [];
@@ -626,7 +614,6 @@ Basic procedure:
             console.log( '*tried to combine with a removed reference obj: '+input_string); 
             return false;
         }
-//         dfdd change this funciton so it takes the user input as parameter, not the reference obj. and maybe i can get rid of the table_row_number thing from reference_obj
         var row_index = text_obj[input_string].table_row_number();
 		var other_row_index = text_obj[input_string].table_row_number() + shift;
 		
@@ -763,13 +750,6 @@ Basic procedure:
             text_obj[to_string] = Object.assign({}, text_obj[from_obj.user_input]);
             text_obj[to_string].user_input = to_string;
             
-            // change to do list
-//             if (to_do_list_input_string.indexOf(from_string) > -1) {
-//                 to_do_list_input_string[to_do_list_input_string.indexOf(from_string)] = to_string;
-//             } else {
-// //                 console.log( 'from isnt in to do list (i.e., index < 0)')
-//             }
-        
             // update reference obj (i.e., from obj)
             from_obj.user_input = to_string;
             
