@@ -368,23 +368,13 @@ Basic procedure:
 				if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
 					// create new reference
 					reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
-					text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
-					text_obj[input_string].update_input('done');
-
-                    // i don't know what's going on here... hopefully it never happens and I can just delete this mofo
-// 					if (to_do_list_input_string.indexOf(input_string) > -1) {
-// 						console.log( '**error i horpe this doesnt happen')
-// 						to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1); // remove it from to do list because it's done
-// 					}
-
 				} else { 
-					// if it finds a doi that already has a reference obj (i.e., that's been found before), combine them. 
-					// first figure out where each one is, then call decide whether with the appropriate shift
-                    const original_row = reference_obj[myJSON.data[0].DOI].table_row_number();
-                    const new_row = text_obj[input_string].table_row_number();
-                    decide_whether_to_combine_rows(reference_obj[myJSON.data[0].DOI], new_row - original_row);
-        			update_progress();
+					// if it finds a doi that already has a reference obj (i.e., that's been found before), 
+					// don't create a new reference obj. (but it will create a new text_obj)
+//         			update_progress();
 				}
+                text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
+                text_obj[input_string].update_input('done');
 			}
 		}
 		catch(err) {
@@ -405,6 +395,45 @@ Basic procedure:
 			}
 		}
 	}	
+	
+	function remove_duplicate_references() {
+        //dfdd
+        var i = 0;
+        var temp_doi = '';
+        var temp_doi_array = [];
+	
+
+       for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
+			try {
+				temp_row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
+			} catch(err) {
+			    console.log( "error 1244")
+			    continue;
+			}
+			try {
+				temp_doi = text_obj[temp_row_text].doi;
+                if (temp_doi == '') {
+                    // this just means this item doesn't have a doi yet
+                	continue;
+                }
+			} catch(err) {
+			    console.log( "error 1974")
+			    continue;
+			}
+			if (temp_doi_array.includes(temp_doi)) {
+                const r1 = temp_doi_array.indexOf(temp_doi) + 1;
+                const r2 = i;
+			    console.log( 'found a duplicate doi in rows '+r1+', '+r2+': ' + temp_doi)
+                if (decide_whether_to_combine_rows(reference_obj[temp_doi], r2 - r1) == true) {
+                    console.log( 'combined refs');
+                } else {
+                    console.log( 'did not ocmbine refs;')
+                }
+			} else {
+			    temp_doi_array.push(temp_doi);
+			}			
+        }
+	}
 
 	function remove_duplicate_rows() {
 	    // this is called once, after user dois have been processed
@@ -420,16 +449,7 @@ Basic procedure:
 		var foof = 0;
 		var local_list = [];
 		var temp_row_text = '';
-		
-// 		for (let key in text_obj) { // this loops through all of text_obj
-//             if (text_obj[key].search_status === 'not started' || text_obj[key].search_status === 'incorrect doi entered; searching again') {
-//                 local_list.push(text_obj[key].user_input);
-//                 if (text_obj[key].removed) {
-//                     console.log('**error: in remove duplicate rows, found removed row: ' + text_obj[key].user_input)
-//                 }
-//             }
-//         }
-        
+		       
         // go through the table and create an array that needs to be checked for whether it contains duplicates. 
 		for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
 			try {
@@ -518,6 +538,8 @@ Basic procedure:
                 
                 var row_to_remove = document.getElementById(input_string).rowIndex;
                 document.getElementById("article_table").deleteRow(row_to_remove);
+                
+//                 console.log( 'removing row: '+input_string)
 
 				text_obj[input_string].search_status = 'done';				
                 text_obj[input_string].removed = true; // I think I did this rather than deleting it because get URL might be looking for it later. 
@@ -561,12 +583,15 @@ Basic procedure:
                     // this will happen when there's one it just can't find (it should be rare but it's fine I think)
                 	continue;
                 }
-				console.log( 'deciding about: '+temp_DOI)
+// 				console.log( 'deciding about: '+temp_DOI)
 				if (decide_whether_to_combine_rows(reference_obj[temp_DOI],-1) == true) {
 					run_me_again = true;
+                    break; // exit this loop
+
 				}
 				if (decide_whether_to_combine_rows(reference_obj[temp_DOI],1) == true) {
 					run_me_again = true;
+                    break; // exit this loop
 				}
 				if (run_me_again == false) {
                     text_obj[temp_row_text].combine_status = 'done';
@@ -579,8 +604,8 @@ Basic procedure:
 			}
 		}
 		if (run_me_again) {
+			console.log( ';again;')
 			check_table_for_combinations();
-			console.log( 'again;')
 		} else {
 			console.log( '-C-checked for combinations--')
 		    current_mode = "done combining"
@@ -589,6 +614,7 @@ Basic procedure:
 	}
 
 	function decide_whether_to_combine_rows(input_reference_obj, shift) {
+//     	console.log( 'shift='+shift)
         // make sure we're looking at two legitimate rows
 		if (document.getElementById(input_reference_obj.user_input) == null) { // this can happen when the user_input has changed but the reference obj hasn't)
 			console.log( '**error: in decide whether to combine... null found for '+input_reference_obj.user_input)
@@ -599,7 +625,7 @@ Basic procedure:
             console.log( '*tried to combine with a removed reference obj: '+input_reference_obj.user_input); 
             return false;
         }
-
+        dfdd change this funciton so it takes the user input as parameter, not the reference obj. and maybe i can get rid of the table_row_number thing from reference_obj
 		var otherRow_index = input_reference_obj.table_row_number() + shift;
 		
         // don't try it if it would go outside the table
@@ -620,7 +646,7 @@ Basic procedure:
 	        console.log( 'returning because otherRow has been removed: '+ otherRow_input_string)
 	        return false;
 	    }
-	    
+	    console.log( 'deciding about rows '+input_reference_obj.table_row_number()+', ' +otherRow_index)
 	    // see if the other row has a doi
 	    var otherRow_doi = text_obj[otherRow_input_string].doi;
 
@@ -640,6 +666,7 @@ Basic procedure:
                 // if they have the same doi
                 shouldCombine = true;
                 console.log( 'is this correlated with problems??????????')
+//                 return false;
             } else if (text_obj[otherRow_input_string].search_status == "searching") {
                 // if it's still searching for the other row, return. it'll try again with that row later. 
                 return false; 
@@ -655,7 +682,7 @@ Basic procedure:
         try {
 
             var bestcombo = best_combination(otherRow_input_string, input_reference_obj.user_input, input_reference_obj.apa_no_html);
-
+ 
             // assume input reference obj is correct (i.e., that's the apa string target)
             if (otherRow_doi != '') {
                 if (typeof reference_obj[otherRow_doi] != "undefined" && reference_obj[otherRow_doi] != null) {
@@ -676,6 +703,8 @@ Basic procedure:
             
                         // dfd if there are three lines, with no doi, it cuts out one of them. Or mixes up the order. (maybe also if there are two?)
 
+
+
             // if the best match is the combo, combine them. 
             if (input_reference_obj.user_input !== bestcombo) {
                 shouldCombine = true;
@@ -686,6 +715,10 @@ Basic procedure:
             if (shouldCombine == true) {
                 remove_row(otherRow_input_string);
                 if (shouldChangeUserInput == true) {
+                    if (current_mode == "completely done") {
+                        console.log( '...when completely done')
+                        return false; // dfd put back
+                    }
                     change_user_input(input_reference_obj, bestcombo); 
                 } else {
                     if (input_reference_obj.user_input == bestcombo) {
@@ -1205,6 +1238,7 @@ Basic procedure:
             console.log( '*error called finish() when already completely done [returning]')
             return;
         }
+        remove_duplicate_references();
         current_mode = 'completely done'
         var rows_total = document.getElementById('article_table').rows.length - 1;
 		document.getElementById('progressHeader').innerHTML = 'Done ';
@@ -1238,9 +1272,14 @@ Basic procedure:
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
 Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning 
 
+https://doi.org/10.3758/s13421-013-0307-8
+
 (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL 
 
 effect”. Memory, 26, 771–783. 
+
+https://doi.org/10.3758/s13421-013-0307-8
+
 
 </textarea>
 
@@ -1284,6 +1323,8 @@ https://doi.org/10.1016/S0749-596X(02)00537-5
 
 <p><button onclick="start()">Run</button>
 <p><button onclick="update_progress()">update_progress</button>
+<p><button onclick="check_table_for_combinations()">check_table_for_combinations</button>
+
 
 <div class='bigBox' id='progressBox' style="display: none;">
 	<div class='boxAroundTable' style="min-width: 300px">
