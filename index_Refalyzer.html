@@ -1,12 +1,6 @@
 <!-- 
-dfd To do: 
-
-- update progress should be smarter about when it is actually finished. (And don't call update progress so often.)
-- this should also fix the abcabc problem I think
-
+To do: 
 - It would speed things up to not wait for all of the lines to come in before trying to combine. Maybe if an obj is correct it should try to combine right away?
-- Why is it returning errors?
-- Why is it checking for combinations so many times and a) is that bad or good b) can it be changed?
 - With two non-user-doi rows, it's possible that neither doi it finds is right. In this case, maybe it could find the right doi if they were combined and then sent to the server, but as of now the program doesn't check the database for the combo. 
 - Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
 
@@ -17,8 +11,66 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 
 -->
 
+<!-- stuff to test-->
+<!--
+This makes it decide the other doi will be better, and therefore return, during decide to combine
+
+metacognitive judgments. Journal of 
+Experimental Psychology: Learning, frank
+Memory, and Cognition, 43, 680–693. 
+
+
+-->
+
 <!-- 
-stuff to test
+Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning 
+
+(JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL 
+
+effect”. Memory, 26, 771–783. 
+
+https://doi.org/10.3758/s13421-013-0307-8
+
+Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL 
+ -->
+ 
+<!-- 
+Hicks, J. L., & Cockman, D. W. (2003). The effect of general knowledge on source memory
+
+and decision processes. Journal of Memory and Language, 48, 489–501.
+
+https://doi.org/10.1016/S0749-596X(02)00537-5
+
+Johnson, M. K., Hashtroudi, S., & Lindsay, D. S. (1993). Source monitoring. Psychological
+
+Bulletin, 114, 3–28. https://doi.org/10.1037/0033-2909.114.1.3
+
+
+Dunlosky, J., & Nelson, T. O. (1997). Similarity between the cue for judgments of 
+
+learning (JOL) and the cue for test is not the primary determinant of JOL 
+
+accuracy. Journal of Memory and Language, 36, 34–49. 
+ -->
+
+
+<!-- 
+Heck, D. W., Gronau, F. Q., & Wagenmakers &, E.-J. (2019). metaBMA: Bayesian Model
+
+Averaging for Random and Fixed Effects Meta-Analysis. https://CRAN.R-project.org/package=metaBMA.
+
+Henkel, L. A., Johnson, M. K., & De Leonardis, D. M. (1998). Aging and source monitoring:
+
+Cognitive processes and neuropsychological correlates. Journal of Experimental
+
+Psychology: General, 127, 251–268. https://doi.org/10.1037/0096-3445.127.3.251 Hicks, J. L., & Cockman, D. W. (2003). The effect of general knowledge on source memory
+
+and decision processes. Journal of Memory and Language, 48, 489–501.
+
+https://doi.org/10.1016/S0749-596X(02)00537-5
+ -->
+
+<!--
 ~~
 this causes ABCABC to get messed up. I think basically, if there's only dois plus duplicates, it's a problem. 
 
@@ -89,11 +141,20 @@ Basic procedure:
 <!-- 	<script src="https://cdn.jsdelivr.net/npm/string-algorithms"></script> -->
 <!-- <script src="https://cdn.jsdelivr.net/npm/string-similarity@4/package.json"></script> -->
 
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2GM67KQ52J"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-2GM67KQ52J');
+</script>
+
 <script>
 	var author_obj = [];
 	var reference_obj = [];
 	var text_obj = []
-// 	var to_do_list_input_string = [];
 	var duplicate_input_text = [];
 	var articleTableText = "";
 	var startTime = 0;
@@ -125,7 +186,6 @@ Basic procedure:
 		this.letter_match = 0;
 		this.letter_match_percentage = 0;
 		
-//         to_do_list_input_string.push(input_userInput);
         
         this.table_row_number = function() {
             return document.getElementById(this.user_input).rowIndex;
@@ -143,10 +203,6 @@ Basic procedure:
                 return;
             }
 
-// 		    if (this.search_status != 'done' && input_search_status == 'done') {
-//                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(this.user_input),1); // remove it from to do list because it's done
-// 		    }
-		    
 		    if (input_search_status != '') {
     		    this.search_status = input_search_status;
     		}
@@ -266,6 +322,10 @@ Basic procedure:
 	async function getAllUrls(doi_type_to_handle) {
 		// this gets called twice. First, for rows that have a doi. Then, when they're done, for rows that don't. 
         
+		if (current_mode == 'completely done') {
+            return;
+        }
+
         var row_queue = [];
         var i = 0;
 
@@ -281,8 +341,8 @@ Basic procedure:
             }
 		}
 
+		console.log('-A- getting [' + row_queue.length + '] rows ('+doi_type_to_handle+')--')
         if (row_queue.length > 0) {
-            console.log('-A- getting ' + row_queue.length + ' rows ('+doi_type_to_handle+')--')
 		    current_mode = "searching for dois"
             for (i = 0; i < row_queue.length; i++) {
                 getOneURL(row_queue[i]); 
@@ -353,17 +413,8 @@ Basic procedure:
                 if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
                     // create new reference
                     reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
-                } else { 
-                    // if it finds a doi that already has a reference obj (i.e., that's been found before), 
-                    // don't create a new reference obj. (but it will create a new text_obj)
-//         			update_progress();
                 }
-                if (text_obj[input_string].doi != reference_obj[myJSON.data[0].DOI].doi) {
-                    console.log( 'getoneurl changed a doi, which is ok. (from/to)')
-                    console.log( ' '+ text_obj[input_string].doi)
-                    console.log( ' '+ reference_obj[myJSON.data[0].DOI].doi)
-                }
-                text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // I think sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
+                text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
                 text_obj[input_string].update_input('done');
 			}
 		}
@@ -389,6 +440,7 @@ Basic procedure:
 	function remove_duplicate_references() {
         // dfd could this whole function be merged with remove duplicate rows?
         var i = 0;
+        var foof = 0;
         var temp_doi = '';
         var temp_doi_array = [];
 	
@@ -411,21 +463,23 @@ Basic procedure:
 			    continue;
 			}
 			
-		    console.log( 'tempdoi='+temp_doi)
+// 		    console.log( 'tempdoi='+temp_doi)
 			if (temp_doi_array.includes(temp_doi)) {
                 const r1 = temp_doi_array.indexOf(temp_doi) + 1;
                 const r2 = i;
 			    const r1_text = document.getElementById("article_table").rows[r1].cells[0].textContent
-			    console.log( 'found a duplicate doi ['+temp_doi+'] in rows '+r1+', '+r2+': ' + r1_text)
+// 			    console.log( 'found a duplicate doi ['+temp_doi+'] in rows '+r1+', '+r2+': ' + r1_text)
                 if (decide_whether_to_combine_rows(r1_text, r2 - r1) == true) {
-                    console.log( 'combined refs');
+                	foof++;
+//                     console.log( 'combined refs');
                 } else {
-                    console.log( 'did not ocmbine refs;')
+//                     console.log( 'did not combine refs;')
                 }
 			} else {
 			    temp_doi_array.push(temp_doi);
 			}			
         }
+        console.log( '-E-removed ['+foof+'] duplicate references--');
 	}
 
 	function remove_duplicate_rows() {
@@ -502,9 +556,9 @@ Basic procedure:
                 }
             }
         }
-        if (foof > 0) {
-            console.log('--removed '+foof+' duplicate rows--');
-        }
+//         if (foof > 0) {
+            console.log('-C-removed ['+foof+'] duplicate rows--');
+//         }
 	}
 	
 	
@@ -517,11 +571,6 @@ Basic procedure:
 		
         if (text_obj[input_string].removed) {
             // if it's already removed, don't remove it. 
-//             if (to_do_list_input_string.indexOf(input_string) >= 0) { // 
-//                 // But before returning, check if it's still in the to do list, and if it is, remove it. (This can happen because exact duplicate rows need to be removed from the to do list more than once.)
-//                 console.log( 'splicing '+to_do_list_input_string.indexOf(input_string));
-//                 to_do_list_input_string.splice(to_do_list_input_string.indexOf(input_string),1);
-//             }
             return;
         } else {
             try {
@@ -573,7 +622,7 @@ Basic procedure:
                 	continue;
                 } 
                 if (typeof reference_obj[temp_DOI] == "undefined" || reference_obj[temp_DOI] == null) {
-                    // this will happen when there's one it just can't find (it should be rare but it's fine I think)
+                    // this will happen when there's one where the doi is correct but it's not in the database (it should be rare. but it's fine.)
                 	continue;
                 }
 // 				console.log( 'deciding about: '+temp_DOI)
@@ -600,7 +649,7 @@ Basic procedure:
 // 			console.log( ';again;')
 			check_table_for_combinations();
 		} else {
-			console.log( '-C-checked for combinations--')
+			console.log( '-D-checked for combinations--')
 		    current_mode = "done combining"
 		    update_progress();
 		}
@@ -658,7 +707,7 @@ Basic procedure:
             if (otherRow_doi == text_obj[input_string].doi) {
                 // if they have the same doi
                 shouldCombine = true;
-                console.log( 'is this correlated with problems??????????')
+//                 console.log( 'is this correlated with problems??????????')
             } else if (text_obj[otherRow_input_string].search_status == "searching") {
                 // if it's still searching for the other row, return. it'll try again with that row later. 
                 return false; 
@@ -675,28 +724,29 @@ Basic procedure:
 
             var bestcombo = best_combination(otherRow_input_string, input_string, reference_obj[this_row_doi].apa_no_html);
  
-            // assume input reference obj is correct (i.e., that's the apa string target)
-            if (otherRow_doi != '') {
-                if (typeof reference_obj[otherRow_doi] != "undefined" && reference_obj[otherRow_doi] != null) {
-                        var bestcombo_other = best_combination(input_string, otherRow_input_string, reference_obj[otherRow_doi].apa_no_html);
-//                         console.log('bestcombo_other='+bestcombo_other)
-                        var s1 = compute_letter_match(bestcombo, reference_obj[this_row_doi].apa_no_html);
-                        var s2 = compute_letter_match(bestcombo_other, reference_obj[otherRow_doi].apa_no_html);
-                        if (s2 > s1) {
-                            console.log( 'the reverse is better!!!')
-//                             console.log( ' bestcombo score= ' + s1 + ' for: ' + bestcombo)
-//                             console.log( ' bestcombo_other score= ' + s2 + ' for: ' + bestcombo_other)
-//                            return false; // dfd doing this makes it so the thing doesn't finish! I still want to return false but I'm not sure if I can. 
-                        }
-//                     }
-                }
-            }
-
             // if the best match is the combo, combine them. 
             if (input_string !== bestcombo) {
                 shouldCombine = true;
                 shouldChangeUserInput = true;
             }
+            
+            if (shouldCombine) {
+				if (otherRow_doi != '') {
+					if (typeof reference_obj[otherRow_doi] != "undefined" && reference_obj[otherRow_doi] != null) {
+						if (otherRow_doi != this_row_doi) {
+							var bestcombo_other = best_combination(input_string, otherRow_input_string, reference_obj[otherRow_doi].apa_no_html);
+							var s1 = compute_letter_match(bestcombo, reference_obj[this_row_doi].apa_no_html);
+							var s2 = compute_letter_match(bestcombo_other, reference_obj[otherRow_doi].apa_no_html);
+							if (s2 > s1) {
+								console.log( 'using the other doi will be better!!! [returning]')
+								console.log( '-score [' + s1 + '] ' + bestcombo)
+								console.log( '-score [' + s2 + '] ' + bestcombo_other)
+								return false; 
+							}
+						}
+					}
+				}
+			}
 
             // if appropriate, remove the row
             if (shouldCombine == true) {
@@ -709,7 +759,7 @@ Basic procedure:
                     change_user_input(input_string, bestcombo); // is input_string OK? 
                 } else {
                     if (input_string == bestcombo) {
-                        console.log( "[didn't change user input] they're the same")
+//                         console.log( "[didn't change user input] they're the same")
                     } else {
                         console.log( "[didn't change user input] "+input_string + " != "+bestcombo)
                     }
@@ -735,7 +785,8 @@ Basic procedure:
 				console.log( '**error: trying to change user input for a removed thing;)')
 			}
 			if (typeof text_obj[to_string] !== 'undefined' && text_obj[to_string] !== null) {
-			    console.log( '**error 8484: changing user input to something that already existed')
+			    console.log( '**error 8484: tried to change user input to something that already existed [returning]')
+			    return;
 			}
         
             change_elementIDs(from_string, to_string);
@@ -744,16 +795,12 @@ Basic procedure:
 //             console.log( ' '+from_string)
 //             console.log( ' '+to_string)
 
-            // change input obj
-            // create a new version of the input obj (with a new array index), but then copy the old one into it. 
-            // I think I did this because get url is going to be expecting to return info to this thingy
+            // create a new version of the input obj (with a new array index), but then copy the old one into it. I think I did this because get url is going to be expecting to return info to this thingy
             text_obj[to_string] = new Text_object(to_string, "","",-1); // not giving it a doi means it won't add 1 to numRows withDOIsTotal
             text_obj[to_string] = Object.assign({}, text_obj[from_string]);
             text_obj[to_string].user_input = to_string;
             // update reference obj (i.e., from obj)
             reference_obj[text_obj[to_string].doi].user_input = to_string;
-//             from_obj.user_input = to_string;
-            
             text_obj[to_string].update_input('');
 
             update_progress();
@@ -1006,7 +1053,7 @@ Basic procedure:
                     // text_obj only knows about one of the rows, because when it gets created (here), it creates two objects with the same index. 
                     // so only one gets added to the html table. basically, the second one (and beyond) kinda disappears. 
                     // And you won't see a problem in the output, necessarily, because the disappeared line doesn't get processed. 
-                    // And btw, I don't want to just disappear it because it's possible that the same line appearing twice is correct, whereas with dois, disappearing a duplicate is fine. 
+                    // And btw, here's why I don't want to just disappear: it's possible that the same line appearing twice is correct. (by contrast, disappearing a duplicate doi is fine.) 
                 }
                 text_obj[urlSuffix[i]] = new Text_object(urlSuffix[i], tempDOI, tempDOItype, i); // if there's no doi, or the doi is new, use it. 
                 if (tempDOI.length > 0) {
@@ -1166,8 +1213,8 @@ Basic procedure:
 // 	    console.log('current mode: ' + current_mode)
 	
 	    if (current_mode == "completely done") {
-	        console.log( ' called up when completely done')
-// 	        return; // dfd put back
+	        console.log( ' called up when completely done [returning]')
+	        return; // is this ok?
 	    }
 	    
 	    var row_text = '';
@@ -1197,8 +1244,8 @@ Basic procedure:
 		if (rows_combined >= rows_total && current_mode == "done combining") {
 		    // it's already attempted to combine all rows
 		    current_mode = "wrap up";
-// 		    remove_duplicate_references();
-// 			finish();
+		    remove_duplicate_references();
+			finish();
 		} else if (rows_searched >= rows_total && current_mode == "searching for dois") {
 		    // if done searching for all dois
 			console.log( '-B- searched all--')
@@ -1224,17 +1271,18 @@ Basic procedure:
         }
         
         current_mode = 'completely done'
+        
         var rows_total = document.getElementById('article_table').rows.length - 1;
 		document.getElementById('progressHeader').innerHTML = 'Done ';
 		document.getElementById('progressText').innerHTML = '&nbsp;' + rows_total + " rows (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
 		document.getElementById("myProgress").style = "display: none;"
+		
 		build_author_table();
 		document.getElementById("refalyzerAuthorsBox").style = "display: flex;"	
+		
 		console.log( '---------finish----------')
 		console.log( '')
 	}
-	
-//dfd if there's only refs without a doi, then it doesn't say -a- but it says -b- and -c- in the console. Not sure this matters but maybe check. 
 </script>
 </head>
 
@@ -1254,62 +1302,29 @@ Basic procedure:
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning 
+Finn, B., & Metcalfe, J. (2007). The role of memory for past test in the underconfidence with practice effect. 
 
-(JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL 
+Journal of Experimental Psychology: Learning, Memory, and Cognition, 
 
-effect”. Memory, 26, 771–783. 
+33, 238–244. 
 
-https://doi.org/10.3758/s13421-013-0307-8
+Frank, D. J., & Kuhlmann, B. G. (2017). More than just beliefs: Experience and beliefs jointly contribute to volume effects on metacognitive judgments. 
 
+Journal of Experimental Psychology: Learning, Memory, and Cognition, 
 
-Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL 
-
+43, 680–693. 
 </textarea>
 
-<!-- 
-Hicks, J. L., & Cockman, D. W. (2003). The effect of general knowledge on source memory
-
-and decision processes. Journal of Memory and Language, 48, 489–501.
-
-https://doi.org/10.1016/S0749-596X(02)00537-5
-
-Johnson, M. K., Hashtroudi, S., & Lindsay, D. S. (1993). Source monitoring. Psychological
-
-Bulletin, 114, 3–28. https://doi.org/10.1037/0033-2909.114.1.3
-
-
-Dunlosky, J., & Nelson, T. O. (1997). Similarity between the cue for judgments of 
-
-learning (JOL) and the cue for test is not the primary determinant of JOL 
-
-accuracy. Journal of Memory and Language, 36, 34–49. 
- -->
-
-
-<!-- 
-Heck, D. W., Gronau, F. Q., & Wagenmakers &, E.-J. (2019). metaBMA: Bayesian Model
-
-Averaging for Random and Fixed Effects Meta-Analysis. https://CRAN.R-project.org/package=metaBMA.
-
-Henkel, L. A., Johnson, M. K., & De Leonardis, D. M. (1998). Aging and source monitoring:
-
-Cognitive processes and neuropsychological correlates. Journal of Experimental
-
-Psychology: General, 127, 251–268. https://doi.org/10.1037/0096-3445.127.3.251 Hicks, J. L., & Cockman, D. W. (2003). The effect of general knowledge on source memory
-
-and decision processes. Journal of Memory and Language, 48, 489–501.
-
-https://doi.org/10.1016/S0749-596X(02)00537-5
- -->
 
 <p id="outputText"></p>
 
 <p><button onclick="start()">run</button>
+<!-- 
 <button onclick="update_progress()">update_progress</button>
 <button onclick="check_table_for_combinations()">check_table_for_combinations</button>
 <button onclick="remove_duplicate_references()">remove_duplicate_references</button>
 <button onclick="finish()">finish</button>
+ -->
 
 
 
