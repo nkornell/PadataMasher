@@ -325,7 +325,8 @@ Basic procedure:
                 } else {
                     temp_search_string = input_string;
     			}
-	       		pagelog( 'getOneURL [no doi]: '+temp_search_string)
+// 	       		pagelog( 'getOneURL [no doi]: '+temp_search_string)
+
    				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
 				let myJSON = await $.getJSON(encodeURI(stringToSend));
 				if (typeof myJSON.message.items[0] === 'undefined') { // if it's not in the database
@@ -344,25 +345,26 @@ Basic procedure:
 				}
 			} else { 
 			    // if a doi was found and we're using it (for now at least, unless we find out it's bad)
-				try {
-					let myJSON = await Cite.async(inputDOI);
-					let bibliography = myJSON.format ('bibliography', {
-						format: 'html'
-					});
-				
-					if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
-						// create new reference
-						reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
-					} else { 
-						// if it finds a doi that already has a reference obj (i.e., that's been found before), 
-						// don't create a new reference obj. (but it will create a new text_obj)
-	//         			update_progress();
-					}
-					text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
-					text_obj[input_string].update_input('done');
-				} catch(err) {
-					console.log( '*error 234: '+input_string)
-				}
+                let myJSON = await Cite.async(inputDOI);
+                let bibliography = myJSON.format ('bibliography', {
+                    format: 'html'
+                });
+            
+                if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
+                    // create new reference
+                    reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
+                } else { 
+                    // if it finds a doi that already has a reference obj (i.e., that's been found before), 
+                    // don't create a new reference obj. (but it will create a new text_obj)
+//         			update_progress();
+                }
+                if (text_obj[input_string].doi != reference_obj[myJSON.data[0].DOI].doi) {
+                    console.log( 'getoneurl changed a doi, which is ok. (from/to)')
+                    console.log( ' '+ text_obj[input_string].doi)
+                    console.log( ' '+ reference_obj[myJSON.data[0].DOI].doi)
+                }
+                text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // I think sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
+                text_obj[input_string].update_input('done');
 			}
 		}
 		catch(err) {
@@ -409,11 +411,13 @@ Basic procedure:
 			    continue;
 			}
 			
+		    console.log( 'tempdoi='+temp_doi)
 			if (temp_doi_array.includes(temp_doi)) {
                 const r1 = temp_doi_array.indexOf(temp_doi) + 1;
                 const r2 = i;
-			    console.log( 'found a duplicate doi in rows '+r1+', '+r2+': ' + temp_doi)
-                if (decide_whether_to_combine_rows(temp_row_text, r2 - r1) == true) {
+			    const r1_text = document.getElementById("article_table").rows[r1].cells[0].textContent
+			    console.log( 'found a duplicate doi ['+temp_doi+'] in rows '+r1+', '+r2+': ' + r1_text)
+                if (decide_whether_to_combine_rows(r1_text, r2 - r1) == true) {
                     console.log( 'combined refs');
                 } else {
                     console.log( 'did not ocmbine refs;')
@@ -593,7 +597,7 @@ Basic procedure:
 			}
 		}
 		if (run_me_again) {
-			console.log( ';again;')
+// 			console.log( ';again;')
 			check_table_for_combinations();
 		} else {
 			console.log( '-C-checked for combinations--')
@@ -603,8 +607,8 @@ Basic procedure:
 	}
 
 	function decide_whether_to_combine_rows(input_string, shift) {
-//     	console.log( 'shift='+shift)
         // make sure we're looking at two legitimate rows
+        // this returns true if it makes any changes (i.e., removes a row or changes user input)
 		if (document.getElementById(input_string) == null) { // this can happen when the user_input has changed but the reference obj hasn't)
 			console.log( '**error: in decide whether to combine... null found for '+input_string)
 			return false;
@@ -616,7 +620,7 @@ Basic procedure:
         }
         var row_index = text_obj[input_string].table_row_number();
 		var other_row_index = text_obj[input_string].table_row_number() + shift;
-		
+
         // don't try it if it would go outside the table
     	if (other_row_index < 1) { // it's 1 because row 0 is the table header
     	    return false;
@@ -636,7 +640,6 @@ Basic procedure:
 	        return false;
 	    }
 	    
-	    console.log( 'deciding about rows '+row_index+', ' +other_row_index)
 	    // see if the other row has a doi
 	    var this_row_doi = text_obj[input_string].doi;
 	    var otherRow_doi = text_obj[otherRow_input_string].doi;
@@ -656,7 +659,6 @@ Basic procedure:
                 // if they have the same doi
                 shouldCombine = true;
                 console.log( 'is this correlated with problems??????????')
-//                 return false;
             } else if (text_obj[otherRow_input_string].search_status == "searching") {
                 // if it's still searching for the other row, return. it'll try again with that row later. 
                 return false; 
@@ -689,10 +691,6 @@ Basic procedure:
 //                     }
                 }
             }
-            
-                        // dfd if there are three lines, with no doi, it cuts out one of them. Or mixes up the order. (maybe also if there are two?)
-
-
 
             // if the best match is the combo, combine them. 
             if (input_string !== bestcombo) {
@@ -706,16 +704,14 @@ Basic procedure:
                 if (shouldChangeUserInput == true) {
                     if (current_mode == "completely done") {
                         console.log( '...when completely done')
-                        return false; // dfd put back
+                        return true; // true because a row was removed above
                     }
-                    change_user_input(reference_obj[this_row_doi], bestcombo); 
+                    change_user_input(input_string, bestcombo); // is input_string OK? 
                 } else {
                     if (input_string == bestcombo) {
                         console.log( "[didn't change user input] they're the same")
-                        return false;
                     } else {
                         console.log( "[didn't change user input] "+input_string + " != "+bestcombo)
-                        return false;
                     }
                 }
                 return true;
@@ -730,28 +726,33 @@ Basic procedure:
         }
 	}
 	
-	function change_user_input(from_obj, to_string) { // dfdd this shouldn't use from_obj, it should use a string
-	    // this changes the user input in: the table, the reference obj, the to do list, and...
-	    // it also deletes the input obj and creates a new one in its place.
+	function change_user_input(from_string, to_string) { 
+	    // this changes the user input in: the table, the reference obj, and...
+	    // it also deletes the text obj and creates a new one in its place.
 	
         try {
-			if (text_obj[from_obj.user_input].removed == true) {
+			if (text_obj[from_string].removed == true) {
 				console.log( '**error: trying to change user input for a removed thing;)')
 			}
-		
-            var from_string = from_obj.user_input;
+			if (typeof text_obj[to_string] !== 'undefined' && text_obj[to_string] !== null) {
+			    console.log( '**error 8484: changing user input to something that already existed')
+			}
         
             change_elementIDs(from_string, to_string);
         
+//             console.log( 'change user input (from/to): ')
+//             console.log( ' '+from_string)
+//             console.log( ' '+to_string)
+
             // change input obj
             // create a new version of the input obj (with a new array index), but then copy the old one into it. 
             // I think I did this because get url is going to be expecting to return info to this thingy
             text_obj[to_string] = new Text_object(to_string, "","",-1); // not giving it a doi means it won't add 1 to numRows withDOIsTotal
-            text_obj[to_string] = Object.assign({}, text_obj[from_obj.user_input]);
+            text_obj[to_string] = Object.assign({}, text_obj[from_string]);
             text_obj[to_string].user_input = to_string;
-            
             // update reference obj (i.e., from obj)
-            from_obj.user_input = to_string;
+            reference_obj[text_obj[to_string].doi].user_input = to_string;
+//             from_obj.user_input = to_string;
             
             text_obj[to_string].update_input('');
 
@@ -1195,8 +1196,9 @@ Basic procedure:
 		
 		if (rows_combined >= rows_total && current_mode == "done combining") {
 		    // it's already attempted to combine all rows
-		    current_mode = "wrap up"
-			finish();
+		    current_mode = "wrap up";
+// 		    remove_duplicate_references();
+// 			finish();
 		} else if (rows_searched >= rows_total && current_mode == "searching for dois") {
 		    // if done searching for all dois
 			console.log( '-B- searched all--')
@@ -1220,7 +1222,7 @@ Basic procedure:
             console.log( '*error called finish() when already completely done [returning]')
             return;
         }
-        remove_duplicate_references();
+        
         current_mode = 'completely done'
         var rows_total = document.getElementById('article_table').rows.length - 1;
 		document.getElementById('progressHeader').innerHTML = 'Done ';
@@ -1254,14 +1256,14 @@ Basic procedure:
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
 Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning 
 
-https://doi.org/10.3758/s13421-013-0307-8
-
 (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL 
 
 effect”. Memory, 26, 771–783. 
 
 https://doi.org/10.3758/s13421-013-0307-8
 
+
+Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL 
 
 </textarea>
 
@@ -1303,9 +1305,12 @@ https://doi.org/10.1016/S0749-596X(02)00537-5
 
 <p id="outputText"></p>
 
-<p><button onclick="start()">Run</button>
-<p><button onclick="update_progress()">update_progress</button>
-<p><button onclick="check_table_for_combinations()">check_table_for_combinations</button>
+<p><button onclick="start()">run</button>
+<button onclick="update_progress()">update_progress</button>
+<button onclick="check_table_for_combinations()">check_table_for_combinations</button>
+<button onclick="remove_duplicate_references()">remove_duplicate_references</button>
+<button onclick="finish()">finish</button>
+
 
 
 <div class='bigBox' id='progressBox' style="display: none;">
