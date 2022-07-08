@@ -7,6 +7,8 @@ To do:
 	Zhang, Y., Pan, Z., Li, K., & Guo, Y. (2018). Self-serving bias in memories: Selectively forgetting the connection between negative information and the self. Experimental Psychology, 65, 236–244. http://dx.doi.org/10.1027/1618-3169/a000409	
 
 - If you ask it to do too many rows, it barfs after doing some of the doi rows. I'd like to make it handle those errors better. 
+- Make it sort the article table when you click the headers
+
 - It would speed things up to not wait for all of the lines to come in before trying to combine. Maybe if an obj is correct it should try to combine right away?
 - With two non-user-doi rows, it's possible that neither doi it finds is right. In this case, maybe it could find the right doi if they were combined and then sent to the server, but as of now the program doesn't check the database for the combo. 
 - Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
@@ -1367,9 +1369,6 @@ Frank, D. J., & Kuhlmann, B. G. (2017). More than just beliefs: Experience and b
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~- -->
 
 
-<!-- <script src="file_select.js"></script> -->
-<!-- <script src="file_importExportContent.js"></script> -->
-<!-- <script src="functions_fileOverlap.js"></script> -->
 <script src="functions_stats.js"></script>
 <script src="functions_tables.js"></script>
 
