@@ -400,6 +400,7 @@ Basic procedure:
 				} else {
 					// if a doi was found, run this thing again but with the doi in the parameter, so Cite will work.
 					text_obj[input_string].doi = myJSON.message.items[0].DOI;
+// 					console.log( '774 happened;')
 					getOneURL(input_string);
 					return;
 				}
@@ -421,10 +422,12 @@ Basic procedure:
 		catch(err) {
 			if (err == "Error: Server responded with status code 404") {
 			    //if it tried a doi that isn't correct, search again without the doi this time
-				pagelog( "failed to find DOI " + inputDOI)
+				console.log( "could not find DOI " + inputDOI + " [searching again with doi removed]") // dfd
+// 				console.log( 'current search status = ' + text_obj[input_string].search_status)
 				if (text_obj[input_string].search_status == 'searching') {
             		text_obj[input_string].update_input('incorrect doi entered; searching again');
-	    			getOneURL(input_string); 
+//             		console.log( 'searching again with bad doi removed')
+// 	    			getOneURL(input_string); 
 	    		} 
 	    		   			
 			} else if (err == 'Error: This format is not supported or recognized') { 
@@ -444,7 +447,7 @@ Basic procedure:
         var temp_doi = '';
         var temp_doi_array = [];
 	
-
+ 
        for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
 			try {
 				temp_row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
@@ -1048,7 +1051,8 @@ Basic procedure:
                 console.log( 'duplicate doi found in user input. not added: ' + tempDOI);
             } else {
                 if (typeof text_obj[urlSuffix[i]] != 'undefined' ) {
-                    console.log( "**error: adding text_obj that already exists: "+urlSuffix[i])
+                    console.log( "**error: text_obj already exists [skipping it]: "+urlSuffix[i])
+                    continue;
                     // dfd here's a known issue: If two rows are identical (and don't have a doi), there's a problem. 
                     // text_obj only knows about one of the rows, because when it gets created (here), it creates two objects with the same index. 
                     // so only one gets added to the html table. basically, the second one (and beyond) kinda disappears. 
@@ -1258,7 +1262,7 @@ Basic procedure:
 			check_table_for_combinations();
             getAllUrls('not_found_yet');
         }
-//         console.log( 'upd_prog: done,combined,total= '+ rows_searched+', '+rows_combined+', '+rows_total)
+//         console.log( 'upd_prog: searched,combined,total= '+ rows_searched+', '+rows_combined+', '+rows_total)
         
         // update progress bar
         document.getElementById("myBar").style.width = 100*rows_searched/rows_total + "%";
@@ -1302,6 +1306,11 @@ Basic procedure:
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
+
+
+Krull, J. L., & Mackinnon, D. P. (2001). Multilevel modeling of individual and group level mediated effects. Multivariate Behavioral Research, 36, 249–277. https://doi.org/10.1207/S15327906MBR3602
+
+
 Finn, B., & Metcalfe, J. (2007). The role of memory for past test in the underconfidence with practice effect. 
 
 Journal of Experimental Psychology: Learning, Memory, and Cognition, 
@@ -1435,7 +1444,7 @@ metamemory: Analyzing the perceptual fluency hypothesis in the auditory modality
 <p>https://doi.org/10.1006/jmla.1996.0009
 <p>Kenny, D. A., Korchmaros, J. D., & Bolger, N. (2003). Lower level mediation in multilevel
 <p>models. Psychological Methods, 8, 115–128. https://doi.org/10.1037/1082-989X.8.2.115
-<!-- 
+
 <p>
 DELAYED JUDGMENTS IN SOURCE MONITORING 56
 <p>Kimball, D. R., & Metcalfe, J. (2003). Delaying judgments of learning affects memory, not metamemory. Memory & Cognition, 31, 918–929. https://doi.org/10.3758/BF03196445
