@@ -1,5 +1,12 @@
 <!-- 
 To do: 
+
+- this returns wrong. what it means is, the user was wrong. that's different than thinking the answer its giving is wrong. 
+	Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. go to the store and buy a carpet, buy a floor https://doi.org/10.1037/xlm0000246
+- same here, except here, maybe the user was right. it's not showing the subtitle
+	Zhang, Y., Pan, Z., Li, K., & Guo, Y. (2018). Self-serving bias in memories: Selectively forgetting the connection between negative information and the self. Experimental Psychology, 65, 236–244. http://dx.doi.org/10.1027/1618-3169/a000409	
+
+- If you ask it to do too many rows, it barfs after doing some of the doi rows. I'd like to make it handle those errors better. 
 - It would speed things up to not wait for all of the lines to come in before trying to combine. Maybe if an obj is correct it should try to combine right away?
 - With two non-user-doi rows, it's possible that neither doi it finds is right. In this case, maybe it could find the right doi if they were combined and then sent to the server, but as of now the program doesn't check the database for the combo. 
 - Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
@@ -215,7 +222,7 @@ Basic procedure:
 			if (typeof reference_obj[this.doi] != 'undefined') { 
 				// compute scores and statuses
 				const temp_apa_no_html = reference_obj[this.doi].apa_no_html;
-				temp_ref_to_show = reference_obj[this.doi].apa;
+				temp_ref_to_show = reference_obj[this.doi].apa_no_html;
 				temp_ref_to_show = temp_ref_to_show.replace('&#38;amp;', "&"); // otherwise it shows &amp; in place of the & character
 				this.score = compute_score(temp_apa_no_html, this.user_input); // order has to be database version, user version 
 				this.letter_match = compute_letter_match(temp_apa_no_html, this.user_input);
@@ -421,18 +428,18 @@ Basic procedure:
 		}
 		catch(err) {
 			if (err == "Error: Server responded with status code 404") {
-			    //if it tried a doi that isn't correct, search again without the doi this time
-				console.log( "could not find DOI " + inputDOI + " [searching again with doi removed]") // dfd
-// 				console.log( 'current search status = ' + text_obj[input_string].search_status)
+			    //if it tried a doi that is incorrect, search again without the doi
+				console.log( "could not find DOI " + inputDOI + " [searching again with doi removed]") // this is fine. it's supposed to happen when a doi is incorrect.
 				if (text_obj[input_string].search_status == 'searching') {
             		text_obj[input_string].update_input('incorrect doi entered; searching again');
-//             		console.log( 'searching again with bad doi removed')
-// 	    			getOneURL(input_string); 
 	    		} 
 	    		   			
 			} else if (err == 'Error: This format is not supported or recognized') { 
 			    // if it found a doi that is correct, but the citation can't be found by Cite, give up.
                 text_obj[input_string].update_input('done');
+            } else if (err == 'Network request failed') {
+			    console.log( 'Network request failed: '+input_string);
+                text_obj[input_string].update_input('done');            
 			} else {
 			    console.log( '*error in get one url: '+input_string);
 				console.log(err);
@@ -447,7 +454,6 @@ Basic procedure:
         var temp_doi = '';
         var temp_doi_array = [];
 	
- 
        for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
 			try {
 				temp_row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
@@ -474,9 +480,6 @@ Basic procedure:
 // 			    console.log( 'found a duplicate doi ['+temp_doi+'] in rows '+r1+', '+r2+': ' + r1_text)
                 if (decide_whether_to_combine_rows(r1_text, r2 - r1) == true) {
                 	foof++;
-//                     console.log( 'combined refs');
-                } else {
-//                     console.log( 'did not combine refs;')
                 }
 			} else {
 			    temp_doi_array.push(temp_doi);
@@ -553,7 +556,6 @@ Basic procedure:
         for (i = local_list.length - 1; i >= 0; i--) {
             if (duplicate_input_text.includes(local_list[i])) {
                 if (text_obj[local_list[i]].doi_type != 'from_user') { // don't remove if it has a doi
-//                     pagelog('[removing] ' + local_list[i]+' doi type='+text_obj[local_list[i]].doi_type)
                     remove_row(local_list[i]);                
                     foof++;
                 }
@@ -948,6 +950,7 @@ Basic procedure:
 	    var foof = '';
 	    
         foof = input_string.replace("https://doi.org/"+input_doi,""); // assuming what seems like the standard format from the database
+        foof = input_string.replace("https://dx.doi.org/"+input_doi,""); // I'm not even sure this can happen or is necessary, but it doesn't seem to hurt. 
         foof = foof.replace(input_doi,""); // in case that wasn't found, remove just the doi
         
         return foof;
@@ -1034,9 +1037,6 @@ Basic procedure:
                 var b = tempArraySplit[1].trim();
                 // if the string after the delimiter has something in it, split that stuff (everything after the 1st doi) into a different string
                 if (b.length > 0) {
-// 					console.log( 'Splitting:');
-// 					console.log( a);
-// 					console.log( b);
                     urlSuffix[i] = a; // change suffix to be equal to the first part
                     urlSuffix.splice(i+1, 0, b); // add an item to the suffix array that's got the second part in it. 
                 }
@@ -1051,10 +1051,11 @@ Basic procedure:
                 console.log( 'duplicate doi found in user input. not added: ' + tempDOI);
             } else {
                 if (typeof text_obj[urlSuffix[i]] != 'undefined' ) {
-                    console.log( "**error: text_obj already exists [skipping it]: "+urlSuffix[i])
+                    console.log( "**error: textobj already exists [skipping it]: "+urlSuffix[i])
+					duplicate_input_text.push(urlSuffix[i]);
                     continue;
                     // dfd here's a known issue: If two rows are identical (and don't have a doi), there's a problem. 
-                    // text_obj only knows about one of the rows, because when it gets created (here), it creates two objects with the same index. 
+                    // you can't make two text_obj because they'll have the same index and therefore be indistinuishable. 
                     // so only one gets added to the html table. basically, the second one (and beyond) kinda disappears. 
                     // And you won't see a problem in the output, necessarily, because the disappeared line doesn't get processed. 
                     // And btw, here's why I don't want to just disappear: it's possible that the same line appearing twice is correct. (by contrast, disappearing a duplicate doi is fine.) 
@@ -1306,22 +1307,9 @@ Basic procedure:
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
+Finn, B., & Metcalfe, J. (2008). Judgments of learning are influenced by memory for past test. Journal of Memory and Language, 58, 19–34. https://doi.org/10.1016/j.jml.2007.03.006
 
-
-Krull, J. L., & Mackinnon, D. P. (2001). Multilevel modeling of individual and group level mediated effects. Multivariate Behavioral Research, 36, 249–277. https://doi.org/10.1207/S15327906MBR3602
-
-
-Finn, B., & Metcalfe, J. (2007). The role of memory for past test in the underconfidence with practice effect. 
-
-Journal of Experimental Psychology: Learning, Memory, and Cognition, 
-
-33, 238–244. 
-
-Frank, D. J., & Kuhlmann, B. G. (2017). More than just beliefs: Experience and beliefs jointly contribute to volume effects on metacognitive judgments. 
-
-Journal of Experimental Psychology: Learning, Memory, and Cognition, 
-
-43, 680–693. 
+Frank, D. J., & Kuhlmann, B. G. (2017). More than just beliefs: Experience and beliefs jointly contribute to volume effects on metacognitive judgments. Journal of Experimental Psychology: Learning, Memory, and Cognition, 43, 680–693. https://doi.org/10.1037/xlm0000332
 </textarea>
 
 
@@ -1383,7 +1371,7 @@ Journal of Experimental Psychology: Learning, Memory, and Cognition,
 <!-- <script src="file_importExportContent.js"></script> -->
 <!-- <script src="functions_fileOverlap.js"></script> -->
 <script src="functions_stats.js"></script>
-<script src="functions_indexpage.js"></script>
+<script src="functions_tables.js"></script>
 
 
 <p>Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. https://doi.org/10.1037/xlm0000246
@@ -1565,4 +1553,4 @@ DELAYED JUDGMENTS IN SOURCE MONITORING 56
 <p>Yang, C., Potts, R., & Shanks, D. R. (2017). Metacognitive unawareness of the errorful generation benefit and its effects on self-regulated learning. Journal of Experimental Psychology: Learning, Memory, and Cognition, 43, 1073–1092. https://doi.org/10.1037/xlm0000363
 <p>Zechmeister, E. B., & Shaughnessy, J. J. (1980). When you know that you know and when you think that you know but you don’t. Bulletin of the Psychonomic Society, 15, 41–44. https://doi.org/10.3758/BF03329756
 <p>Zhang, Y., Pan, Z., Li, K., & Guo, Y. (2018). Self-serving bias in memories: Selectively forgetting the connection between negative information and the self. Experimental Psychology, 65, 236–244. http://dx.doi.org/10.1027/1618-3169/a000409
- -->
+
