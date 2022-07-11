@@ -7,8 +7,8 @@ To do:
 	Zhang, Y., Pan, Z., Li, K., & Guo, Y. (2018). Self-serving bias in memories: Selectively forgetting the connection between negative information and the self. Experimental Psychology, 65, 236–244. http://dx.doi.org/10.1027/1618-3169/a000409	
 
 - If you ask it to do too many rows, it barfs after doing some of the doi rows. I'd like to make it handle those errors better. 
-- Make it sort the article table when you click the headers
 
+- Add analytics. 
 - It would speed things up to not wait for all of the lines to come in before trying to combine. Maybe if an obj is correct it should try to combine right away?
 - With two non-user-doi rows, it's possible that neither doi it finds is right. In this case, maybe it could find the right doi if they were combined and then sent to the server, but as of now the program doesn't check the database for the combo. 
 - Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
@@ -150,15 +150,6 @@ Basic procedure:
 <!-- 	<script src="https://cdn.jsdelivr.net/npm/string-algorithms"></script> -->
 <!-- <script src="https://cdn.jsdelivr.net/npm/string-similarity@4/package.json"></script> -->
 
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-2GM67KQ52J"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-2GM67KQ52J');
-</script>
 
 <script>
 	var author_obj = [];
@@ -300,11 +291,47 @@ Basic procedure:
 	}
 	
 	function Reference_object(input_userInput, input_json, input_apa) {
+	    var all_author = '';
+	    
 		this.user_input = input_userInput;
 		this.json = input_json;
-		this.apa = input_apa; // maybe this should be figured out here, not passed as a parameter?
-		this.apa_no_html = jQuery(input_apa).text().trim(); // apa without the html tags
 		this.doi = this.json.DOI;
+
+        try {
+            if (input_apa == 'journal-article') {
+                // figure out the reference by myself
+        	    console.log('looking at journal-article');
+
+                // figure out author names
+				for (a = 0; a < input_json.author.length; a++) {
+					if (input_json.author[a].family !== undefined && input_json.author[a].family !== null) {
+						temp_firstname = input_json.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim();
+                        firstName_array = temp_firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
+//                         name_apa = input_familyname + ", " + first_letters(firstName_array);
+
+						name_apa = input_json.author[a].family + ", " + first_letters(firstName_array);
+						if (a == 0) {
+    						all_author = name_apa;
+    					} else if (a == input_json.author.length - 1) {
+    					    all_author += ' & ' + name_apa;
+    					} else {
+    					    all_author += ', ' + name_apa;
+    					}
+					}
+				}
+
+                this.apa = all_author + ' (' + input_json.issued["date-parts"][0][0] + '). ' + input_json.title + '. <i>' + input_json['container-title'] + ', ' + input_json.volume + '</i>, ' + input_json.page + '. ' + input_json.DOI;
+        		this.apa_no_html = this.apa.trim(); 
+            } else {
+                // using cite
+                this.apa = input_apa; 
+        		this.apa_no_html = jQuery(this.apa).text().trim(); // apa without the html tags
+            }
+	    	
+    	} catch(err) {
+    	    console.log ('error in new reference obj')
+    	    console.log(err);
+    	}
  	}
 
 	function Author_object(input_familyname, input_firstname) {
@@ -387,7 +414,7 @@ Basic procedure:
 
 		try {
 			if (inputDOI === "" || temp_ignore_doi == true) {
-                // if we're not using a doi (either there isn't on or it's bad), search crossref w/o a doi
+                // if we're not using a doi (either there isn't one or it's bad), search Crossref without a doi
                 if (temp_ignore_doi == true) {
                     temp_search_string = remove_doi_from_string(input_string, inputDOI);
                     // maybe check if it's an empty string and if so, abandon ship?
@@ -407,11 +434,31 @@ Basic procedure:
 					    console.log( "** 823 i didn't' think THIS HAPPENING WAS POSSIBLE");
 					}
 				} else {
-					// if a doi was found, run this thing again but with the doi in the parameter, so Cite will work.
+					// if a doi was found.... 
 					text_obj[input_string].doi = myJSON.message.items[0].DOI;
-// 					console.log( '774 happened;')
-					getOneURL(input_string);
-					return;
+					// dfdd
+// 					1. make it check for common types such as 'journal-article' and format them itself so you don't have to call Cite
+// 					    which would be nice bc a) it's faster that way and b) cite seems to limit the number of times you can call it
+// 					2. if possible, maybe find all co-authors by checking the database. 
+// 					3. this tells you the authors of all of the papers cited by this paper. so it's going to be easy to get second-order citation inf. 
+// 					    this could be useful in two ways. first, to figure out co-authors if 2 fails. Second, to figure out who's getting cited in this area of research. 
+					    
+					console.log( '774 type=' + myJSON.message.items[0].type);
+				    console.log(myJSON.message.items[0])
+				    
+				    if (myJSON.message.items[0].type == "journal-article") {
+                        if (typeof reference_obj[myJSON.message.items[0].DOI] === 'undefined') { 
+                            // create new reference
+                            console.log ('create new the new way')
+                            reference_obj[myJSON.message.items[0].DOI] = new Reference_object(input_string, myJSON.message.items[0], "journal-article");
+                        }
+                        text_obj[input_string].doi = reference_obj[myJSON.message.items[0].DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
+                        text_obj[input_string].update_input('done');
+				    } else {
+				        // If it's not a common type, run this thing again but with the doi in the parameter, so Cite will work.
+                        getOneURL(input_string);
+                        return;
+                    }
 				}
 			} else { 
 			    // if a doi was found and we're using it (for now at least, unless we find out it's bad)
@@ -419,7 +466,9 @@ Basic procedure:
                 let bibliography = myJSON.format ('bibliography', {
                     format: 'html'
                 });
-            
+                console.log('bibliography')
+                console.log(bibliography)
+
                 if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
                     // create new reference
                     reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
@@ -959,6 +1008,7 @@ Basic procedure:
 	}
 	
 	function parse_JSON_for_authors(input_json) {
+		var temp_firstname = '';
 		var tempAuthor_full = "";
 		var temp_list_of_co_authors_from_this_article = [];
 				
@@ -985,9 +1035,15 @@ Basic procedure:
 				connect_coauthors(temp_list_of_co_authors_from_this_article);
 			}
 		} catch(err) {
-// 			console.log( 'error in parse_JSON_for_authors');
+			console.log( '*error in parse_JSON_for_authors');
 		}
 	}
+	
+// not tested
+// 	function author_full(author_input_obj) {
+//         var temp_firstname = author_input_obj.given.replaceAll('. ',' ').replaceAll('.',' ').trim();
+//         return author_input_obj.family + ", " + temp_firstname;  
+// 	}
 
 	function connect_coauthors(list_of_coauthors) {
 		var i = 0;
@@ -1076,9 +1132,9 @@ Basic procedure:
 		var s = '';
 		
 		articleTableText = "<table id='article_table'>";
-		articleTableText += '<tr><th style="width:40%">Input text</th>';
-    	articleTableText += '<th style="width:40%">Article found</th>';
-    	articleTableText += '<th style="width:20%">Notes</th></tr>';
+		articleTableText += "<tr><th style='width:40%' onclick='sortTable(0, "+'"articleTable","letters"'+")' title='Click to Sort'>Input text</th>";
+    	articleTableText += "<th style='width:40%' onclick='sortTable(1, "+'"articleTable","letters"'+")' title='Click to Sort'>Article found</th>";
+    	articleTableText += "<th style='width:20%' onclick='sortTable(2, "+'"articleTable","letters"'+")' title='Click to Sort'>Notes</th></tr>";
     	
 		for (let key in text_obj) { // this loops through all of text_obj
             s = text_obj[key].user_input;
@@ -1199,7 +1255,6 @@ Basic procedure:
 		console.log( '')
 		console.log( '---------start----------')
 
-
 		document.getElementById("outputText").innerHTML = "";
         document.getElementById("myProgress").style = "display: flex;"
         document.getElementById("refalyzerAuthorsBox").style = "display: none;"
@@ -1309,9 +1364,8 @@ Basic procedure:
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-Finn, B., & Metcalfe, J. (2008). Judgments of learning are influenced by memory for past test. Journal of Memory and Language, 58, 19–34. https://doi.org/10.1016/j.jml.2007.03.006
+Finn, B., & Metcalfe, J. (2008). Judgments of learning are influenced by memory for past test. Journal of Memory and Language, 58, 19–34.
 
-Frank, D. J., & Kuhlmann, B. G. (2017). More than just beliefs: Experience and beliefs jointly contribute to volume effects on metacognitive judgments. Journal of Experimental Psychology: Learning, Memory, and Cognition, 43, 680–693. https://doi.org/10.1037/xlm0000332
 </textarea>
 
 
@@ -1355,7 +1409,7 @@ Frank, D. J., & Kuhlmann, B. G. (2017). More than just beliefs: Experience and b
 <div class='bigBox' id='refalyzerAuthorsBox' style="display: none">
 	<div class='bigBox' display="block"> 
 		<div class='boxAroundTable'>
-			<div class='heading'>Authors (click headings to sort)</p></div><br>
+			<div class='heading'>Authors</p></div><br>
 			<p>
 			<div id='authorTable' class='dataTable'></div>
 		</div>
