@@ -212,11 +212,13 @@ Basic procedure:
                 this.doi_type = 'not_found_yet';
             }
 
+
+
 			if (typeof reference_obj[this.doi] != 'undefined') { 
 				// compute scores and statuses
 				const temp_apa_no_html = reference_obj[this.doi].apa_no_html;
-				temp_ref_to_show = reference_obj[this.doi].apa_no_html;
-				temp_ref_to_show = temp_ref_to_show.replace('&#38;amp;', "&"); // otherwise it shows &amp; in place of the & character
+				temp_ref_to_show = reference_obj[this.doi].apa;
+				temp_ref_to_show = temp_ref_to_show.replace('&#38;amp;', "&"); // otherwise it shows &amp; in place of the & character (actually this problem might go away when you're showing the html)
 				this.score = compute_score(temp_apa_no_html, this.user_input); // order has to be database version, user version 
 				this.letter_match = compute_letter_match(temp_apa_no_html, this.user_input);
 				this.letter_match_percentage = compute_letter_match_percentage(this.user_input, temp_apa_no_html); // order has to be user, database
@@ -290,9 +292,7 @@ Basic procedure:
 		}
 	}
 	
-	function Reference_object(input_userInput, input_json, input_apa) {
-	    var all_author = '';
-	    
+	function Reference_object(input_userInput, input_json, input_apa) {	    
 		this.user_input = input_userInput;
 		this.json = input_json;
 		this.doi = this.json.DOI;
@@ -300,28 +300,9 @@ Basic procedure:
         try {
             if (input_apa == 'journal-article') {
                 // figure out the reference by myself
-        	    console.log('looking at journal-article');
-
-                // figure out author names
-				for (a = 0; a < input_json.author.length; a++) {
-					if (input_json.author[a].family !== undefined && input_json.author[a].family !== null) {
-						temp_firstname = input_json.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim();
-                        firstName_array = temp_firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
-//                         name_apa = input_familyname + ", " + first_letters(firstName_array);
-
-						name_apa = input_json.author[a].family + ", " + first_letters(firstName_array);
-						if (a == 0) {
-    						all_author = name_apa;
-    					} else if (a == input_json.author.length - 1) {
-    					    all_author += ' & ' + name_apa;
-    					} else {
-    					    all_author += ', ' + name_apa;
-    					}
-					}
-				}
-
-                this.apa = all_author + ' (' + input_json.issued["date-parts"][0][0] + '). ' + input_json.title + '. <i>' + input_json['container-title'] + ', ' + input_json.volume + '</i>, ' + input_json.page + '. ' + input_json.DOI;
-        		this.apa_no_html = this.apa.trim(); 
+        	    console.log(this.json);
+                this.apa = convert_json_to_apa(input_json);
+        		this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, "");
             } else {
                 // using cite
                 this.apa = input_apa; 
@@ -329,9 +310,59 @@ Basic procedure:
             }
 	    	
     	} catch(err) {
-    	    console.log ('error in new reference obj')
+    	    console.log ('**error in new reference obj')
     	    console.log(err);
     	}
+ 	}
+ 	
+ 	function convert_json_to_apa(input_json) {
+        var firstname = '';
+	    var all_author = '';
+	    var name_apa = '';
+        var a = 0;
+        var title = '';
+        
+        // figure out authors
+        try {
+            for (a = 0; a < input_json.author.length; a++) {
+                if (input_json.author[a].family !== undefined && input_json.author[a].family !== null) {
+                    firstname = input_json.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim();
+                    firstName_array = firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
+
+                    name_apa = input_json.author[a].family + ", " + first_letters(firstName_array);
+                    if (a == 0) {
+                        all_author = name_apa;
+                    } else if (a == input_json.author.length - 1) {
+                        all_author += ' & ' + name_apa;
+                    } else {
+                        all_author += ', ' + name_apa;
+                    }
+                }
+            }
+        
+            // figure out title
+            title = input_json.title.toString().trim();
+            
+            if (input_json.subtitle != undefined && input_json.subtitle != null && input_json.subtitle != '') {
+dfd                // dfd replace :: with : check for trailing period, etc. 
+                console.log( '---subtitle found:' )
+                console.log( title)
+                console.log( input_json.subtitle.toString().trim())
+                title = title + ': ' + input_json.subtitle.toString().trim();
+            }
+            
+            if (title.charAt(title.length-1) != '.') {
+                title = title + '.';
+            }
+
+            // put it all together
+            return all_author + ' (' + input_json.issued["date-parts"][0][0] + '). ' + title + ' <i>' + input_json['container-title'] + ', ' + input_json.volume + '</i>(' + input_json.issue + '), ' + input_json.page + '. https://doi.org/' + input_json.DOI;
+            
+        } catch (err) {
+    	    console.log ('**error in convert json to apa')
+    	    console.log(err);
+        
+        }
  	}
 
 	function Author_object(input_familyname, input_firstname) {
@@ -388,16 +419,18 @@ Basic procedure:
 
 	
 	async function getOneURL(input_string) {	
-// 		Be careful here! This calls everything async, which means that some of this code might 
-// 		execute for item 12 before it gets to item 8, etc. Things can get out of order. Which means, 
-// 		for example, that by the time it arrives at item x (e.g., 2), item x + y (e.g., 5) might have 
-// 		already decided that x shouldn't be shown. And stuff. This is why the program does all the  
-//		rows that have dois before starting on the ones that don't. 
-        
-	// If this function finds a doi in crossref, it recursively calls itself and returns. 
-	// This is wasteful because it means going to a server to find JSON that's already 
-	// been found, but I need the JSON in the format Cite uses, which is called Citation 
-	// Style Language (CSL). And I couldn't figure out any other way. 
+    // If this line has a doi in it, this queries the Cite database. 
+    // Cite returns json with the citation formatted correctly.
+    // If this line does not have a doi, this queries Crossref. 
+    //      If Crossref returns a familiar type (e.g., journal-article), my code parses it.
+    //      If Crossref returns an unfamiliar type, this recursively calls itself, and then queries Cite. 
+	//      This is wasteful because it means going to a server to find JSON that's already 
+	//      been found, but I need the JSON in the format Cite uses, which is called Citation 
+	//      Style Language (CSL). And I couldn't figure out any other way. 
+
+    // Be careful here! This calls everything async, which means that some of this code might 
+    // execute for item 12 before it gets to item 8, etc. This is why the program does all the  
+    // rows that have dois before starting on the ones that don't. 
 
         var temp_ignore_doi = false;
         var temp_search_string = '';
@@ -437,19 +470,16 @@ Basic procedure:
 					// if a doi was found.... 
 					text_obj[input_string].doi = myJSON.message.items[0].DOI;
 					// dfdd
-// 					1. make it check for common types such as 'journal-article' and format them itself so you don't have to call Cite
-// 					    which would be nice bc a) it's faster that way and b) cite seems to limit the number of times you can call it
-// 					2. if possible, maybe find all co-authors by checking the database. 
-// 					3. this tells you the authors of all of the papers cited by this paper. so it's going to be easy to get second-order citation inf. 
+// 					1. i haven't tested to make sure that cite and my thing return the same stuff. also, maybe make it only use cite when it's an uncommon format?
+// 					2. if possible, maybe find all co-authors by checking the database. (i.e.,, is there a way to ask for coauthors using crossref? or maybe orcid or something? 
+// 					3. this tells you the papers cited by this paper. Looking at them would make it easy to get second-order citation information although that would be a lot of doi calls 
 // 					    this could be useful in two ways. first, to figure out co-authors if 2 fails. Second, to figure out who's getting cited in this area of research. 
 					    
-					console.log( '774 type=' + myJSON.message.items[0].type);
-				    console.log(myJSON.message.items[0])
-				    
+                    // if it finds a journal article in the database, it doesn't need to recursively call getOneURL (which will end up using Cite). 
+                    // Instead, it goes ahead and creates a reference obj that will figure out the apa format using my own code. 
 				    if (myJSON.message.items[0].type == "journal-article") {
                         if (typeof reference_obj[myJSON.message.items[0].DOI] === 'undefined') { 
-                            // create new reference
-                            console.log ('create new the new way')
+                            // create new reference based on Crossref
                             reference_obj[myJSON.message.items[0].DOI] = new Reference_object(input_string, myJSON.message.items[0], "journal-article");
                         }
                         text_obj[input_string].doi = reference_obj[myJSON.message.items[0].DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
@@ -466,11 +496,9 @@ Basic procedure:
                 let bibliography = myJSON.format ('bibliography', {
                     format: 'html'
                 });
-                console.log('bibliography')
-                console.log(bibliography)
 
                 if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
-                    // create new reference
+                    // create new reference based on Cite
                     reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
                 }
                 text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
@@ -536,7 +564,9 @@ Basic procedure:
 			    temp_doi_array.push(temp_doi);
 			}			
         }
-        console.log( '-E-removed ['+foof+'] duplicate references--');
+        if (foof > 0) {
+            console.log( '-E-removed ['+foof+'] duplicate references--');
+        }
 	}
 
 	function remove_duplicate_rows() {
@@ -612,9 +642,9 @@ Basic procedure:
                 }
             }
         }
-//         if (foof > 0) {
+        if (foof > 0) {
             console.log('-C-removed ['+foof+'] duplicate rows--');
-//         }
+        }
 	}
 	
 	
@@ -705,7 +735,7 @@ Basic procedure:
 // 			console.log( ';again;')
 			check_table_for_combinations();
 		} else {
-			console.log( '-D-checked for combinations--')
+// 			console.log( '-D-checked for combinations--')
 		    current_mode = "done combining"
 		    update_progress();
 		}
@@ -777,7 +807,6 @@ Basic procedure:
         }
 
         try {
-
             var bestcombo = best_combination(otherRow_input_string, input_string, reference_obj[this_row_doi].apa_no_html);
  
             // if the best match is the combo, combine them. 
@@ -1310,11 +1339,11 @@ Basic procedure:
 			finish();
 		} else if (rows_searched >= rows_total && current_mode == "searching for dois") {
 		    // if done searching for all dois
-			console.log( '-B- searched all--')
+// 			console.log( '-B- searched all--')
 			check_table_for_combinations(); 
 		} else if (rows_searched == rows_with_user_dois_total && started_notFoundYet == false  && current_mode == "searching for dois") {
 		    // if it's done searching for user-entered dois
-			console.log( '-B- searched dois--')
+// 			console.log( '-B- searched dois--')
 		    started_notFoundYet = true;
 			remove_duplicate_rows();
 			check_table_for_combinations();
