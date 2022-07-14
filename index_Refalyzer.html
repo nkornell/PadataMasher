@@ -185,7 +185,7 @@ Basic procedure:
 		this.score = 0;
 		this.letter_match = 0;
 		this.letter_match_percentage = 0;
-		
+		this.use_Cite = false;
         
         this.table_row_number = function() {
             return document.getElementById(this.user_input).rowIndex;
@@ -300,7 +300,6 @@ Basic procedure:
         try {
             if (input_apa == 'journal-article') {
                 // figure out the reference by myself
-        	    console.log(this.json);
                 this.apa = convert_json_to_apa(input_json);
         		this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, "");
             } else {
@@ -351,9 +350,8 @@ Basic procedure:
                     title = title.slice(0, -1).trim();
                 }
 
-                console.log( '---subtitle found:' )
-                console.log( title)
-                console.log( input_json.subtitle.toString().trim())
+                console.log( '---subtitle found for '+ title)
+//                 console.log( input_json.subtitle.toString().trim())
                 // add together title, colon, then subtitle
                 title = title + ': ' + input_json.subtitle.toString().trim();
             }
@@ -465,58 +463,69 @@ Basic procedure:
 		var inputDOI = text_obj[input_string].doi;
 
 		try {
-			if (inputDOI === "" || temp_ignore_doi == true) {
-                // if we're not using a doi (either there isn't one or it's bad), search Crossref without a doi
-                if (temp_ignore_doi == true) {
+		    if (text_obj[input_string].use_Cite != true) {
+                if (temp_ignore_doi) {
                     temp_search_string = remove_doi_from_string(input_string, inputDOI);
                     // maybe check if it's an empty string and if so, abandon ship?
                 } else {
                     temp_search_string = input_string;
-    			}
+                }
+                if (inputDOI === "" || temp_ignore_doi == true) {
+                    // if we're not using a doi (either there isn't one or it's bad), search Crossref without a doi
+                    console.log( 'no doi found, searching...')
+                    stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
+                    var myJSON = await $.getJSON(encodeURI(stringToSend)); // this doesn't work with let (in place of var) but it should. figure that out later. 
+                    var myJSONobj = myJSON.message.items[0];
+                } else {
+                    console.log( 'searching using a doi')
+                    stringToSend = 'https://api.crossref.org/works/'+inputDOI+'?mailto=nkornell@gmail.com';
+                    var myJSON = await $.getJSON(encodeURI(stringToSend)); // this doesn't work with let (in place of var) but it should. figure that out later. 
+                    var myJSONobj = myJSON.message;
+                }
 
-//  				stringToSend = 'https://api.crossref.org/works/'+inputDOI+'?mailto=nkornell@gmail.com';
+                if (typeof myJSONobj === 'undefined') { // if it's not in the database
+                    if (duplicate_input_text.indexOf(input_string) < 0) { // if it's not a duplicate
+                        // this happens when a doi is bad	
+                        text_obj[input_string].update_input('done');
+                        console.log( "** found a doi that's bad, trying again (yay, delete this line)");
+                    } else {
+                        console.log( "** 823 i didn't' think THIS HAPPENING WAS POSSIBLE");
+                    }
+                } else {
+    // 					1. i haven't tested to make sure that cite and my thing return the same stuff. 
+    // 					2. if possible, maybe find all co-authors by checking the database. (i.e.,, is there a way to ask for coauthors using crossref? or maybe orcid or something? 
+    // 					3. this tells you the papers cited by this paper. Looking at them would make it easy to get second-order citation information although that would be a lot of doi calls 
+    // 					    this could be useful in two ways. first, to figure out co-authors if 2 fails. Second, to figure out who's getting cited in this area of research. 
+    //                  4. maybe download the whole doi database and do the searching locally. 
 
-   				stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
-				let myJSON = await $.getJSON(encodeURI(stringToSend));
-				if (typeof myJSON.message.items[0] === 'undefined') { // if it's not in the database
-					if (duplicate_input_text.indexOf(input_string) < 0) { // if it's not a duplicate
-					    // this happens when a doi is bad	
-		                text_obj[input_string].update_input('done');
-					    console.log( "** found a doi that's bad, trying again (yay, delete this line)");
-					} else {
-					    console.log( "** 823 i didn't' think THIS HAPPENING WAS POSSIBLE");
-					}
-				} else {
-// 					1. i haven't tested to make sure that cite and my thing return the same stuff. 
-// 					2. if possible, maybe find all co-authors by checking the database. (i.e.,, is there a way to ask for coauthors using crossref? or maybe orcid or something? 
-// 					3. this tells you the papers cited by this paper. Looking at them would make it easy to get second-order citation information although that would be a lot of doi calls 
-// 					    this could be useful in two ways. first, to figure out co-authors if 2 fails. Second, to figure out who's getting cited in this area of research. 
-//                  4. maybe download the whole doi database and do the searching locally. 
-
-					// if a doi was found.... 
-					text_obj[input_string].doi = myJSON.message.items[0].DOI;
-					// dfdd
+                    // if a doi was found.... 
+                    text_obj[input_string].doi = myJSONobj.DOI;
+                    // dfdd
                     // if it finds a journal article in the database, it doesn't recursively call getOneURL (which will end up using Cite). 
                     // Instead, it goes ahead and creates a reference obj that will figure out the apa format using my own code. 
-				    if (myJSON.message.items[0].type == "journal-article") {
-                        if (typeof reference_obj[myJSON.message.items[0].DOI] === 'undefined') { 
+                    if (myJSONobj.type == "journal-article") {
+                        if (typeof reference_obj[myJSONobj.DOI] === 'undefined') { 
                             // create new reference based on Crossref
-                            reference_obj[myJSON.message.items[0].DOI] = new Reference_object(input_string, myJSON.message.items[0], "journal-article");
+                            reference_obj[myJSONobj.DOI] = new Reference_object(input_string, myJSONobj, "journal-article");
                         }
-                        text_obj[input_string].doi = reference_obj[myJSON.message.items[0].DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
+                        text_obj[input_string].doi = reference_obj[myJSONobj.DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
                         text_obj[input_string].update_input('done');
-				    } else {
-				        // If it's not a common type, run this thing again but with the doi in the parameter, so Cite will work.
+                    } else {
+                        // If it's not a common type, run this thing again but with the doi in the parameter, so Cite will work.
+                        text_obj[input_string].use_Cite = true;
                         getOneURL(input_string);
                         return;
                     }
-				}
+                }
 			} else { 
-			    // if a doi was found and we're using it (for now at least, unless we find out it's bad)
+			    // if we're using Cite
+			    console.log('Using Cite for '+inputDOI)
                 let myJSON = await Cite.async(inputDOI);
                 let bibliography = myJSON.format ('bibliography', {
                     format: 'html'
                 });
+                
+//                 dfdd this needs to do something smarter
 
                 if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
                     // create new reference based on Cite
@@ -1417,6 +1426,9 @@ Finn, B., & Metcalfe, J. (2008). Judgments of learning are influenced by memory 
 
 Zhang, Y., Pan, Z., Li, K., & Guo, Y. (2018). Self-serving bias in memories: Selectively forgetting the connection between negative information and the self. Experimental Psychology, 65, 236–244. http://dx.doi.org/10.1027/1618-3169/a000409
 
+Nelson, T. O., & Narens, L. (1990). Metamemory: A theoretical framework and new findings. In G. H. Bower (Ed.), The Psychology of Learning and Motivation (Vol. 26, pp. 125–141). San Diego, CA: Academic Press. https://doi.org/10.1016/S0079-7421(08)60053-5 
+
+Nelson, T. O., & Narens, L. (1994). Why investigate metacognition. In J. Metcalfe & A. P. Shimamura (Eds.), Metacognition: Knowing about Knowing (pp. 1-25). Cambridge, MA: MIT Press.
 </textarea>
 
 
