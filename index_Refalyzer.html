@@ -307,7 +307,7 @@ Basic procedure:
                 this.apa = input_apa; 
         		this.apa_no_html = jQuery(this.apa).text().trim(); // apa without the html tags
             }
-	    	
+
     	} catch(err) {
     	    console.log ('**error in new reference obj')
     	    console.log(err);
@@ -320,6 +320,7 @@ Basic procedure:
 	    var name_apa = '';
         var a = 0;
         var title = '';
+        var out = '';
         
         // figure out authors
         try {
@@ -362,7 +363,23 @@ Basic procedure:
             }
 
             // put it all together
-            return all_author + ' (' + input_json.issued["date-parts"][0][0] + '). ' + title + ' <i>' + input_json['container-title'] + ', ' + input_json.volume + '</i>(' + input_json.issue + '), ' + input_json.page + '. https://doi.org/' + input_json.DOI;
+            out += all_author 
+            out += ' (' + input_json.issued["date-parts"][0][0] + '). ';
+            out += title;
+            out += ' <i>' + input_json['container-title'] + ', ';
+            out += input_json.volume + '</i>';
+            if (typeof input_json.issue != "undefined") {
+                out += '(' + input_json.issue + ')';
+            }
+            if (typeof input_json.page != "undefined") {
+                out += ', ' + input_json.page;
+            }
+            out += '. https://doi.org/' + input_json.DOI;
+            if (out.indexOf('undefined') > -1) {
+                console.log( 'Found in output: undefined')
+            }
+            return out;
+            
             
         } catch (err) {
     	    console.log ('**error in convert json to apa')
@@ -470,9 +487,10 @@ Basic procedure:
                 } else {
                     temp_search_string = input_string;
                 }
+
                 if (inputDOI === "" || temp_ignore_doi == true) {
                     // if we're not using a doi (either there isn't one or it's bad), search Crossref without a doi
-                    console.log( 'no doi found, searching...')
+//                     console.log( 'no doi found, searching...')
                     stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
                     var myJSON = await $.getJSON(encodeURI(stringToSend)); // this doesn't work with let (in place of var) but it should. figure that out later. 
                     var myJSONobj = myJSON.message.items[0];
@@ -482,6 +500,7 @@ Basic procedure:
                     var myJSON = await $.getJSON(encodeURI(stringToSend)); // this doesn't work with let (in place of var) but it should. figure that out later. 
                     var myJSONobj = myJSON.message;
                 }
+
 
                 if (typeof myJSONobj === 'undefined') { // if it's not in the database
                     if (duplicate_input_text.indexOf(input_string) < 0) { // if it's not a duplicate
@@ -500,7 +519,7 @@ Basic procedure:
 
                     // if a doi was found.... 
                     text_obj[input_string].doi = myJSONobj.DOI;
-                    // dfdd
+                    // dfdd : add in chapter as another type
                     // if it finds a journal article in the database, it doesn't recursively call getOneURL (which will end up using Cite). 
                     // Instead, it goes ahead and creates a reference obj that will figure out the apa format using my own code. 
                     if (myJSONobj.type == "journal-article") {
@@ -519,24 +538,25 @@ Basic procedure:
                 }
 			} else { 
 			    // if we're using Cite
-			    console.log('Using Cite for '+inputDOI)
+// 			    console.log('Using Cite for '+inputDOI)
                 let myJSON = await Cite.async(inputDOI);
                 let bibliography = myJSON.format ('bibliography', {
                     format: 'html'
                 });
-                
-//                 dfdd this needs to do something smarter
 
                 if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
                     // create new reference based on Cite
                     reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
+                } else {
+                    console.log( 'error ur38 for') // dfd this happened at least once
+                    console.log( input_string)
                 }
                 text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
                 text_obj[input_string].update_input('done');
 			}
 		}
 		catch(err) {
-			if (err == "Error: Server responded with status code 404") {
+			if (err.responseText == 'Resource not found.' || err == "Error: Server responded with status code 404") {
 			    //if it tried a doi that is incorrect, search again without the doi
 				console.log( "could not find DOI " + inputDOI + " [searching again with doi removed]") // this is fine. it's supposed to happen when a doi is incorrect.
 				if (text_obj[input_string].search_status == 'searching') {
@@ -550,7 +570,7 @@ Basic procedure:
                 text_obj[input_string].update_input('done');            
 			} else {
 			    console.log( '*error in get one url: '+input_string);
-				console.log(err);
+				console.log(err.responseText);
 			}
 		}
 	}	
@@ -1158,6 +1178,11 @@ Basic procedure:
                 }
                 tempDOItype = "from_user";
                 tempDOI = tempDOIArray[0];
+                if (tempDOI.indexOf("//", 7) >= 0) {
+                    // get rid of //, which is legal in a URL but only once (at least with respect to submitting a doi to crossref)
+//                     console.log( 'found double hockey sticks')
+                    tempDOI = tempDOI.slice(0,7) + tempDOI.slice(8).replace('//','/');
+                }
             } else {
                 tempDOItype = "not_found_yet";
                 tempDOI = '';
@@ -1422,13 +1447,37 @@ Basic procedure:
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-Finn, B., & Metcalfe, J. (2008). Judgments of learning are influenced by memory for past test. Journal of Memory and Language, 58, 19–34.
+Finley, J. R., Tullis, J. G., Benjamin, A. S. (2010). Metacognitive control of learning and remembering. In M. S. Knine I. M. Saleh (Eds.), New Science of Learning (pp. 109– 131). New York, NY: Springer. https://doi.org/10.1007/978-1-4419-5716-0_6	
 
-Zhang, Y., Pan, Z., Li, K., & Guo, Y. (2018). Self-serving bias in memories: Selectively forgetting the connection between negative information and the self. Experimental Psychology, 65, 236–244. http://dx.doi.org/10.1027/1618-3169/a000409
+Fixed-Effects and Random-Effects in Meta-Analysis. (2013). In Applied Meta-Analysis with R (pp. 63–89). Chapman and Hall/CRC. https://doi.org/10.1201/b14872-8
 
-Nelson, T. O., & Narens, L. (1990). Metamemory: A theoretical framework and new findings. In G. H. Bower (Ed.), The Psychology of Learning and Motivation (Vol. 26, pp. 125–141). San Diego, CA: Academic Press. https://doi.org/10.1016/S0079-7421(08)60053-5 
+Kuhlmann, B. G., Bayen, U. J. (2016). Metacognitive aspects of source monitoring. In J. Dunlosky S. U. Tauber (Eds.), The Oxford Handbook of Metamemory (pp. 149–168). New York, NY: Oxford University Press. https://doi.org/10.1093/oxfordhb/9780199336746.013.8	
 
-Nelson, T. O., & Narens, L. (1994). Why investigate metacognition. In J. Metcalfe & A. P. Shimamura (Eds.), Metacognition: Knowing about Knowing (pp. 1-25). Cambridge, MA: MIT Press.
+Kuznetsova, A., Brockhoff, P. B., Christensen, R. H. B. (2014). lmerTest: Tests for random and fixed effects for linear mixed effect models (lmer objects of lme4 package) (R package version 2.0-6) [Software]. Retrieved from http://cran.r-project.org/package=lmerTest	
+
+Nelson, T. O., & Narens, L. (1990). Metamemory: A theoretical framework and new findings.
+
+In G. H. Bower (Ed.), The Psychology of Learning and Motivation (Vol. 26, pp. 125–
+
+141). San Diego, CA: Academic Press. https://doi.org/10.1016/S0079-7421(08)60053-5 Nelson, T. O., & Narens, L. (1994). Why investigate metacognition. In J. Metcalfe & A. P.
+
+Shimamura (Eds.), Metacognition: Knowing about Knowing (pp. 1-25). Cambridge, MA:
+
+MIT Press.
+
+Nelson, T. O., Narens, L., & Dunlosky, J. (2004). A revised methodology for research on
+
+metamemory: Pre-judgment recall and monitoring (PRAM). Psychological methods, 9,
+
+53–69. https://doi.org/10.1037/1082-989X.9.1.53
+
+Rhodes, M. G. (2016). Judgments of learning: Methods, data, and theory. In J. Dunlosky S. U. Tauber (Eds.), The Oxford Handbook of Metamemory (pp. 65–80). New York, NY: Oxford University Press. https://doi.org/10.1093/oxfordhb/9780199336746.013.4	
+
+Heck, D. W., Gronau, F. Q., & Wagenmakers &, E.-J. (2019). metaBMA: Bayesian Model
+
+Averaging for Random and Fixed Effects Meta-Analysis. https://CRAN.R-
+
+project.org/package=metaBMA.
 </textarea>
 
 
