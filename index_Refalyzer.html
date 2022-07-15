@@ -548,7 +548,8 @@ Basic procedure:
                     // create new reference based on Cite
                     reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
                 } else {
-                    console.log( 'error ur38 for') // dfd this happened at least once
+	                // dfd this happens when... it returns something that's already been found via a different row (I think)
+                    console.log( 'error u38 for') 
                     console.log( input_string)
                 }
                 text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
