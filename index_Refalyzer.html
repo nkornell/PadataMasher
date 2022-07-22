@@ -1,14 +1,26 @@
 <!-- 
 To do: 
 
+- make it use cache, or actually, maybe this is better: https://www.w3schools.com/html/html5_webstorage.asp
+- handle network errors (start by testing with wifi turned off)
+- find second-order authors
+- make it deal with chapters and stuff well
+- when it formats json, have it return notes about what it got wrong (and maybe even fix the errors?? like if eds are missing, use the user input to insert them?)
+-      do this by having it return an object, and have the object include, like, .apa (so the user could type something like, returnthing(x).apa)
+- have it figure out specifically which strings/characters are different between the user input and the doi info, and highlight them (maybe copy bbedit style)?
+- if a string is too short, should it automatically be combined with the previous row??
+
+- this returns a crazy reference that's way too long. It returns fragment but it should probably return wrong. 
+- Learning and Motivation: Advances in Research and Theory, vol. 54, ed. BH Ross, pp. 103–40. San Diego, CA: Elsevier
+
 - this returns wrong. what it means is, the user was wrong. that's different than thinking the answer its giving is wrong. 
 	Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. go to the store and buy a carpet, buy a floor https://doi.org/10.1037/xlm0000246
 - same here, except here, maybe the user was right. it's not showing the subtitle
 	Zhang, Y., Pan, Z., Li, K., & Guo, Y. (2018). Self-serving bias in memories: Selectively forgetting the connection between negative information and the self. Experimental Psychology, 65, 236–244. http://dx.doi.org/10.1027/1618-3169/a000409	
 
-- If you ask it to do too many rows, it barfs after doing some of the doi rows. I'd like to make it handle those errors better. 
+- If you ask it to do too many rows, it barfs after doing some of the doi rows. Does it still do this? handling things without cite (hopefully) fixed it?
 
-- Add analytics. 
+- Add google analytics tags so i can see if it gets used. 
 - It would speed things up to not wait for all of the lines to come in before trying to combine. Maybe if an obj is correct it should try to combine right away?
 - With two non-user-doi rows, it's possible that neither doi it finds is right. In this case, maybe it could find the right doi if they were combined and then sent to the server, but as of now the program doesn't check the database for the combo. 
 - Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
@@ -212,8 +224,7 @@ Basic procedure:
                 this.doi_type = 'not_found_yet';
             }
 
-
-
+try {
 			if (typeof reference_obj[this.doi] != 'undefined') { 
 				// compute scores and statuses
 				const temp_apa_no_html = reference_obj[this.doi].apa_no_html;
@@ -273,7 +284,10 @@ Basic procedure:
                 this.notes = temp_search_status_to_show + temp_match_status_to_show; 
             }
 //             console.log( this.user_input)
-     		    		
+} catch (err) {
+    console.log('**error in update input part 1 for '+this.user_input)
+    console.log( err)
+}  		
             try { 
                 // update html
                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
@@ -296,25 +310,48 @@ Basic procedure:
 		this.user_input = input_userInput;
 		this.json = input_json;
 		this.doi = this.json.DOI;
-
+		
+//         console.log('type='+this.json.type+" for "+ this.doi); // dfd
         try {
-            if (input_apa == 'journal-article') {
+            if (input_apa == '') {
+		        // dfd maybe check here if it's a chapter, and if it is see if it can find the book by cutting off the last 1-2 numbers of the doi and checking crossref?
+		        // then it would have to check whether the title seems right, and if it does, it could find the editors and amend the reference object? 
+		        // this sounds risky because what if something (the title, the editors) seems right but it's wrong?
+
                 // figure out the reference by myself
-                this.apa = convert_json_to_apa(input_json);
-        		this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, "");
+                this.apa = get_apa_from_json(input_json);
+                this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, ""); // dfd this should be moved into get apa from json, once it's returning an object
             } else {
                 // using cite
                 this.apa = input_apa; 
-        		this.apa_no_html = jQuery(this.apa).text().trim(); // apa without the html tags
+        		this.apa_no_html = jQuery(this.apa).text().trim(); // apa without the html tags        		
             }
 
     	} catch(err) {
     	    console.log ('**error in new reference obj')
     	    console.log(err);
     	}
- 	}
+ 	} 
  	
- 	function convert_json_to_apa(input_json) {
+// Examples of why returning accurately formatted references won't work.
+// However, Mendeley gets both of these wrong as well, so...
+// 
+// DOI: "10.1093/oxfordhb/9780199336746.013.4"
+// URL: "http://dx.doi.org/10.1093/oxfordhb/9780199336746.013.4"
+// This is a chapter but the doi says it's a book. 
+// The doi doesn't know the correct title of the book it's in.
+// 
+// DOI: "10.1037/0000157-002"
+// URL: "http://dx.doi.org/10.1037/0000157-002"
+// This is a chapter but it doesn't know who the editors are. 
+// It should be...
+// Zeleke, W. A., Hughes, T. L., & Drozda, N. (2020). Home–school collaboration to promote mind–
+// body health. In C. Maykel & M. A. Bray (Eds.), Promoting mind–body health in schools:
+// Interventions for mental health professionals (pp. 11–26). American Psychological Association.
+// https://doi.org/10.1037/0000157-002
+
+ 	function get_apa_from_json(input_json) {
+        // https://apastyle.apa.org/instructional-aids/reference-examples.pdf
         var firstname = '';
 	    var all_author = '';
 	    var name_apa = '';
@@ -322,67 +359,93 @@ Basic procedure:
         var title = '';
         var out = '';
         
-        // figure out authors
+//         console.log(input_json)
+        
         try {
-            for (a = 0; a < input_json.author.length; a++) {
-                if (input_json.author[a].family !== undefined && input_json.author[a].family !== null) {
-                    firstname = input_json.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim();
-                    firstName_array = firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
+            // figure out authors
+            if (input_json.author !== undefined && input_json.author !== null) {
+                for (a = 0; a < input_json.author.length; a++) {
+                    if (input_json.author[a].family !== undefined && input_json.author[a].family !== null) {
+                        firstname = input_json.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim();
+                        firstName_array = firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
 
-                    name_apa = input_json.author[a].family + ", " + first_letters(firstName_array);
-                    if (a == 0) {
-                        all_author = name_apa;
-                    } else if (a == input_json.author.length - 1) {
-                        all_author += ' & ' + name_apa;
-                    } else {
-                        all_author += ', ' + name_apa;
+                        name_apa = input_json.author[a].family + ", " + first_letters(firstName_array);
+                        if (a == 0) {
+                            all_author = name_apa;
+                        } else if (a == input_json.author.length - 1) {
+                            all_author += ' & ' + name_apa;
+                        } else {
+                            all_author += ', ' + name_apa;
+                        }
                     }
                 }
+            } else {
+                console.log( 'no author found')
             }
         
-            // figure out title
-            title = input_json.title.toString().trim();
+            // figure out editors
+            // dfd I haven't worked on this because I can't find a doi with editors!!
+            if (typeof input_json.editor != "undefined") {
+                console.log( 'EDITOR FOUND *$*# '+all_author)
+                for (a = 0; a < input_json.editor.length; a++) {
+                    console.log(input_json.editor[a].family)
+                }
+            } else {
+//                 console.log('editors not found for '+all_author)
+            }
             
+            // figure out title
+            if (input_json.title !== undefined && input_json.title !== null) {
+                title = input_json.title.toString().trim();
+            }
+                        
             // if there's a subtitle
             if (input_json.subtitle != undefined && input_json.subtitle != null && input_json.subtitle != '') {
-            
                 // remove period and colon at the end of the title
                 if (title.charAt(title.length-1) == '.' || title.charAt(title.length-1) == ':') {
                     title = title.slice(0, -1).trim();
                 }
-
-                console.log( '---subtitle found for '+ title)
-//                 console.log( input_json.subtitle.toString().trim())
+//                 console.log( '---subtitle found for '+ title)
                 // add together title, colon, then subtitle
                 title = title + ': ' + input_json.subtitle.toString().trim();
             }
-            
             // if it doesn't end with a period, end it
             if (title.charAt(title.length-1) != '.') {
                 title = title + '.';
             }
 
             // put it all together
-            out += all_author 
-            out += ' (' + input_json.issued["date-parts"][0][0] + '). ';
-            out += title;
-            out += ' <i>' + input_json['container-title'] + ', ';
-            out += input_json.volume + '</i>';
-            if (typeof input_json.issue != "undefined") {
-                out += '(' + input_json.issue + ')';
+            if (input_json.type == 'journal-article') {
+                out += all_author 
+                out += ' (' + input_json.issued["date-parts"][0][0] + '). ';
+                out += title;
+                out += ' <i>' + input_json['container-title'] + ', ';
+                out += input_json.volume + '</i>';
+                if (typeof input_json.issue != "undefined") {
+                    out += '(' + input_json.issue + ')';
+                }
+                if (typeof input_json.page != "undefined") {
+                    out += ', ' + input_json.page;
+                }
+                out += '. https://doi.org/' + input_json.DOI;
+                if (out.indexOf('undefined') > -1) {
+                    console.log( 'Found in output: undefined')
+                }
+            } else if (input_json.type == 'chapter' || input_json.type == 'book-chapter') {
+                out += all_author 
+                out += ' (' + input_json.issued["date-parts"][0][0] + '). ';
+                out += title;  
+                out += '. https://doi.org/' + input_json.DOI;   
             }
-            if (typeof input_json.page != "undefined") {
-                out += ', ' + input_json.page;
-            }
-            out += '. https://doi.org/' + input_json.DOI;
-            if (out.indexOf('undefined') > -1) {
-                console.log( 'Found in output: undefined')
-            }
-            return out;
             
+            return out;
+            // dfdd have it return an object that has: 
+            // val.apa
+            // val.apa_no_html
+            // val.notes
             
         } catch (err) {
-    	    console.log ('**error in convert json to apa')
+    	    console.log ('**error in get apa from json')
     	    console.log(err);
         
         }
@@ -394,6 +457,10 @@ Basic procedure:
 		this.citation_count = 1;
 		this.coauthors = [];
 		this.checked = false;
+		
+		// dfd
+// 		give this a new variable... or maybe do two counters, one for primary citations and one for secondary?
+// 		also, there might need to be two types of co-authorship, primary and secondary
 		
 		var firstName_array = input_firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
 		this.name_apa = input_familyname + ", " + first_letters(firstName_array);
@@ -440,27 +507,26 @@ Basic procedure:
 		}
 	}
 
+                // dfd
+    // 					2. if possible, maybe find all co-authors by checking the database. (i.e.,, is there a way to ask for coauthors using crossref? or maybe orcid or something? 
+    // 					3. this tells you the papers cited by this paper. Looking at them would make it easy to get second-order citation information although that would be a lot of doi calls 
+    // 					    this could be useful in two ways. first, to figure out co-authors if 2 fails. Second, to figure out who's getting cited in this area of research. 
+    //                  4. maybe download the whole doi database and do the searching locally. 
+	
+	
 	
 	async function getOneURL(input_string) {	
-    // If this line has a doi in it, this queries the Cite database. 
-    // Cite returns json with the citation formatted correctly.
+    // If this line has a doi in it, this queries the Crossref database. 
+    //      It returns a doi and JSON
     // If this line does not have a doi, this queries Crossref. 
-    //      If Crossref returns a familiar type (e.g., journal-article), my code parses it.
-    //      If Crossref returns an unfamiliar type, this recursively calls itself, and then queries Cite. 
-	//      This is wasteful because it means going to a server to find JSON that's already 
-	//      been found, but I need the JSON in the format Cite uses, which is called Citation 
-	//      Style Language (CSL). And I couldn't figure out any other way. 
-	
-// change it to:
-// If this line does not have json
-//     query Crossref
-// Else
-//     If it's not a format I know
-//         query Cite
-//     End if
-// End if
-// new reference obj
-    
+    //      It returns a doi and JSON.
+    // Once it has the doi and JSON,
+    //      If it's a type I've planned for (e.g., journal-article), my code parses it.
+    //      If it's an unfamiliar type, this recursively calls itself, and then queries Cite. 
+
+	// This is wasteful because it means going to a server to find JSON that's already 
+	// been found, but I need the JSON in the format Cite uses, which is called Citation 
+	// Style Language (CSL). And I couldn't figure out any other way. 
 
     // Be careful here! This calls everything async, which means that some of this code might 
     // execute for item 12 before it gets to item 8, etc. This is why the program does all the  
@@ -488,18 +554,33 @@ Basic procedure:
                     temp_search_string = input_string;
                 }
 
-                if (inputDOI === "" || temp_ignore_doi == true) {
+                const local_JSON = localStorage.getItem(input_string);  // check whether the input string is stored locally on the browser (bc the user has searched it before)
+ 
+                if (local_JSON != null && local_JSON != '') {
+                    // if the string is stored locally, retrieve the JSON without checking the server
+//                     pagelog( 'using locals')
+//                     pagelog( local_JSON)
+                    var myJSONobj = JSON.parse(local_JSON);
+                let bibliography = myJSONobj.format ('bibliography', {
+                    format: 'html'
+                });
+                pagelog(bibliography)
+                } else if (inputDOI === "" || temp_ignore_doi == true) {
                     // if we're not using a doi (either there isn't one or it's bad), search Crossref without a doi
 //                     console.log( 'no doi found, searching...')
                     stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
-                    var myJSON = await $.getJSON(encodeURI(stringToSend)); // this doesn't work with let (in place of var) but it should. figure that out later. 
+                    var myJSON = await $.getJSON(encodeURI(stringToSend)); // dfd this doesn't work with let (in place of var) but it should. figure that out later. 
                     var myJSONobj = myJSON.message.items[0];
+                    localStorage.setItem(input_string, JSON.stringify(myJSONobj));
                 } else {
-                    console.log( 'searching using a doi')
+//                     console.log( 'searching using a doi')
                     stringToSend = 'https://api.crossref.org/works/'+inputDOI+'?mailto=nkornell@gmail.com';
-                    var myJSON = await $.getJSON(encodeURI(stringToSend)); // this doesn't work with let (in place of var) but it should. figure that out later. 
+                    var myJSON = await $.getJSON(encodeURI(stringToSend)); // this doesn't work with let (in place of var) but it should. figure that out later.    
                     var myJSONobj = myJSON.message;
+                    localStorage.setItem(input_string, JSON.stringify(myJSONobj));
                 }
+                // to find a book  
+                // stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&filter=type:book&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
 
 
                 if (typeof myJSONobj === 'undefined') { // if it's not in the database
@@ -511,21 +592,17 @@ Basic procedure:
                         console.log( "** 823 i didn't' think THIS HAPPENING WAS POSSIBLE");
                     }
                 } else {
-    // 					1. i haven't tested to make sure that cite and my thing return the same stuff. 
-    // 					2. if possible, maybe find all co-authors by checking the database. (i.e.,, is there a way to ask for coauthors using crossref? or maybe orcid or something? 
-    // 					3. this tells you the papers cited by this paper. Looking at them would make it easy to get second-order citation information although that would be a lot of doi calls 
-    // 					    this could be useful in two ways. first, to figure out co-authors if 2 fails. Second, to figure out who's getting cited in this area of research. 
-    //                  4. maybe download the whole doi database and do the searching locally. 
-
-                    // if a doi was found.... 
+                     // if a doi was found.... 
                     text_obj[input_string].doi = myJSONobj.DOI;
-                    // dfdd : add in chapter as another type
                     // if it finds a journal article in the database, it doesn't recursively call getOneURL (which will end up using Cite). 
                     // Instead, it goes ahead and creates a reference obj that will figure out the apa format using my own code. 
-                    if (myJSONobj.type == "journal-article") {
+                    if (myJSONobj.type == "journal-article" || myJSONobj.type == "chapter" || myJSONobj.type == "book-chapter") {
                         if (typeof reference_obj[myJSONobj.DOI] === 'undefined') { 
                             // create new reference based on Crossref
-                            reference_obj[myJSONobj.DOI] = new Reference_object(input_string, myJSONobj, "journal-article");
+                            reference_obj[myJSONobj.DOI] = new Reference_object(input_string, myJSONobj, "");
+                        } else {
+                            // see notes for u38 
+                            // console.log( 'u37')
                         }
                         text_obj[input_string].doi = reference_obj[myJSONobj.DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
                         text_obj[input_string].update_input('done');
@@ -536,21 +613,29 @@ Basic procedure:
                         return;
                     }
                 }
+// na police 664-4944 ext 1
 			} else { 
 			    // if we're using Cite
-// 			    console.log('Using Cite for '+inputDOI)
+			    console.log( 'using cite for '+inputDOI)
                 let myJSON = await Cite.async(inputDOI);
+                // dfd add in the cool thing with localStorage
+//                 pagelog (JSON.stringify(myJSON))
+//                 console.log( myJSON)
                 let bibliography = myJSON.format ('bibliography', {
                     format: 'html'
                 });
+//                 pagelog (bibliography)
+                store two keys, one for json and one for bibliography. then, above, make sure to search for both
 
                 if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
                     // create new reference based on Cite
                     reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
                 } else {
-	                // dfd this happens when... it returns something that's already been found via a different row (I think)
-                    console.log( 'error u38 for') 
-                    console.log( input_string)
+	                // u37 and u38 are caused when two things happen. 
+	                //    1) It tried to combine two rows and decided not to because best combo was better without one of them
+	                //    2) Crossref returned the same doi for both. In other words, crossref say the best match for b is x, but this thinks a matches x better without b. 
+	                // It's not really an error. 
+                    // console.log( 'u38')
                 }
                 text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
                 text_obj[input_string].update_input('done');
@@ -570,11 +655,38 @@ Basic procedure:
 			    console.log( 'Network request failed: '+input_string);
                 text_obj[input_string].update_input('done');            
 			} else {
-			    console.log( '*error in get one url: '+input_string);
-				console.log(err.responseText);
+			    console.log('*error in get one url: '+input_string);
+				console.log(err);
 			}
 		}
-	}	
+	}
+
+	async function get_author(input_string) {
+	    var i = 0, j = 0;
+	    var temp_name = '';
+	    var temp_name_array = [];
+	    
+	    console.log( 'starting author search')
+        var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&query.author='+input_string.replaceAll(' ', '+');
+        console.log( stringToSend)
+        var myJSON = await $.getJSON(encodeURI(stringToSend));
+        // dfd add in the cool thing with localStorage (? maybe not because author info can change)
+        console.log( 'author='+input_string)
+        
+        for (i = 0; i < 20; i++) {
+            temp_obj = myJSON.message.items[i];
+//             console.log( temp_obj)
+            temp_name_array.push('[' + temp_obj.type + '] ' + temp_obj.title[0])
+            for (j = 0; j < temp_obj.author.length; j++) {
+//                 console.log(temp_obj.author[j]);
+                temp_name = temp_obj.author[j].given + ' ' + temp_obj.author[j].family;
+                temp_name_array.push(temp_name)
+//                dfd use parse json for authors
+            }
+        }
+        console.log(temp_name_array)
+    }
+
 	
 	function remove_duplicate_references() {
         // dfd could this whole function be merged with remove duplicate rows?
@@ -583,7 +695,9 @@ Basic procedure:
         var temp_doi = '';
         var temp_doi_array = [];
 	
-       for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
+	    current_mode = "remove duplicate references";
+
+        for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
 			try {
 				temp_row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
 			} catch(err) {
@@ -597,18 +711,20 @@ Basic procedure:
                 	continue;
                 }
 			} catch(err) {
-			    console.log( "error 1974")
+			    console.log( "error 1947")
 			    continue;
 			}
 			
 // 		    console.log( 'tempdoi='+temp_doi)
 			if (temp_doi_array.includes(temp_doi)) {
+			    // if this doi is already in another row...
                 const r1 = temp_doi_array.indexOf(temp_doi) + 1;
                 const r2 = i;
 			    const r1_text = document.getElementById("article_table").rows[r1].cells[0].textContent
+			    const r2_text = document.getElementById("article_table").rows[r2].cells[0].textContent
 // 			    console.log( 'found a duplicate doi ['+temp_doi+'] in rows '+r1+', '+r2+': ' + r1_text)
                 if (decide_whether_to_combine_rows(r1_text, r2 - r1) == true) {
-                	foof++;
+                	foof++; 
                 }
 			} else {
 			    temp_doi_array.push(temp_doi);
@@ -711,7 +827,7 @@ Basic procedure:
         } else {
             try {
                 if (text_obj[input_string].match_status == "correct") {
-                    console.log('removing a "correct" row');
+                    console.log('removing a "correct" row: '+input_string);
                 }
                 
                 var row_to_remove = document.getElementById(input_string).rowIndex;
@@ -803,6 +919,7 @@ Basic procedure:
             console.log( '*tried to combine with a removed reference obj: '+input_string); 
             return false;
         }
+        
         var row_index = text_obj[input_string].table_row_number();
 		var other_row_index = text_obj[input_string].table_row_number() + shift;
 
@@ -824,6 +941,7 @@ Basic procedure:
 	        console.log( 'returning because otherRow has been removed: '+ otherRow_input_string)
 	        return false;
 	    }
+// 	    console.log( 'breadcrumb^^^^^ '+this_row_doi)
 	    
 	    // see if the other row has a doi
 	    var this_row_doi = text_obj[input_string].doi;
@@ -835,15 +953,20 @@ Basic procedure:
         var shouldChangeUserInput = false;
 
 		if (text_obj[input_string].match_status == "wrong") {
-		    // this is where it would be smart to check whether the other one is also wrong, and if it is, join the strings and send that to the database.  
-			return false; 
+		    if (current_mode == 'remove duplicate references') {
+		        // when the mode is removing duplicate references, it's not going to check both input strings. so just go ahead and combine it (i.e., don't return)
+		    } else {
+                // return here, and then wait for the other input string to be called. 
+                // dfd: if both are wrong, then they won't get combined given the way this is set up now. 
+    		    // this is where it would be smart to check whether the other one is also wrong, and if it is, join the strings and send that to the database. 
+                return false; 
+            }
 		}
         
         try {
-            if (otherRow_doi == text_obj[input_string].doi) {
+            if (otherRow_doi == this_row_doi) {
                 // if they have the same doi
                 shouldCombine = true;
-//                 console.log( 'is this correlated with problems??????????')
             } else if (text_obj[otherRow_input_string].search_status == "searching") {
                 // if it's still searching for the other row, return. it'll try again with that row later. 
                 return false; 
@@ -859,6 +982,9 @@ Basic procedure:
         try {
             var bestcombo = best_combination(otherRow_input_string, input_string, reference_obj[this_row_doi].apa_no_html);
  
+//             console.log( 'input string: '+input_string)
+//             console.log( 'otherRow input_string: '+otherRow_input_string)
+//             console.log( 'best combo  : '+bestcombo)
             // if the best match is the combo, combine them. 
             if (input_string !== bestcombo) {
                 shouldCombine = true;
@@ -885,13 +1011,15 @@ Basic procedure:
 
             // if appropriate, remove the row
             if (shouldCombine == true) {
+//             console.log( 'combining '+this_row_doi)
+//             console.log( 'should change user input ='+shouldChangeUserInput)
                 remove_row(otherRow_input_string);
                 if (shouldChangeUserInput == true) {
                     if (current_mode == "completely done") {
                         console.log( '...when completely done')
                         return true; // true because a row was removed above
                     }
-                    change_user_input(input_string, bestcombo); // is input_string OK? 
+                    change_user_input(input_string, bestcombo); 
                 } else {
                     if (input_string == bestcombo) {
 //                         console.log( "[didn't change user input] they're the same")
@@ -1016,23 +1144,27 @@ Basic procedure:
 		var userDOI = userString.match(doi_pattern); 
 		var databaseDOI = databaseString.match(doi_pattern); 
 		
-		// return a score
-		if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	// with typeof, put undefined in quotes
-			// if there was a valid DOI in the user input, return a score of 100
-			if (userDOI[0].toLowerCase() == databaseDOI[0].toLowerCase()) { 
-			    // if a doi was found, it returns percentage. why? basically, if it's part of a reference with the right doi, this 
-			    // will be high. but if it's the wrong reference, it'll be low. 
-			    return compute_letter_match_percentage(userString,databaseString);
-			} else {
-				// if the user doi wasn't the same as the database one (is this possible?!) return the match strength without removing the doi
-				// this happens when there's a bad doi, it searches without the doi, and finds a good doi to replace the bad one
-				return compute_letter_match(databaseString,userString);
-			}
-		} else {
-			// if there is not a valid doi in the user input, remove the doi from the database string for the sake of comparison. 
-			// this does not use percentage because without a doi, I can't assume either side is good 
-			databaseString = remove_doi_from_string(databaseString, databaseDOI);
-			return compute_letter_match(databaseString,userString);
+        try {		
+            // return a score
+            if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	// with typeof, put undefined in quotes
+                if (userDOI[0].toLowerCase() == databaseDOI[0].toLowerCase()) { 
+                    // if a doi was found, it returns percentage. why? basically, if it's part of a reference with the right doi, this 
+                    // will be high. but if it's the wrong reference, it'll be low. 
+                    return compute_letter_match_percentage(userString,databaseString);
+                } else {
+                    // if the user doi wasn't the same as the database one (is this possible?!) return the match strength without removing the doi
+                    // this happens when there's a bad doi, it searches without the doi, and finds a good doi to replace the bad one
+                    return compute_letter_match(databaseString,userString);
+                }
+            } else {
+                // if there is not a valid doi in the user input, remove the doi from the database string for the sake of comparison. 
+                // this does not use percentage because without a doi, I can't assume either side is good 
+                databaseString = remove_doi_from_string(databaseString, databaseDOI);
+                return compute_letter_match(databaseString,userString);
+            }
+		} catch(err) {
+		    console.log("error in compute_score. (Note; this error can happen if the database string doesn't contain a doi.)")
+		    console.log(err)
 		}
 	}
 	
@@ -1086,7 +1218,7 @@ Basic procedure:
         return foof;
 	}
 	
-	function parse_JSON_for_authors(input_json) {
+	function parse_JSON_for_authors(input_json) { // dfd give this a second parameter, type of author
 		var temp_firstname = '';
 		var tempAuthor_full = "";
 		var temp_list_of_co_authors_from_this_article = [];
@@ -1328,6 +1460,8 @@ Basic procedure:
 		x.style.display = "flex";
 	}
 	
+    
+
 	function start() {
 		reference_obj = [];
 		text_obj = [];
@@ -1338,6 +1472,9 @@ Basic procedure:
 		
 		console.log( '')
 		console.log( '---------start----------')
+		
+		// dfdd
+// 		get_author('nate kornell')
 
 		document.getElementById("outputText").innerHTML = "";
         document.getElementById("myProgress").style = "display: flex;"
@@ -1389,7 +1526,6 @@ Basic procedure:
 		
 		if (rows_combined >= rows_total && current_mode == "done combining") {
 		    // it's already attempted to combine all rows
-		    current_mode = "wrap up";
 		    remove_duplicate_references();
 			finish();
 		} else if (rows_searched >= rows_total && current_mode == "searching for dois") {
@@ -1448,6 +1584,13 @@ Basic procedure:
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
+https://doi.org/10.1037/0000157-002
+
+https://doi.org/10.1093/oxfordhb/9780199336746.013.4
+
+
+</textarea>
+<!-- 
 Finley, J. R., Tullis, J. G., Benjamin, A. S. (2010). Metacognitive control of learning and remembering. In M. S. Knine I. M. Saleh (Eds.), New Science of Learning (pp. 109– 131). New York, NY: Springer. https://doi.org/10.1007/978-1-4419-5716-0_6	
 
 Fixed-Effects and Random-Effects in Meta-Analysis. (2013). In Applied Meta-Analysis with R (pp. 63–89). Chapman and Hall/CRC. https://doi.org/10.1201/b14872-8
@@ -1479,8 +1622,7 @@ Heck, D. W., Gronau, F. Q., & Wagenmakers &, E.-J. (2019). metaBMA: Bayesian Mod
 Averaging for Random and Fixed Effects Meta-Analysis. https://CRAN.R-
 
 project.org/package=metaBMA.
-</textarea>
-
+ -->
 
 <p id="outputText"></p>
 
@@ -1720,3 +1862,218 @@ DELAYED JUDGMENTS IN SOURCE MONITORING 56
 <p>Zechmeister, E. B., & Shaughnessy, J. J. (1980). When you know that you know and when you think that you know but you don’t. Bulletin of the Psychonomic Society, 15, 41–44. https://doi.org/10.3758/BF03329756
 <p>Zhang, Y., Pan, Z., Li, K., & Guo, Y. (2018). Self-serving bias in memories: Selectively forgetting the connection between negative information and the self. Experimental Psychology, 65, 236–244. http://dx.doi.org/10.1027/1618-3169/a000409
 
+<!-- from bjork dunlosky kornell -->
+<!-- 
+Benjamin AS, Bjork RA. 1996. Retrieval fluency as a metacognitive index. In Implicit Memory and Metacognition, ed. LM Reder, pp. 309–38. Mahwah, NJ: Erlbaum
+Benjamin AS, Bjork RA, Schwartz BL. 1998. The mismeasure of memory: when retrieval fluency is misleading as a metamnemonic index. J. Exp. Psychol.: Gen. 127:55–68
+Bjork EL, Bjork RA. 2011. Making things hard on yourself, but in a good way: creating desirable difficulties to enhance learning. In Psychology and the Real World: Essays Illustrating Fundamental Contributions to Society, ed. MA Gernsbacher, RW Pew, LM Hough, JR Pomerantz, pp. 56–64. New York: Worth
+Bjork RA. 1975. Retrieval as a memory modifier. In Information Processing and Cognition: The Loyola Symposium, ed. R Solso, pp. 123–44. Hillsdale, NJ: Erlbaum
+Bjork RA. 1994. Memory and metamemory considerations in the training of human beings. In Metacognition: Knowing About Knowing, ed. J Metcalfe, A Shimamura, pp. 185–205. Cambridge, MA: MIT Press
+Bjork RA. 2011. On the symbiosis of remembering, forgetting and learning. In Successful Remembering and Successful Forgetting: A Festschrift in Honor of Robert A. Bjork, ed. AS Benjamin, pp. 1–22. London: Psychol. Press
+Bjork RA, Bjork EL. 1992. A new theory of disuse and an old theory of stimulus fluctuation. In From Learning Processes to Cognitive Processes: Essays in Honor of William K. Estes, ed. A Healy, S Kosslyn, R Shiffrin, vol. 2, pp. 35–67. Hillsdale, NJ: Erlbaum
+Butler AC, Fazio LK, Marsh EJ. 2011. The hypercorrection effect persists over a week, but high-confidence errors return. Psychon. Bull. Rev. 18:1238–44
+Butterfield B, Metcalfe J. 2001. Errors committed with high confidence are hypercorrected. J. Exp. Psychol.: Learn. Mem. Cogn. 27:1491–94
+Carpenter SK. 2011. Semantic information activated during retrieval contributes to later retention: support for the mediator effectiveness hypothesis of the testing effect. J. Exp. Psychol.: Learn. Mem. Cogn. 37:1547–52 Castel AD, McCabe DP, Roediger H. 2007. Illusions of competence and overestimation of associative memory
+for identical items: evidence from judgments of learning. Psychon. Bull. Rev. 14:107–11
+Cepeda NJ, Pashler H, Vul E, Wixted JT, Rohrer D. 2006. Distributed practice in verbal recall tasks: a review
+and quantitative synthesis. Psychol. Bull. 132:354–80
+Cohen MS, Halamish V, Bjork RA. 2011. Learners fail to appreciate benefits of longer spacings over shorter spacings
+in repeated practice. Poster presented at Annu. Meet. Psychon. Soc., 52nd, Seattle, Wash.
+Crede ́ M, Phillips L. 2011. A meta-analytic review of the motivated strategies for learning questionnaire.
+Learn. Individ. Differ. 21:337–46
+Dempster FN. 1996. Distributing and managing the conditions of encoding and practice. In Memory, ed. R
+Bjork, E Bjork, pp. 317–44. San Diego, CA: Academic
+Diemand-Yauman C, Oppenheimer DM, Vaughan EB. 2011. Fortune favors the bold (and the italicized):
+effects of disfluency on educational outcomes. Cognition 118:114–18
+Duffy GG, Miller S, Parsons S, Meloth M. 2009. Teachers as metacogntive professionals. In Handbook of
+Metacognition in Education, ed. DJ Hacker, J Dunlosky, AC Graesser, pp. 240–56. New York: Taylor &
+Francis
+Dunlosky J, Ariel R. 2011a. Self-regulated learning and the allocation of study time. In The Psychology of
+Learning and Motivation: Advances in Research and Theory, vol. 54, ed. BH Ross, pp. 103–40. San Diego,
+CA: Elsevier
+Dunlosky J, Ariel R. 2011b. The influence of agenda-based and habitual processes on item selection during
+study. J. Exp. Psychol.: Learn. Mem. Cogn. 37:899–912
+Dunlosky J, Lipko A. 2007. Metacomprehension: a brief history and how to improve its accuracy. Curr. Dir.
+Psychol. Sci. 16:228–32
+Dunlosky J, Nelson TO. 1992. Importance of the kind of cue for judgments of learning ( JOL) and the delayed
+JOL effect. Mem. Cogn. 20:374–80
+Dunlosky J, Nelson TO. 1994. Does the sensitivity of judgments of learning ( JOLs) to the effects of various
+study activities depend on when the JOLs occur? J. Mem. Lang. 33:545–65
+Dunlosky J, Rawson KA. 2012. Overconfidence produces underachievement: inaccurate self evaluations un-
+dermine students’ learning and retention. Learn. Instr. 22:271–80
+Dunlosky J, Rawson KA, Marsh EJ, Nathan MJ, Willingham DT. 2012. Improving students’ learning with effective learning techniques: promising directions from cognitive and educational psychology. Psychol. Sci. Public Interest. In press
+Dunlosky J, Serra M, Baker JMC. 2007. Metamemory applied. In Handbook of Applied Cognition, ed. FT Durso, RS Nickerson, ST Dumais, S Lewandowsky, TJ Perfect, pp. 137–59. New York: Wiley. 2nd ed.
+Dunlosky J, Thiede KW. 1998. What makes people study more? An evaluation of factors that affect people’s self-paced study and yield “labor-and-gain” effects. Acta Psychol. 98:37–56
+Dweck CS. 2006. Mindset. New York: Random House
+Finn B, Metcalfe J. 2007. The role of memory for past test in the underconfidence with practice effect. J. Exp.
+Psychol.: Learn. Mem. Cogn. 33:238–44
+Finn B, Metcalfe J. 2008. Judgments of learning are influenced by memory for past test. J. Mem. Lang. 58:19–34 Fischhoff B. 1975. Hindsight is not equal to foresight: the effects of outcome knowledge on judgment under
+uncertainty. J. Exp. Psychol.: Hum. Percept. Perform. 1:288–99
+Fritz CO, Morris PE, Bjork RA, Gelman R, Wickens TD. 2000. When further learning fails: stability and
+change following repeated presentation of text. Br. J. Psychol. 91:493–511
+Grimaldi PJ, Karpicke JD. 2012. When and why do retrieval attempts enhance subsequent encoding? Mem.
+Cogn. 40:505–13
+Gurung RAR, Weidert J, Jeske A. 2010. Focusing on how students study. J. Scholars. Teach. Learn. 10:28–35 Halamish V, Bjork RA. 2011. When does testing enhance retention? A distribution-based interpretation of
+retrieval as a memory modifier. J. Exp. Psychol.: Learn. Mem. Cogn. 37:801–12
+Hart JT. 1965. Memory and the feeling-of-knowing experience. J. Educ. Psychol. 56:208–16
+Hartwig MK, Dunlosky J. 2012. Study strategies of college students: Are self-testing and scheduling related
+to achievement? Psychon. Bull. Rev. 19:126–34
+Hays M, Kornell N, Bjork RA. 2012. When and why a failed test potentiates the effectiveness of subsequent
+study. J. Exp. Psychol: Learn. Mem. Cogn. In press
+Hertzog C, Dunlosky J, Robinson AE, Kidder DP. 2003. Encoding fluency is a cue used for judgments about
+learning. J. Exp. Psychol: Learn. Mem. Cogn. 29:22–34
+Huelser BJ, Metcalfe J. 2012. Making related errors facilitates learning, but learners do not know it. Mem.
+Cogn. 40:514–27
+Jacoby LL. 1978. On interpreting the effects of repetition: solving a problem versus remembering a solution.
+J. Verbal Learn. Verbal Behav. 17:649–67
+Jacoby LL, Kelley CM. 1987. Unconscious influences of memory for a prior event. Pers. Soc. Psychol. Bull.
+13:314–36
+Jacoby LL, Kelley CM, Dywan J. 1989. Memory attributions. In Varieties of Memory and Consciousness: Essays
+in Honour of Endel Tulving, ed. H Roediger, FM Craik, pp. 391–422. Hillsdale, NJ: Erlbaum
+Kang SK, Pashler H. 2012. Learning painting styles: spacing is advantageous when it promotes discriminative
+contrast. Appl. Cogn. Psychol. 26:97–103
+Karpicke JD. 2009. Metacognitive control and strategy selection: deciding to practice retrieval during learning.
+J. Exp. Psychol.: Gen. 138:469–86
+Karpicke JD, Butler AC, Roediger H. 2009. Metacognitive strategies in student learning: Do students practise
+retrieval when they study on their own? Memory 17:471–79
+Kelley CM, Jacoby LL. 1996. Adult egocentrism: subjective experience versus analytic bases for judgment.
+J. Mem. Lang. 35:157–75
+Kelley CM, Lindsay DS. 1993. Remembering mistaken for knowing: ease of retrieval as a basis for confidence
+in answers to general knowledge questions. J. Mem. Lang. 32:1–24
+Kelley CM, Rhodes MG. 2002. Making sense and nonsense of experience: attributions in memory and judg-
+ment. In The Psychology of Learning and Motivation: Advances in Research and Theory, vol. 41, ed. H Ross,
+pp. 293–320. San Diego, CA: Academic
+Kimball DR, Metcalfe J. 2003. Delaying judgments of learning affects memory, not metamemory. Mem. Cogn.
+31:918–29
+King JF, Zechmeister EB, Shaughnessy JJ. 1980. Judgments of knowing: the influence of retrieval practice.
+Am. J. Psychol. 93:329–43
+Knight JB, Hunter Ball B, Brewer GA, DeWitt MR, March RL. 2012. Testing unsuccessfully: a specification of the underlying mechanisms supporting its influence on retention. J. Mem. Lang. 66:731–46
+Koriat A. 1993. How do we know that we know? The accessibility model of the feeling of knowing. Psychol. Rev. 100:609–39
+Koriat A. 1997. Monitoring one’s own knowledge during study: a cue-utilization approach to judgments of learning. J. Exp. Psychol.: Gen. 126:349–70
+Koriat A, Bjork RA. 2005. Illusions of competence in monitoring one’s knowledge during study. J. Exp. Psychol.: Learn. Mem. Cogn. 31:187–94
+Koriat A, Bjork RA, Sheffer L, Bar SK. 2004. Predicting one’s own forgetting: the role of experience-based and theory-based processes. J. Exp. Psychol.: Gen. 133:643–56
+Kornell N. 2009. Optimizing learning using flashcards: Spacing is more effective than cramming. Appl. Cogn. Psychol. 23:1297–317
+Kornell N. 2011. Failing to predict future changes in memory: A stability bias yields long-term overconfidence. In Successful Remembering and Successful Forgetting: A Festschrift in Honor of Robert A. Bjork, ed. AS Benjamin, pp. 365–86. New York: Psychol. Press
+Kornell N. 2012. A stability bias in human memory. In Encyclopedia of the Sciences of Learning, ed. N Seel, pp. 4–7. New York: Springer
+Kornell N, Bjork RA. 2007. The promise and perils of self-regulated study. Psychon. Bull. Rev. 6:219–24 Kornell N, Bjork RA. 2008a. Learning concepts and categories: Is spacing the “enemy of induction”? Psychol.
+Sci. 19:585–92
+Kornell N, Bjork RA. 2008b. Optimising self-regulated study: the benefits—and costs—of dropping flashcards.
+Memory 16:125–36
+Kornell N, Bjork RA. 2009. A stability bias in human memory: overestimating remembering and underesti-
+mating learning. J. Exp. Psychol.: Gen. 138:449–68
+Kornell N, Bjork RA, Garcia MA. 2011a. Why tests appear to prevent forgetting: a distribution-based bifur-
+cation model. J. Mem. Lang. 65:85–97
+Kornell N, Castel AD, Eich TS, Bjork RA. 2010. Spacing as the friend of both memory and induction in
+young and older adults. Psychol. Aging 25:498–503
+Kornell N, Hays MJ, Bjork RA. 2009. Unsuccessful retrieval attempts enhance subsequent learning. J. Exp.
+Psychol.: Learn. Mem. Cogn. 35:989–98
+Kornell N, Metcalfe J. 2006. Study efficacy and the region of proximal learning framework. J. Exp. Psychol.:
+Learn. Mem. Cogn. 32:609–22
+Kornell N, Rhodes MG, Castel AD, Tauber SK. 2011b. The ease of processing heuristic and the stability bias:
+dissociating memory, memory beliefs, and memory judgments. Psychol. Sci. 22:787–94
+Kornell N, Son LK. 2009. Learners’ choices and beliefs about self-testing. Memory 17:493–501
+Landauer TK, Bjork RA. 1978. Optimum rehearsal patterns and name learning. In Practical Aspects of Memory,
+ed. MM Gruneberg, PE Morris, RN Sykes, pp. 625–32. London: Academic
+Lee TD. 2012. Contextual interference: generalizability and limitations. In Skill Acquisition in Sport: Research,
+Theory, and Practice II, ed. NJ Hodges, AM Williams, pp. 79–93. London: Routledge
+Little JL, Bjork EL, Bjork RA, Angello G. 2012. Multiple-choice tests exonerated, at least of some charges:
+fostering test-induced learning and avoiding test-induced forgetting. Psychol. Sci. In press
+Lundeberg MA, Fox PW. 1991. Do laboratory findings on test expectancy generalize to classroom outcomes?
+Rev. Educ. Res. 61:94–106
+Matvey G, Dunlosky J, Guttentag R. 2001. Fluency of retrieval at study affects judgments of learning ( JOLs):
+an analytic or nonanalytic basis for JOLs? Mem. Cogn. 29:222–33
+McCabe DP, Soderstrom NC. 2011. Recollection-based prospective metamemory judgments are more accu-
+rate than those based on confidence: judgments of remembering and knowing ( JORKs). J. Exp. Psychol.:
+Gen. 140:605–21
+McCabe JA. 2011. Metacognitive awareness of learning strategies in undergraduates. Mem. Cogn. 39:462–76 McNamara DS. 2010. Strategies to read and learn: overcoming learning by consumption. Med. Educ. 44:340–46 Metcalfe J. 2009. Metacognitive judgments and control of study. Curr. Dir. Psychol. Sci. 18:159–63
+Metcalfe J, Finn B. 2008. Evidence that judgments of learning are causally related to study choice. Psychon.
+Bull. Rev. 15:174–79
+Metcalfe J, Finn B. 2011. People’s hypercorrection of high-confidence errors: Did they know it all along? J. Exp. Psychol.: Learn. Mem. Cogn. 37:437–48
+Metcalfe J, Kornell N. 2005. A region of proximal learning model of study time allocation. J. Mem. Lang. 52:463–77
+Miele DB, Finn B, Molden DC. 2011. Does easily learned mean easily remembered? It depends on your beliefs about intelligence. Psychol. Sci. 22:320–24
+Morisano D, Hirsh JB, Peterson JB, Pihl RO, Shore BM. 2010. Setting, elaborating, and reflecting on personal goals improves academic performance. J. Appl. Psychol. 95:255–64
+Nelson TO, Dunlosky J. 1991. When people’s judgments of learning ( JOLs) are extremely accurate at pre- dicting subsequent recall: the “delayed-JOL effect.” Psychol. Sci. 2:267–70
+Nelson TO, Narens L. 1990. Metamemory: a theoretical framework and new findings. In The Psychology of Learning and Motivation, vol. 26, ed. GH Bower, pp. 125–73. New York: Academic
+Oppenheimer DM. 2008. The secret life of fluency. Trends Cogn. Sci. 12:237–41
+Pashler H, McDaniel M, Rohrer D, Bjork RA. 2009. Learning styles: concepts and evidence. Psychol. Sci. Public
+Interest 3:105–19
+Pintrich PR, Smith DAF, Garcia T, McKeachie WJ. 1993. Reliability and predictive validity of the motivated
+strategies for learning questionnaire (MSLQ). Educ. Psychol. Meas. 53:801–3
+Pyc MA, Dunlosky J. 2010. Toward an understanding of students’ allocation of study time: Why do they
+decide to mass or space their practice? Mem. Cogn. 38:431–40
+Pyc MA, Rawson KA. 2009. Testing the retrieval effort hypothesis: Does greater difficulty correctly recalling
+information lead to higher levels of memory? J. Mem. Lang. 60:437–47
+Pyc MA, Rawson KA. 2010. Why testing improves memory: mediator effectiveness hypothesis. Science 330:335 Pyc MA, Rawson KA. 2012. Why is test–restudy practice beneficial for memory? An evaluation of the mediator
+shift hypothesis. J. Exp. Psychol.: Learn. Mem. Cogn. 38:737–46
+Rawson KA, Dunlosky J. 2011. Optimizing schedules of retrieval practice for durable and efficient learning:
+How much is enough? J. Exp. Psychol.: Gen. 140:283–302
+Rawson KA, Dunlosky J, McDonald SL. 2002. Influences of metamemory on performance predictions for
+text. Q. J. Exp. Psychol. 55A:505–24
+Rawson KA, Kintsch W. 2005. Rereading effects depend on time of test. J. Educ. Psychol. 97:70–80
+Reder LM. 1987. Strategy selection in question answering. Cogn. Psychol. 19:90–138
+Reder LM. 1996. Different research programs on metacognition: Are the boundaries imaginary? Learn. Individ.
+Differ. 8:383–90
+Rhodes MG, Castel AD. 2008. Memory predictions are influenced by perceptual information: evidence for
+metacognitive illusions. J. Exp. Psychol.: Gen. 137:615–25
+Rhodes MG, Castel AD. 2009. Metacognitive illusions for auditory information: effects on monitoring and
+control. Psychon. Bull. Rev. 16:550–54
+Rhodes MG, Tauber SK. 2011. The influence of delaying judgments of learning on metacognitive accuracy:
+a meta-analytic review. Psychol. Bull. 137:131–48
+Richland LE, Kornell N, Kao LS. 2009. The pretesting effect: Do unsuccessful retrieval attempts enhance
+learning? J. Exp. Psychol: Appl. 15:243–57
+Roediger HL, Butler AC. 2011. The critical role of retrieval practice in long-term retention. Trends Cogn. Sci.
+15:20–27
+Roediger HL, Karpicke JD. 2006. The power of testing memory: basic research and implications for educa-
+tional practice. Perspect. Psychol. Sci. 1:181–210
+Rohrer D, Taylor K. 2006. The effects of overlearning and distributed practice on the retention of mathematics
+knowledge. Appl. Cogn. Psychol. 20:1209–24
+Rohrer D, Taylor K. 2007. The shuffling of mathematics problems improves learning. Instr. Sci. 35:481–98 Schacter DL, Gilbert DT, Wegner DM. 2011. Psychology. New York: Worth. 2nd ed.
+Schwartz BL, Benjamin AS, Bjork RA. 1997. The inferential and experiential basis of metamemory. Curr. Dir.
+Psychol. Sci. 6:132–37
+Schwarz N. 2004. Metacognitive experiences in consumer judgment and decision making. J. Consumer Psychol.
+14:332–48
+Serra MJ, Dunlosky J. 2005. Does retrieval fluency contribute to the underconfidence-with-practice effect? J. Exp. Psychol.: Learn. Mem. Cogn. 31:1258–66
+Shaw J. 1996. Increases in eyewitness confidence resulting from postevent questioning. J. Exp. Psychol.: Appl. 2:126–46
+Simon DA, Bjork RA. 2001. Metacognition in motor learning. J. Exp. Psychol.: Learn. Mem. Cogn. 27:907–12 Smith SM, Glenberg AM, Bjork RA. 1978. Environmental context and human memory. Mem. Cogn. 6:342–53 Smith SM, Rothkopf EZ. 1984. Contextual enrichment and distribution of practice in the classroom. Cogn.
+Instr. 1:341–58
+Son LK. 2004. Spacing one’s study: evidence for a metacognitive control strategy. J. Exp. Psychol.: Learn. Mem.
+Cogn. 30:601–4
+Son LK. 2010. Metacognitive control and the spacing effect. J. Exp. Psychol.: Learn. Mem. Cogn. 36:255–62 Son LK, Kornell N. 2008. Research on the allocation of study time: key studies from 1890 to the present (and
+beyond). In A Handbook of Memory and Metamemory, ed. J Dunlosky, RA Bjork, pp. 333–51. Hillsdale,
+NJ: Psychol. Press
+Son LK, Kornell N. 2009. Simultaneous decisions at study: time allocation, ordering, and spacing. Metacogn.
+Learn. 4:237–48
+Son LK, Metcalfe J. 2000. Metacognitive and control strategies in study-time allocation. J. Exp. Psychol.: Learn.
+Mem. Cogn. 26:204–21
+Spellman BA, Bjork RA. 1992. When predictions create reality: Judgments of learning may alter what they
+are intended to assess. Psychol. Sci. 3:315–16
+Taraban R, Maki WS, Rynearson K. 1999. Measuring study time distributions: implications for designing
+computer-based courses. Behav. Res. Methods Instrum. Comput. 31:263–69
+Tauber SK, Dunlosky J, Rawson KA, Wahlheim CN, Jacoby LJ. 2012. Self-regulated learning of a natural
+category: Do people interleave or block exemplars during study? In press
+Taylor K, Rohrer D. 2010. The effects of interleaved practice. Appl. Cogn. Psychol. 24:837–48
+Thiede KW. 1999. The importance of accurate monitoring and effective self-regulation during multitrial
+learning. Psychon. Bull. Rev. 6:662–67
+Thiede KW, Dunlosky J. 1999. Toward a general model of self-regulated study: an analysis of selection of
+items for study and self-paced study time. J. Exp. Psychol.: Learn. Mem. Cogn. 25:1024–37
+Thiede KW, Griffin TD, Wiley J, Redford JS. 2009. Metacognitive monitoring during and after reading. In Handbook of Metacognition in Education, ed. DJ Hacker, J Dunlosky, AC Graesser, pp. 85–106. New York:
+Taylor & Francis
+Toppino TC, Cohen MS. 2010. Metacognitive control and spaced practice: clarifying what people do and
+why. J. Exp. Psychol.: Learn. Mem. Cogn. 36:1480–91
+Toppino TC, Cohen MS, Davis M, Moors AC. 2009. Metacognitive control over distribution of practice:
+When is spacing preferred? J. Exp. Psychol.: Learn. Mem. Cogn. 35:1352–58
+Vaughn KE, Rawson KA. 2011. Diagnosing criterion-level effects on memory: What aspects of memory are
+enhanced by repeated retrieval? Psychol. Sci. 22:1127–31
+Vaughn KE, Rawson KA. 2012. When is guessing incorrectly better than studying for enhancing memory?
+Psychon. Bull. Rev. In press
+Wahlheim CN, Dunlosky J, Jacoby LL. 2011. Spacing enhances the learning of natural concepts: an investi-
+gation of mechanisms, metacognition, and aging. Mem. Cogn. 39:750–63
+Wahlheim CN, Finn B, Jacoby LL. 2012. Metacognitive judgments of repetition and variability effects in
+natural concept learning: evidence for variability neglect. Mem. Cogn. 40:703–16
+Whitten WB, Bjork RA. 1977. Learning from tests: effects of spacing. J. Verbal Learn. Verbal Behav. 16:465–78 Wissman KT, Rawson KA, Pyc MA. 2012. How and when do students use flashcards? Memory. 6:568–79 Zaromb FM, Roediger H. 2010. The testing effect in free recall is associated with enhanced organizational
+processes. Mem. Cogn. 38:995–1008
+Zechmeister EB, Shaughnessy JJ. 1980. When you know that you know and when you think that you know
+but you don’t. Bull. Psychon. Soc. 15:41–44
+Zulkiply N, McLean J, Burt JS, Bath D. 2012. Spacing and induction: application to exemplars presented as
+auditory and visual text. Learn. Instr. 22:215–21
+ -->
