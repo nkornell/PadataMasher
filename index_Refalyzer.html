@@ -1,7 +1,10 @@
 <!-- 
 To do: 
 
-- make it use cache, or actually, maybe this is better: https://www.w3schools.com/html/html5_webstorage.asp
+- make it use https://www.w3schools.com/js/js_api_web_storage.asp
+-   maybe make it so that it stores both what the user typed and the doi. what the user typed 
+-   could return the doi, which could store the json. this way even if the user typed something 
+-   weird, as long as the doi is in the user input it won't have to go to the server. Probably not worth it. 
 - handle network errors (start by testing with wifi turned off)
 - find second-order authors
 - make it deal with chapters and stuff well
@@ -224,70 +227,70 @@ Basic procedure:
                 this.doi_type = 'not_found_yet';
             }
 
-try {
-			if (typeof reference_obj[this.doi] != 'undefined') { 
-				// compute scores and statuses
-				const temp_apa_no_html = reference_obj[this.doi].apa_no_html;
-				temp_ref_to_show = reference_obj[this.doi].apa;
-				temp_ref_to_show = temp_ref_to_show.replace('&#38;amp;', "&"); // otherwise it shows &amp; in place of the & character (actually this problem might go away when you're showing the html)
-				this.score = compute_score(temp_apa_no_html, this.user_input); // order has to be database version, user version 
-				this.letter_match = compute_letter_match(temp_apa_no_html, this.user_input);
-				this.letter_match_percentage = compute_letter_match_percentage(this.user_input, temp_apa_no_html); // order has to be user, database
-				if (this.score > good_match_threshold) {
-					this.good_match = true;
-					this.match_status = 'correct';
-				} else {
-					if (this.letter_match_percentage > good_match_threshold) {
-						this.good_match = true;
-						this.match_status = 'fragment';
-					} else {
-						this.good_match = false;
-						this.match_status = 'wrong';
-					}
-				}
+            try {
+                if (typeof reference_obj[this.doi] != 'undefined') { 
+                    // compute scores and statuses
+                    const temp_apa_no_html = reference_obj[this.doi].apa_no_html;
+                    temp_ref_to_show = reference_obj[this.doi].apa;
+                    temp_ref_to_show = temp_ref_to_show.replace('&#38;amp;', "&"); // otherwise it shows &amp; in place of the & character (actually this problem might go away when you're showing the html)
+                    this.score = compute_score(temp_apa_no_html, this.user_input); // order has to be database version, user version 
+                    this.letter_match = compute_letter_match(temp_apa_no_html, this.user_input);
+                    this.letter_match_percentage = compute_letter_match_percentage(this.user_input, temp_apa_no_html); // order has to be user, database
+                    if (this.score > good_match_threshold) {
+                        this.good_match = true;
+                        this.match_status = 'correct';
+                    } else {
+                        if (this.letter_match_percentage > good_match_threshold) {
+                            this.good_match = true;
+                            this.match_status = 'fragment';
+                        } else {
+                            this.good_match = false;
+                            this.match_status = 'wrong';
+                        }
+                    }
 
-				// set stuff up to show (this.notes)
-                const c  = ['tomato','black'];                
-                var temp_stringToShow = "";
-				if (this.match_status != 'correct') {
-					temp_stringToShow += '<div style="color:' + cc[this.match_status]  + ';">' + this.match_status+'</div>';
-                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
-                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
-                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
-	                this.notes = temp_stringToShow;
-				} else {
-					this.notes = '';
-				}
-			} else {
-			    // it wasn't found
-// 				console.log( 'no obj: '+this.doi)
-				this.match_status = 'unknown';
-				temp_ref_to_show = '';
-				if (this.search_status == 'done') {
-				    this.combine_status = 'cannot be combined';
-				    this.notes = "not found";
-				}
-			}
+                    // set stuff up to show (this.notes)
+                    const c  = ['tomato','black'];                
+                    var temp_stringToShow = "";
+                    if (this.match_status != 'correct') {
+                        temp_stringToShow += '<div style="color:' + cc[this.match_status]  + ';">' + this.match_status+'</div>';
+                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
+                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
+                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
+                        this.notes = temp_stringToShow;
+                    } else {
+                        this.notes = '';
+                    }
+                } else {
+                    // it wasn't found
+    // 				console.log( 'no obj: '+this.doi)
+                    this.match_status = 'unknown';
+                    temp_ref_to_show = '';
+                    if (this.search_status == 'done') {
+                        this.combine_status = 'cannot be combined';
+                        this.notes = "not found";
+                    }
+                }
             
-		    if (this.match_status == 'unknown' || this.match_status == 'correct') {
-		        var temp_match_status_to_show = '';
-		    } else {
-    		    var temp_match_status_to_show = '<div style="color:' + cc[this.match_status]  + ';">' + this.match_status + '</div>';
-		    }
-		    if (this.search_status == 'done') {
-		        var temp_search_status_to_show = '';
-		    } else {
-		        var temp_search_status_to_show = this.search_status;
-		    }
-		    
-            if (this.notes == '') {
-                this.notes = temp_search_status_to_show + temp_match_status_to_show; 
+                if (this.match_status == 'unknown' || this.match_status == 'correct') {
+                    var temp_match_status_to_show = '';
+                } else {
+                    var temp_match_status_to_show = '<div style="color:' + cc[this.match_status]  + ';">' + this.match_status + '</div>';
+                }
+                if (this.search_status == 'done') {
+                    var temp_search_status_to_show = '';
+                } else {
+                    var temp_search_status_to_show = this.search_status;
+                }
+            
+                if (this.notes == '') {
+                    this.notes = temp_search_status_to_show + temp_match_status_to_show; 
+                }
+            } catch (err) {
+                console.log('**error in update input part 1 for '+this.user_input)
+                console.log( err)
             }
-//             console.log( this.user_input)
-} catch (err) {
-    console.log('**error in update input part 1 for '+this.user_input)
-    console.log( err)
-}  		
+            	
             try { 
                 // update html
                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
@@ -311,7 +314,6 @@ try {
 		this.json = input_json;
 		this.doi = this.json.DOI;
 		
-//         console.log('type='+this.json.type+" for "+ this.doi); // dfd
         try {
             if (input_apa == '') {
 		        // dfd maybe check here if it's a chapter, and if it is see if it can find the book by cutting off the last 1-2 numbers of the doi and checking crossref?
@@ -384,7 +386,7 @@ try {
             }
         
             // figure out editors
-            // dfd I haven't worked on this because I can't find a doi with editors!!
+            // dfd I haven't worked on this because I can't find a doi with editors!! note to self: try a book
             if (typeof input_json.editor != "undefined") {
                 console.log( 'EDITOR FOUND *$*# '+all_author)
                 for (a = 0; a < input_json.editor.length; a++) {
@@ -439,7 +441,7 @@ try {
             }
             
             return out;
-            // dfdd have it return an object that has: 
+            // dfd have it return an object that has: 
             // val.apa
             // val.apa_no_html
             // val.notes
@@ -534,6 +536,9 @@ try {
 
         var temp_ignore_doi = false;
         var temp_search_string = '';
+        var bibliography = '';
+		var stringToSend = '';
+		var inputDOI = text_obj[input_string].doi;
         
         if (text_obj[input_string].search_status == "not started") {
        		text_obj[input_string].update_input('searching');
@@ -541,105 +546,63 @@ try {
        		text_obj[input_string].update_input('searching');
             temp_ignore_doi = true;
         }
-        
-		var stringToSend = '';
-		var inputDOI = text_obj[input_string].doi;
+
+        if (temp_ignore_doi) {
+            temp_search_string = remove_doi_from_string(input_string, inputDOI);
+            // maybe check if it's an empty string and if so, abandon ship?
+        } else {
+            temp_search_string = input_string;
+        }
 
 		try {
-		    if (text_obj[input_string].use_Cite != true) {
-                if (temp_ignore_doi) {
-                    temp_search_string = remove_doi_from_string(input_string, inputDOI);
-                    // maybe check if it's an empty string and if so, abandon ship?
-                } else {
-                    temp_search_string = input_string;
-                }
+            const local_JSON = localStorage.getItem(input_string);  // get the JSON that I've stored locally on the browser (bc the user has searched it before)
 
-                const local_JSON = localStorage.getItem(input_string);  // check whether the input string is stored locally on the browser (bc the user has searched it before)
- 
-                if (local_JSON != null && local_JSON != '') {
-                    // if the string is stored locally, retrieve the JSON without checking the server
-//                     pagelog( 'using locals')
-//                     pagelog( local_JSON)
-                    var myJSONobj = JSON.parse(local_JSON);
-                let bibliography = myJSONobj.format ('bibliography', {
-                    format: 'html'
-                });
-                pagelog(bibliography)
-                } else if (inputDOI === "" || temp_ignore_doi == true) {
-                    // if we're not using a doi (either there isn't one or it's bad), search Crossref without a doi
-//                     console.log( 'no doi found, searching...')
-                    stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
-                    var myJSON = await $.getJSON(encodeURI(stringToSend)); // dfd this doesn't work with let (in place of var) but it should. figure that out later. 
-                    var myJSONobj = myJSON.message.items[0];
-                    localStorage.setItem(input_string, JSON.stringify(myJSONobj));
-                } else {
-//                     console.log( 'searching using a doi')
-                    stringToSend = 'https://api.crossref.org/works/'+inputDOI+'?mailto=nkornell@gmail.com';
-                    var myJSON = await $.getJSON(encodeURI(stringToSend)); // this doesn't work with let (in place of var) but it should. figure that out later.    
-                    var myJSONobj = myJSON.message;
-                    localStorage.setItem(input_string, JSON.stringify(myJSONobj));
-                }
-                // to find a book  
-                // stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&filter=type:book&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
-
-
-                if (typeof myJSONobj === 'undefined') { // if it's not in the database
-                    if (duplicate_input_text.indexOf(input_string) < 0) { // if it's not a duplicate
-                        // this happens when a doi is bad	
-                        text_obj[input_string].update_input('done');
-                        console.log( "** found a doi that's bad, trying again (yay, delete this line)");
-                    } else {
-                        console.log( "** 823 i didn't' think THIS HAPPENING WAS POSSIBLE");
-                    }
-                } else {
-                     // if a doi was found.... 
-                    text_obj[input_string].doi = myJSONobj.DOI;
-                    // if it finds a journal article in the database, it doesn't recursively call getOneURL (which will end up using Cite). 
-                    // Instead, it goes ahead and creates a reference obj that will figure out the apa format using my own code. 
-                    if (myJSONobj.type == "journal-article" || myJSONobj.type == "chapter" || myJSONobj.type == "book-chapter") {
-                        if (typeof reference_obj[myJSONobj.DOI] === 'undefined') { 
-                            // create new reference based on Crossref
-                            reference_obj[myJSONobj.DOI] = new Reference_object(input_string, myJSONobj, "");
-                        } else {
-                            // see notes for u38 
-                            // console.log( 'u37')
-                        }
-                        text_obj[input_string].doi = reference_obj[myJSONobj.DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
-                        text_obj[input_string].update_input('done');
-                    } else {
-                        // If it's not a common type, run this thing again but with the doi in the parameter, so Cite will work.
-                        text_obj[input_string].use_Cite = true;
-                        getOneURL(input_string);
-                        return;
-                    }
-                }
-// na police 664-4944 ext 1
-			} else { 
-			    // if we're using Cite
-			    console.log( 'using cite for '+inputDOI)
+            if (text_obj[input_string].use_Cite == true) {
+                // if we're using Cite because this function already called create reference, but it couldn't handle the json so it called this again
+//                 text_obj[input_string].use_Cite = false;
                 let myJSON = await Cite.async(inputDOI);
-                // dfd add in the cool thing with localStorage
-//                 pagelog (JSON.stringify(myJSON))
-//                 console.log( myJSON)
-                let bibliography = myJSON.format ('bibliography', {
+                bibliography = myJSON.format ('bibliography', {
                     format: 'html'
                 });
-//                 pagelog (bibliography)
-                store two keys, one for json and one for bibliography. then, above, make sure to search for both
-
-                if (typeof reference_obj[myJSON.data[0].DOI] === 'undefined') { 
-                    // create new reference based on Cite
-                    reference_obj[myJSON.data[0].DOI] = new Reference_object(input_string, myJSON.data[0], bibliography);
-                } else {
-	                // u37 and u38 are caused when two things happen. 
-	                //    1) It tried to combine two rows and decided not to because best combo was better without one of them
-	                //    2) Crossref returned the same doi for both. In other words, crossref say the best match for b is x, but this thinks a matches x better without b. 
-	                // It's not really an error. 
-                    // console.log( 'u38')
+                var myJSONobj = myJSON.data[0];
+                localStorage.setItem(input_string, JSON.stringify(myJSONobj));
+                localStorage.setItem(input_string+'\t'+'cite_bib', bibliography);
+            } else if (local_JSON != null && local_JSON != '') {
+                // if the JSON is in local storage, retrieve it (and the stored bibliography if possible) without having to talk to the server
+                var myJSONobj = JSON.parse(local_JSON);
+                bibliography = localStorage.getItem(input_string+'\t'+'cite_bib') // get the bibliography created by cite (if there is one)
+                if (bibliography == null) { // if there wasn't one, change the value to a blank string
+                    bibliography = '';
                 }
-                text_obj[input_string].doi = reference_obj[myJSON.data[0].DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
-                text_obj[input_string].update_input('done');
-			}
+            } else if (inputDOI === "" || temp_ignore_doi == true) {
+                // search Crossref without a doi (either there isn't one or it's bad)
+                stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
+                var myJSON = await $.getJSON(encodeURI(stringToSend)); // dfd this doesn't work with let (in place of var) but it should. figure that out later. 
+                var myJSONobj = myJSON.message.items[0];
+                localStorage.setItem(input_string, JSON.stringify(myJSONobj));
+            } else {
+                // search using a doi
+                stringToSend = 'https://api.crossref.org/works/'+inputDOI+'?mailto=nkornell@gmail.com';
+                var myJSON = await $.getJSON(encodeURI(stringToSend)); // this doesn't work with let (in place of var) but it should. figure that out later.    
+                var myJSONobj = myJSON.message;
+                localStorage.setItem(input_string, JSON.stringify(myJSONobj));
+            }
+            // here's a random note on how to find a book  
+            // stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&filter=type:book&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
+
+            if (typeof myJSONobj === 'undefined') { // if it's not in the database
+                if (duplicate_input_text.indexOf(input_string) < 0) { // if it's not a duplicate
+                    // this happens when a doi is bad	
+                    text_obj[input_string].update_input('done');
+                    console.log( "found a bad doi, trying again");
+                } else {
+                    console.log( "** error 823 i didn't' think this was POSSIBLE");
+                }
+                return;
+            }
+            
+            create_reference(input_string, myJSONobj, bibliography)
+            
 		}
 		catch(err) {
 			if (err.responseText == 'Resource not found.' || err == "Error: Server responded with status code 404") {
@@ -660,6 +623,78 @@ try {
 			}
 		}
 	}
+	
+
+    function create_reference(input_string, input_JSON, input_bibliography) {
+        text_obj[input_string].doi = input_JSON.DOI;
+
+        if (input_bibliography != '' || input_JSON.type == "journal-article" || input_JSON.type == "chapter" || input_JSON.type == "book-chapter") {
+            // if it has a bibliography (because it already ran through cite or one was stored locally) or is a type that my code will deal with
+            if (typeof reference_obj[input_JSON.DOI] === 'undefined') { 
+                // create new reference based on Crossref
+                reference_obj[input_JSON.DOI] = new Reference_object(input_string, input_JSON, input_bibliography);
+            } else {
+                // this isn't an error. It happens when
+                //    1) It tried to combine two rows and decided not to because best combo was better without one of them
+                //    2) Crossref returned the same doi for both. In other words, crossref say the best match for b is x, but this thinks a matches x better without b. 
+                console.log( 'u37')
+            }
+            text_obj[input_string].doi = reference_obj[input_JSON.DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
+            text_obj[input_string].update_input('done');
+        } else {
+            // since I can't handle it, get the URL again (using Cite this time) 
+            text_obj[input_string].use_Cite = true;
+            getOneURL(input_string);
+            return;
+        }
+    }
+    
+    
+//     function create_reference(input_string, input_JSON, input_bibliography) {
+//         text_obj[input_string].doi = input_JSON.DOI;
+//         // if it finds a journal article in the database, it doesn't recursively call getOneURL (which will end up using Cite). 
+//         // Instead, it goes ahead and creates a reference obj that will figure out the apa format using my own code. 
+// 
+//         if (input_bibliography != '') {
+//             // if it found a bibliography in local browser storage
+//             if (typeof reference_obj[input_JSON.DOI] === 'undefined') { 
+//                 // create new reference based on Crossref
+//                 reference_obj[input_JSON.DOI] = new Reference_object(input_string, input_JSON, input_bibliography);
+//             } else {
+//                 // see notes for u38 
+//                 // console.log( 'u36')
+//             }
+//             text_obj[input_string].doi = reference_obj[input_JSON.DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
+//             text_obj[input_string].update_input('done');
+//         } else if (input_JSON.type == "journal-article" || input_JSON.type == "chapter" || input_JSON.type == "book-chapter") {
+//             if (typeof reference_obj[input_JSON.DOI] === 'undefined') { 
+//                 // create new reference based on Crossref
+//                 reference_obj[input_JSON.DOI] = new Reference_object(input_string, input_JSON, "");
+//             } else {
+//                 // see notes for u38 
+//                 // console.log( 'u37')
+//             }
+//             text_obj[input_string].doi = reference_obj[input_JSON.DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
+//             text_obj[input_string].update_input('done');
+// 
+// if (typeof reference_obj[input_JSON.DOI] === 'undefined') { 
+//     // create new reference based on Cite
+//     reference_obj[input_JSON.DOI] = new Reference_object(input_string, input_JSON, input_bibliography);
+// } else {
+//     // u36 - u38 are caused when two things happen. 
+//     // console.log( 'u38')
+// }
+// text_obj[input_string].doi = reference_obj[input_JSON.DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
+// text_obj[input_string].update_input('done');
+// 
+// 
+//         } else {
+//             // If it's not a common type, run this thing again but with the doi in the parameter, so Cite will work.
+//             text_obj[input_string].use_Cite = true;
+//             getOneURL(input_string);
+//             return;
+//         }
+//     }
 
 	async function get_author(input_string) {
 	    var i = 0, j = 0;
@@ -670,7 +705,7 @@ try {
         var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&query.author='+input_string.replaceAll(' ', '+');
         console.log( stringToSend)
         var myJSON = await $.getJSON(encodeURI(stringToSend));
-        // dfd add in the cool thing with localStorage (? maybe not because author info can change)
+
         console.log( 'author='+input_string)
         
         for (i = 0; i < 20; i++) {
@@ -1473,7 +1508,7 @@ try {
 		console.log( '')
 		console.log( '---------start----------')
 		
-		// dfdd
+		// dfd
 // 		get_author('nate kornell')
 
 		document.getElementById("outputText").innerHTML = "";
@@ -1627,6 +1662,7 @@ project.org/package=metaBMA.
 <p id="outputText"></p>
 
 <p><button onclick="start()">run</button>
+<p><button onclick="localStorage.clear()">clear local storage</button>
 <!-- 
 <button onclick="update_progress()">update_progress</button>
 <button onclick="check_table_for_combinations()">check_table_for_combinations</button>
