@@ -1,10 +1,5 @@
 <!-- 
 To do: 
-
-- make it use https://www.w3schools.com/js/js_api_web_storage.asp
--   maybe make it so that it stores both what the user typed and the doi. what the user typed 
--   could return the doi, which could store the json. this way even if the user typed something 
--   weird, as long as the doi is in the user input it won't have to go to the server. Probably not worth it. 
 - handle network errors (start by testing with wifi turned off)
 - find second-order authors
 - make it deal with chapters and stuff well
@@ -263,7 +258,6 @@ Basic procedure:
                     }
                 } else {
                     // it wasn't found
-    // 				console.log( 'no obj: '+this.doi)
                     this.match_status = 'unknown';
                     temp_ref_to_show = '';
                     if (this.search_status == 'done') {
@@ -518,15 +512,15 @@ Basic procedure:
 	
 	
 	async function getOneURL(input_string) {	
+    // If this input string is stored locally, this doesn't have to go to make an api call/go to a server
+    //      It returns a doi and JSON (and sometimes an apa reference, which is called bibliography) 
     // If this line has a doi in it, this queries the Crossref database. 
     //      It returns a doi and JSON
     // If this line does not have a doi, this queries Crossref. 
     //      It returns a doi and JSON.
-    // Once it has the doi and JSON,
-    //      If it's a type I've planned for (e.g., journal-article), my code parses it.
-    //      If it's an unfamiliar type, this recursively calls itself, and then queries Cite. 
+    // Once it has the doi and JSON, it calls create reference
 
-	// This is wasteful because it means going to a server to find JSON that's already 
+	// This is wasteful because when it calls Cite it means going to a server to find JSON that's already 
 	// been found, but I need the JSON in the format Cite uses, which is called Citation 
 	// Style Language (CSL). And I couldn't figure out any other way. 
 
@@ -535,11 +529,17 @@ Basic procedure:
     // rows that have dois before starting on the ones that don't. 
 
         var temp_ignore_doi = false;
-        var temp_search_string = '';
-        var bibliography = '';
-		var stringToSend = '';
-		var inputDOI = text_obj[input_string].doi;
+        var bibliography = '', stringToSend = '', temp_search_string = '';
+		let myJSON, myJSONobj;
+		const inputDOI = text_obj[input_string].doi;
         
+        // get the JSON that I've stored locally on the browser (bc the user has searched it before)
+        if (inputDOI === "" || temp_ignore_doi == true) {
+            local_JSON = localStorage.getItem(input_string); // if there isn't a good doi, look for the whole search string
+        } else {
+            local_JSON = localStorage.getItem(inputDOI); // if there is a good doi, look for the doi
+        }
+
         if (text_obj[input_string].search_status == "not started") {
        		text_obj[input_string].update_input('searching');
         } else if (text_obj[input_string].search_status == 'incorrect doi entered; searching again') {
@@ -547,45 +547,45 @@ Basic procedure:
             temp_ignore_doi = true;
         }
 
-        if (temp_ignore_doi) {
-            temp_search_string = remove_doi_from_string(input_string, inputDOI);
-            // maybe check if it's an empty string and if so, abandon ship?
-        } else {
-            temp_search_string = input_string;
-        }
-
 		try {
-            const local_JSON = localStorage.getItem(input_string);  // get the JSON that I've stored locally on the browser (bc the user has searched it before)
-
             if (text_obj[input_string].use_Cite == true) {
                 // if we're using Cite because this function already called create reference, but it couldn't handle the json so it called this again
 //                 text_obj[input_string].use_Cite = false;
-                let myJSON = await Cite.async(inputDOI);
+                myJSON = await Cite.async(inputDOI);
                 bibliography = myJSON.format ('bibliography', {
                     format: 'html'
                 });
-                var myJSONobj = myJSON.data[0];
-                localStorage.setItem(input_string, JSON.stringify(myJSONobj));
-                localStorage.setItem(input_string+'\t'+'cite_bib', bibliography);
+                myJSONobj = myJSON.data[0];
+                localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // if using cite, encode in local storage using the search string as the key
+                localStorage.setItem(input_string+'\t'+'cite_bib', bibliography); // and also store the bibliography
             } else if (local_JSON != null && local_JSON != '') {
                 // if the JSON is in local storage, retrieve it (and the stored bibliography if possible) without having to talk to the server
-                var myJSONobj = JSON.parse(local_JSON);
+                myJSONobj = JSON.parse(local_JSON);
                 bibliography = localStorage.getItem(input_string+'\t'+'cite_bib') // get the bibliography created by cite (if there is one)
                 if (bibliography == null) { // if there wasn't one, change the value to a blank string
                     bibliography = '';
                 }
             } else if (inputDOI === "" || temp_ignore_doi == true) {
                 // search Crossref without a doi (either there isn't one or it's bad)
+                if (temp_ignore_doi) {
+                    temp_search_string = remove_doi_from_string(input_string, inputDOI);
+                    // maybe check if it's an empty string and if so, abandon ship?
+                } else {
+                    temp_search_string = input_string;
+                }
                 stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
-                var myJSON = await $.getJSON(encodeURI(stringToSend)); // dfd this doesn't work with let (in place of var) but it should. figure that out later. 
-                var myJSONobj = myJSON.message.items[0];
+                myJSON = await $.getJSON(encodeURI(stringToSend));
+                myJSONobj = myJSON.message.items[0];
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj));
+                if (inputDOI != '') {
+                    localStorage.setItem(inputDOI, JSON.stringify(myJSONobj)); // store the incorrect doi with the correct information. this way if they enter it again it'll get found                            
+                }
             } else {
                 // search using a doi
                 stringToSend = 'https://api.crossref.org/works/'+inputDOI+'?mailto=nkornell@gmail.com';
-                var myJSON = await $.getJSON(encodeURI(stringToSend)); // this doesn't work with let (in place of var) but it should. figure that out later.    
-                var myJSONobj = myJSON.message;
-                localStorage.setItem(input_string, JSON.stringify(myJSONobj));
+                myJSON = await $.getJSON(encodeURI(stringToSend)); // if there's no doi in the user input, encode in local storage using the search string as the key
+                myJSONobj = myJSON.message;
+                localStorage.setItem(inputDOI, JSON.stringify(myJSONobj)); // if there's a doi, encode in local storage using the doi as the key
             }
             // here's a random note on how to find a book  
             // stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&filter=type:book&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
@@ -600,7 +600,7 @@ Basic procedure:
                 }
                 return;
             }
-            
+
             create_reference(input_string, myJSONobj, bibliography)
             
 		}
@@ -626,13 +626,15 @@ Basic procedure:
 	
 
     function create_reference(input_string, input_JSON, input_bibliography) {
+        // If it's already got a bibliography entry, or if it's a type I've planned for and my code parses it, create a reference obj.
+        // If it's an unfamiliar type, this (recursively-ish) calls get one URL, and has it querry Cite. 
+
         text_obj[input_string].doi = input_JSON.DOI;
 
         if (input_bibliography != '' || input_JSON.type == "journal-article" || input_JSON.type == "chapter" || input_JSON.type == "book-chapter") {
-            // if it has a bibliography (because it already ran through cite or one was stored locally) or is a type that my code will deal with
+            // if it has a bibliography (because it just got one from cite or one was stored locally) or is a type that my code will deal with
             if (typeof reference_obj[input_JSON.DOI] === 'undefined') { 
-                // create new reference based on Crossref
-                reference_obj[input_JSON.DOI] = new Reference_object(input_string, input_JSON, input_bibliography);
+                reference_obj[input_JSON.DOI] = new Reference_object(input_string, input_JSON, input_bibliography); 
             } else {
                 // this isn't an error. It happens when
                 //    1) It tried to combine two rows and decided not to because best combo was better without one of them
@@ -1313,6 +1315,7 @@ Basic procedure:
 	
 	function parse_user_input() {
 		var inputText = document.getElementById("myText").value;
+		localStorage.setItem('nates_previous_input',inputText)
 		// below, not taking out the ampersand causes errors. so I take it out even though it does change the input in a meaningful way. If you want to make things 100% perfect, leave it in the input but do not send it to the server.
 		// also, I took out the question mark (it used to be /[&\\#$~%'"*?{}]/g) but that seems to work just fine.
 		inputText = inputText.replace(/[&\\#$~%'"*{}]/g, ''); // remove illegal characters. 
@@ -1495,7 +1498,10 @@ Basic procedure:
 		x.style.display = "flex";
 	}
 	
-    
+    function run_previous() {
+        document.getElementById("myText").value = localStorage.getItem('nates_previous_input')
+        start();
+    }
 
 	function start() {
 		reference_obj = [];
@@ -1662,15 +1668,15 @@ project.org/package=metaBMA.
 <p id="outputText"></p>
 
 <p><button onclick="start()">run</button>
+<p><button onclick="run_previous()">run previous</button>
 <p><button onclick="localStorage.clear()">clear local storage</button>
+
 <!-- 
 <button onclick="update_progress()">update_progress</button>
 <button onclick="check_table_for_combinations()">check_table_for_combinations</button>
 <button onclick="remove_duplicate_references()">remove_duplicate_references</button>
 <button onclick="finish()">finish</button>
  -->
-
-
 
 <div class='bigBox' id='progressBox' style="display: none;">
 	<div class='boxAroundTable' style="min-width: 300px">
