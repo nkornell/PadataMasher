@@ -16,8 +16,6 @@ To do:
 - same here, except here, maybe the user was right. it's not showing the subtitle
 	Zhang, Y., Pan, Z., Li, K., & Guo, Y. (2018). Self-serving bias in memories: Selectively forgetting the connection between negative information and the self. Experimental Psychology, 65, 236–244. http://dx.doi.org/10.1027/1618-3169/a000409	
 
-- If you ask it to do too many rows, it barfs after doing some of the doi rows. Does it still do this? handling things without cite (hopefully) fixed it?
-
 - Add google analytics tags so i can see if it gets used. 
 - It would speed things up to not wait for all of the lines to come in before trying to combine. Maybe if an obj is correct it should try to combine right away?
 - With two non-user-doi rows, it's possible that neither doi it finds is right. In this case, maybe it could find the right doi if they were combined and then sent to the server, but as of now the program doesn't check the database for the combo. 
@@ -1498,9 +1496,17 @@ Basic procedure:
 		x.style.display = "flex";
 	}
 	
-    function run_previous() {
+    function show_previous_user_input() {
         document.getElementById("myText").value = localStorage.getItem('nates_previous_input')
-        start();
+    }
+    
+    function reset_user_input() {
+        console.log( 'reseting;')
+        
+        var foof = "https://doi.org/10.1037/0000157-002" + "\r\n\r\n"
+        foof += "https://doi.org/10.1093/oxfordhb/9780199336746.013.4" + "\r\n\r\n"
+        foof += "https://doi.org/10.1037/xlm0000246" + "\r\n\r\n"
+        document.getElementById("myText").value = foof;
     }
 
 	function start() {
@@ -1610,7 +1616,7 @@ Basic procedure:
 </head>
 
 
-<body>
+<body onload='show_previous_user_input()'>
 
 	<!--  navigation menu -->
 <!-- 
@@ -1625,12 +1631,8 @@ Basic procedure:
  -->
 
 <textarea id="myText" name="inputTextArea" rows="20" cols="80">
-https://doi.org/10.1037/0000157-002
-
-https://doi.org/10.1093/oxfordhb/9780199336746.013.4
-
-
 </textarea>
+
 <!-- 
 Finley, J. R., Tullis, J. G., Benjamin, A. S. (2010). Metacognitive control of learning and remembering. In M. S. Knine I. M. Saleh (Eds.), New Science of Learning (pp. 109– 131). New York, NY: Springer. https://doi.org/10.1007/978-1-4419-5716-0_6	
 
@@ -1668,8 +1670,8 @@ project.org/package=metaBMA.
 <p id="outputText"></p>
 
 <p><button onclick="start()">run</button>
-<p><button onclick="run_previous()">run previous</button>
 <p><button onclick="localStorage.clear()">clear local storage</button>
+<p><button onclick="reset_user_input()">reset user input</button>
 
 <!-- 
 <button onclick="update_progress()">update_progress</button>
