@@ -1,24 +1,46 @@
 <!-- 
 To do: 
 - handle network errors (start by testing with wifi turned off)
-- find second-order authors
-- make it deal with chapters and stuff well
-- when it formats json, have it return notes about what it got wrong (and maybe even fix the errors?? like if eds are missing, use the user input to insert them?)
--      do this by having it return an object, and have the object include, like, .apa (so the user could type something like, returnthing(x).apa)
-- have it figure out specifically which strings/characters are different between the user input and the doi info, and highlight them (maybe copy bbedit style)?
-- if a string is too short, should it automatically be combined with the previous row??
 
-- this returns a crazy reference that's way too long. It returns fragment but it should probably return wrong. 
+- when it formats json, have it return notes about what it got wrong 
+-   And maybe even fix the errors?? like if eds are missing, use the user input to insert them?
+-   do this by having it return an object, and have the object include, like, .apa (so the user could type something like, returnthing(x).apa)
+-   have it figure out specifically which strings/characters are different between the user input and the doi info, and highlight them (maybe copy bbedit style)?
+
+- if a string is too short, try to combine it with the previous row??
+-   figure out median length of input
+-   figure out whether there's line breaks (are there a lot of lines about the same length and then about 25% that are shorter but few that are longer?)
+-   A string can be...
+-       shorter than median, which means it should be combined with the line above probably 
+-       median, which means it should be combined with rows above or below probably 
+-       longer than median, which means... not sure what, maybe nothing? if it's before I've srtarted combining, it might mean it's good?
+
+- this returns a crazy reference that's way too long. It returns fragment but it should probably return wrong. So maybe part of the right/wrong score should be
+- based on total length? (Is it already?)
 - Learning and Motivation: Advances in Research and Theory, vol. 54, ed. BH Ross, pp. 103–40. San Diego, CA: Elsevier
 
-- this returns wrong. what it means is, the user was wrong. that's different than thinking the answer its giving is wrong. 
+- find second-order authors
+
+- this returns wrong. what it means is, the user was wrong. that's different than thinking the answer it's giving is wrong. 
+- make the program differentiate between 'my answer is wrong' and 'your input was wrong'
 	Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. go to the store and buy a carpet, buy a floor https://doi.org/10.1037/xlm0000246
 - same here, except here, maybe the user was right. it's not showing the subtitle
 	Zhang, Y., Pan, Z., Li, K., & Guo, Y. (2018). Self-serving bias in memories: Selectively forgetting the connection between negative information and the self. Experimental Psychology, 65, 236–244. http://dx.doi.org/10.1027/1618-3169/a000409	
 
 - Add google analytics tags so i can see if it gets used. 
+
 - It would speed things up to not wait for all of the lines to come in before trying to combine. Maybe if an obj is correct it should try to combine right away?
-- With two non-user-doi rows, it's possible that neither doi it finds is right. In this case, maybe it could find the right doi if they were combined and then sent to the server, but as of now the program doesn't check the database for the combo. 
+
+Find second-order authors
+- if possible, maybe find all co-authors by checking the database. (i.e.,, is there a way to ask for coauthors using crossref? or maybe orcid or something? 
+- this tells you the papers cited by this paper. Looking at them would make it easy to get second-order citation information although that would be a lot of doi calls 
+    this could be useful in two ways. first, to figure out co-authors if 2 fails. Second, to figure out who's getting cited in this area of research. 
+
+- maybe download the whole doi database and do the searching locally. 
+
+- With two non-user-doi rows, it's possible that neither doi it finds is right. In this case, maybe it could find the right doi if they were combined and then sent
+- to the server, but as of now the program doesn't check the database for the combo. 
+
 - Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
 
 
@@ -499,16 +521,9 @@ Basic procedure:
                 getOneURL(row_queue[i]); 
             }
 		}
-	}
+	}	
 
-                // dfd
-    // 					2. if possible, maybe find all co-authors by checking the database. (i.e.,, is there a way to ask for coauthors using crossref? or maybe orcid or something? 
-    // 					3. this tells you the papers cited by this paper. Looking at them would make it easy to get second-order citation information although that would be a lot of doi calls 
-    // 					    this could be useful in two ways. first, to figure out co-authors if 2 fails. Second, to figure out who's getting cited in this area of research. 
-    //                  4. maybe download the whole doi database and do the searching locally. 
-	
-	
-	
+
 	async function getOneURL(input_string) {	
     // If this input string is stored locally, this doesn't have to go to make an api call/go to a server
     //      It returns a doi and JSON (and sometimes an apa reference, which is called bibliography) 
@@ -548,7 +563,6 @@ Basic procedure:
 		try {
             if (text_obj[input_string].use_Cite == true) {
                 // if we're using Cite because this function already called create reference, but it couldn't handle the json so it called this again
-//                 text_obj[input_string].use_Cite = false;
                 myJSON = await Cite.async(inputDOI);
                 bibliography = myJSON.format ('bibliography', {
                     format: 'html'
@@ -556,6 +570,9 @@ Basic procedure:
                 myJSONobj = myJSON.data[0];
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // if using cite, encode in local storage using the search string as the key
                 localStorage.setItem(input_string+'\t'+'cite_bib', bibliography); // and also store the bibliography
+//                 console.log( 'bib')
+//                 console.log( bibliography)
+
             } else if (local_JSON != null && local_JSON != '') {
                 // if the JSON is in local storage, retrieve it (and the stored bibliography if possible) without having to talk to the server
                 myJSONobj = JSON.parse(local_JSON);
@@ -645,58 +662,32 @@ Basic procedure:
             // since I can't handle it, get the URL again (using Cite this time) 
             text_obj[input_string].use_Cite = true;
             getOneURL(input_string);
+//       		weirdthing(input_string);
             return;
         }
     }
-    
-    
-//     function create_reference(input_string, input_JSON, input_bibliography) {
-//         text_obj[input_string].doi = input_JSON.DOI;
-//         // if it finds a journal article in the database, it doesn't recursively call getOneURL (which will end up using Cite). 
-//         // Instead, it goes ahead and creates a reference obj that will figure out the apa format using my own code. 
-// 
-//         if (input_bibliography != '') {
-//             // if it found a bibliography in local browser storage
-//             if (typeof reference_obj[input_JSON.DOI] === 'undefined') { 
-//                 // create new reference based on Crossref
-//                 reference_obj[input_JSON.DOI] = new Reference_object(input_string, input_JSON, input_bibliography);
-//             } else {
-//                 // see notes for u38 
-//                 // console.log( 'u36')
-//             }
-//             text_obj[input_string].doi = reference_obj[input_JSON.DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
-//             text_obj[input_string].update_input('done');
-//         } else if (input_JSON.type == "journal-article" || input_JSON.type == "chapter" || input_JSON.type == "book-chapter") {
-//             if (typeof reference_obj[input_JSON.DOI] === 'undefined') { 
-//                 // create new reference based on Crossref
-//                 reference_obj[input_JSON.DOI] = new Reference_object(input_string, input_JSON, "");
-//             } else {
-//                 // see notes for u38 
-//                 // console.log( 'u37')
-//             }
-//             text_obj[input_string].doi = reference_obj[input_JSON.DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
-//             text_obj[input_string].update_input('done');
-// 
-// if (typeof reference_obj[input_JSON.DOI] === 'undefined') { 
-//     // create new reference based on Cite
-//     reference_obj[input_JSON.DOI] = new Reference_object(input_string, input_JSON, input_bibliography);
-// } else {
-//     // u36 - u38 are caused when two things happen. 
-//     // console.log( 'u38')
-// }
-// text_obj[input_string].doi = reference_obj[input_JSON.DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
-// text_obj[input_string].update_input('done');
-// 
-// 
-//         } else {
-//             // If it's not a common type, run this thing again but with the doi in the parameter, so Cite will work.
-//             text_obj[input_string].use_Cite = true;
-//             getOneURL(input_string);
-//             return;
-//         }
-//     }
+
+	async function weirdthing(input_url) {
+        // This gets a reference in apa format from Crossref. (I think it's from Crossref?) 
+        // So it kinda does what Cite does. They seem to be about the same speed. 
+        // But this doesn't return formatted text (e.g., italics), which I confirmed in email
+        // with Crossref, so I'm sticking with Cite. 
+        var xy = await $.ajax({
+            headers: { 
+        //         Accept : "application/vnd.citationstyles.csl+json" // this returns json
+                Accept : "text/bibliography; style=apa"
+            },
+            type: "GET",
+            mailto: 'nkornell@gmail.com',
+            url: input_url, // e.g., https://doi.org/10.1093/oxfordhb/9780199336746.013.8
+        })
+        console.log( input_url)
+        console.log(xy)
+    }
 
 	async function get_author(input_string) {
+    	// dfd this function isn't done. but the idea was to get authors from the database. 
+
 	    var i = 0, j = 0;
 	    var temp_name = '';
 	    var temp_name_array = [];
@@ -716,7 +707,7 @@ Basic procedure:
 //                 console.log(temp_obj.author[j]);
                 temp_name = temp_obj.author[j].given + ' ' + temp_obj.author[j].family;
                 temp_name_array.push(temp_name)
-//                dfd use parse json for authors
+    	    // dfd once you have the author json, use parse json for authors
             }
         }
         console.log(temp_name_array)
@@ -724,7 +715,7 @@ Basic procedure:
 
 	
 	function remove_duplicate_references() {
-        // dfd could this whole function be merged with remove duplicate rows?
+        // could this whole function be merged with remove duplicate rows?
         var i = 0;
         var foof = 0;
         var temp_doi = '';
@@ -1668,6 +1659,7 @@ project.org/package=metaBMA.
  -->
 
 <p id="outputText"></p>
+<!-- <pre id="result">To see the code in action, visit JSFiddle</pre> -->
 
 <p><button onclick="start()">run</button>
 <p><button onclick="localStorage.clear()">clear local storage</button>
