@@ -15,8 +15,8 @@ To do:
 -       median, which means it should be combined with rows above or below probably 
 -       longer than median, which means... it could mean multiple things. maybe it's a duplicate. maybe it's a full reference. but if it's about 2x (or 3x etc) the 
             median, it could be that a line break got missed.  
--   A string probably isn't the start of a reference (and should be combined with what's above it)
--      look for rows that don't start with a capital letter (or maybe have a capital in the first 4 characters without a space, for vanDerGroot or whatever)
+-   A string probably isn't the start of a reference (and should be combined with what's above it) if...
+-       it doesn't start with a capital letter (or maybe have a capital in the first 4 characters without a space, for vanDerGroot or whatever)
 -       this includes rows that don't start with a letter. 
 -       by the way, at some point worry about line numbers. like, find them and remove them.
 -       I could try to characterize the typical last character of rows. Like, is it usually a number? usually a period? and then if something deviates, 
@@ -184,6 +184,7 @@ Basic procedure:
 	
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script> <!-- this is to use citation-js -->
+    <script src="functions_stats.js"></script>
 <!-- 	<script src="https://cdn.jsdelivr.net/npm/string-similarity"></script> -->
 <!-- 	<script src="https://cdn.jsdelivr.net/npm/string-algorithms"></script> -->
 <!-- <script src="https://cdn.jsdelivr.net/npm/string-similarity@4/package.json"></script> -->
@@ -224,7 +225,10 @@ Basic procedure:
 		this.letter_match = 0;
 		this.letter_match_percentage = 0;
 		this.use_Cite = false;
-        
+		this.weird_first_letters = false;
+		
+
+
         this.table_row_number = function() {
             return document.getElementById(this.user_input).rowIndex;
         }
@@ -248,6 +252,30 @@ Basic procedure:
 		    // if the user-entered doi was incorrect, change doi type
             if (input_search_status == 'incorrect doi entered; searching again') {
                 this.doi_type = 'not_found_yet';
+            }
+            
+            // dfd do something with this?!?!
+            // const regex pattern("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[-+_!@#$%^&*.,?]).+$");
+            // if a row doesn't have an uppercase letter near the start, mark it as weird
+            this.weird_first_letters = false;
+            var flim = this.user_input.slice(0,4) // first four letters of the string
+            
+            // if there are no uppercase letters in the string and it's not http
+            const pattern_uppercase = new RegExp("^(?=.*[A-Z]).+$"); // uppercase letters
+            if (pattern_uppercase.test(flim) == false) {
+                if (flim.toLowerCase() != 'http') {
+                    this.weird_first_letters = true;
+                }
+            }
+            
+             // if there are non-letters in the string
+            const pattern_non_letters = new RegExp("^(?=.*[-+_!@ #$%^&*.,?]).+$"); // non-letters (including space character)
+            if (pattern_non_letters.test(flim)) {
+                this.weird_first_letters = true;
+            }
+
+            if (this.weird_first_letters) {
+                console.log('weird_first_letters: '+flim)
             }
 
             try {
@@ -280,6 +308,9 @@ Basic procedure:
                         temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
                         temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
                         temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
+                        if (this.weird_first_letters) {
+                            temp_stringToShow += '<div>weird first letters</div>'
+                        }
                         this.notes = temp_stringToShow;
                     } else {
                         this.notes = '';
@@ -453,7 +484,7 @@ Basic procedure:
                 }
                 out += '. https://doi.org/' + input_json.DOI;
                 if (out.indexOf('undefined') > -1) {
-                    console.log( 'Found in output: undefined')
+                    console.log( 'Undefined found in output for '+out)
                 }
             } else if (input_json.type == 'chapter' || input_json.type == 'book-chapter') {
                 out += all_author 
@@ -1318,16 +1349,51 @@ Basic procedure:
 		inputText = inputText.replace(/[&\\#$~%'"*{}]/g, ''); // remove illegal characters. 
 		inputText = inputText.replaceAll("- ","-"); 
 		
-		var urlSuffix = inputText.split(/\r\n|\r|\n/g);
 		var tempDOIArray = [];
 		var tempDOItype = "";
         var tempDOI = '';
         var tempDOIsFoundSoFar = [];
+		var urlSuffix = inputText.split(/\r\n|\r|\n/g);
         
-		// get rid of rows with too few characters
-		for (i = urlSuffix.length - 1; i >= 0; i--) { 
+		for (i = urlSuffix.length - 1; i >= 0; i--) {
 			urlSuffix[i] = urlSuffix[i].trim();
-			if (urlSuffix[i].length < 5) {
+        
+			if (urlSuffix[i].length < 1) {
+			    // if it's a blank row, get rid of it
+                urlSuffix.splice(i, 1);
+            }
+        }
+        
+        // compute median string length
+        const strLenArray = urlSuffix.map(myFunction);
+        function myFunction(input_string) {
+            const x = input_string.trim();
+            return input_string.length;
+        }
+        const median_string_length = Median(strLenArray)
+        console.log('Median='+median_string_length)
+        
+//             const pattern_non_letters = new RegExp("^(?=.*[-+_!@ #$%^&*.,?]).+$"); // non-letters (including space character)
+//             if (pattern_non_letters.test(flim)) {
+//                 this.weird_first_letters = true;
+//             }
+dfdd
+        
+		// combine rows if they're too, short or end with -
+        // dfd: right now, if's combining based on median. but that's only good if there re line breaks. so first, check if there are
+		const min_length = median_string_length/2;
+		for (i = urlSuffix.length - 1; i >= 0; i--) {
+			// dfd         
+        
+			if (urlSuffix[i].length < min_length) {
+        		// if a row has too few characters, combine it with the previous row
+			    if (i > 0) { // if it's not the first row (bc there's no previous row)
+                    urlSuffix[i-1] = urlSuffix[i-1] + urlSuffix[i];
+                    urlSuffix.splice(i, 1);
+                }
+			} else if (urlSuffix[i].charAt(urlSuffix[i].length-1) == '-') {
+        		// if it ends with - combine it with the following row.
+			    urlSuffix[i+1] = urlSuffix[i] + urlSuffix[i+1];
 				urlSuffix.splice(i, 1);
 			}
 		}
