@@ -12,7 +12,6 @@ https://doi.org/10.1016/S0749-596X(02)00537-5
 - when it formats json, have it return notes about what it got wrong 
 -   And maybe even fix the errors?? like if eds are missing, use the user input to insert them?
 -   do this by having it return an object, and have the object include, like, .apa (so the user could type something like, returnthing(x).apa)
--   have it figure out specifically which strings/characters are different between the user input and the doi info, and highlight them (maybe copy bbedit style)?
 
 - look at strings more
 -   figure out median length of input
@@ -192,21 +191,10 @@ Basic procedure:
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script> <!-- this is to use citation-js -->
     <script src="functions_stats.js"></script>
-<!--     <script src="functions_string_diff.js"></script> -->
     <script src="functions_tables.js"></script>
-    <script src="diff.js"></script>
-
-<!-- <script src="../jsdiff/runtime.js"></script> -->
-<!-- <script src="../jsdiff/"></script> -->
-<!-- 
-<script src="https://cdn.jsdelivr.net/npm/string-similarity"></script>
-<script src="https://unpkg.com/string-similarity/umd/string-similarity.min.js"></script>
- -->
+    <script src="diff_match_patch_uncompressed.js"></script> <!-- this is to use a script that I copied into my folder, for highlighting differences between strings -->
 
 <script>
-// 	var diff = JsDiff["Char"](a.textContent, b.textContent);
-
-
 	var author_obj = [];
 	var reference_obj = [];
 	var text_obj = []
@@ -220,13 +208,13 @@ Basic procedure:
     cc['wrong'] = 'red';
     var good_match_threshold = 80;
     var current_mode = '';
+	let Cite = require('citation-js');
+    let dmp = new diff_match_patch();
 
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
 // 	var doi_pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
 // 	var doi_pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
 
-	let Cite = require('citation-js');
-//     var diff = require("diff");
     
 	function Text_object(input_userInput, input_doi, input_doi_type, input_ord) { 
 		this.user_input = input_userInput;
@@ -360,10 +348,13 @@ Basic procedure:
             	
             try { 
                 // update html
-                document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
-                document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show;
-//                 this.notes = diffString(this.user_input, temp_ref_to_show.replace(/(<([^>]+)>)/gi, "")) //dfdd
+                var d = dmp.diff_main(this.user_input, temp_ref_to_show.replace(/(<([^>]+)>)/gi, "").trim(), false); //dfdd there are two optional parameters, 
+                document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true); 
+                document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false);
                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
+//                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
+//                 document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show;
+//                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
             } catch(err) {
                 console.log( '<---------')
     		    console.log('*error in update input, for: ');
@@ -443,7 +434,7 @@ Basic procedure:
                         if (a == 0) {
                             all_author = name_apa;
                         } else if (a == input_json.author.length - 1) {
-                            all_author += ' & ' + name_apa;
+                            all_author += ', & ' + name_apa;
                         } else {
                             all_author += ', ' + name_apa;
                         }
@@ -1703,79 +1694,10 @@ Basic procedure:
 	
 </script>
 
-
-
-
-
-
-<!-- 
-<script src="../diff-match-patch/javascript/diff_match_patch_uncompressed.js"></script>
- -->
-<script src="diff_match_patch_uncompressed.js"></script>
-<script>
-
-function launch() {
-  var text1 = "Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. https://doi.org/10.1037/xlm0000246";
-  var text2 = 'Besken, M. (2016). Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42(9), 1417-1433. https://doi.org/10.1037/xlm0000246	';
-
-  var dmp = new diff_match_patch();
-  var d = dmp.diff_main(text1, text2, false);
-  var ds = dmp.diff_prettyHtml(d);
-pagelog (ds);
-console.log( ds)
-console.log( d)
-}
-</script>
-
-
-
-
-
-
-
 </head>
 
 
 <body onload='show_previous_user_input()'>
-
-
-
-
-
-<!-- 
-
-<div id="settings">
-	<h1>Diff</h1>
-	<label><input type="radio" name="diff_type" value="diffChars" checked> Chars</label>
-	<label><input type="radio" name="diff_type" value="diffWords"> Words</label>
-	<label><input type="radio" name="diff_type" value="diffLines"> Lines</label>
-</div>
-
-<table>
-	<tr>
-		<td contenteditable="true" id="a">restaurant</td>
-		<td contenteditable="true" id="b">aura</td>
-		<td><pre id="result"></pre></td>
-	</tr>
-</table>
-<p><button onclick="changed()">changed</button>
- -->
-
-
-
-
-
-	<!--  navigation menu -->
-<!-- 
-	<nav>
-		<ul>
-			<li><a href="index.html"><div class="navMenuItem"><img src="images/pm.png" > Masher Home</div></a></li>
-			<li><a href="index_CombineAndClean.html"><div class="navMenuItem"><img src="images/cac.png"> Combine Datafiles</div></a></li>
-			<li><a href="index_StatBuddy.html"><div class="navMenuItem"><img src="images/ptp.png"> StatBuddy</div></a></li>
-			<li style="float:right"><a href="index_About.html"><div class="navMenuItem">About</div></a></li>
-		</ul>
-	</nav>
- -->
 
 <textarea id="myText" name="inputTextArea" rows="20" style='width:100%'></textarea>
 
@@ -1816,10 +1738,9 @@ project.org/package=metaBMA.
 <p id="outputText"></p>
 <!-- <pre id="result">To see the code in action, visit JSFiddle</pre> -->
 
-<p><button onclick="start()">run</button>
-<p><button onclick="launch()">launch</button>
-<p><button onclick="localStorage.clear()">clear local storage</button>
-<p><button onclick="reset_user_input()">reset user input</button>
+<p><button onclick="start()">run</button> 
+<button onclick="localStorage.clear()">clear local storage</button> 
+<button onclick="reset_user_input()">reset user input</button>
 
 <!-- 
 <button onclick="update_progress()">update_progress</button>

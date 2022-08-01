@@ -1252,7 +1252,8 @@ diff_match_patch.prototype.diff_xIndex = function(diffs, loc) {
  * @param {!Array.<!diff_match_patch.Diff>} diffs Array of diff tuples.
  * @return {string} HTML representation.
  */
-diff_match_patch.prototype.diff_prettyHtml = function(diffs) {
+diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
+// the last two parameters determine whether the insertions and deletions are shown, respectively.
   var html = [];
   var pattern_amp = /&/g;
   var pattern_lt = /</g;
@@ -1265,10 +1266,14 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs) {
         .replace(pattern_gt, '&gt;').replace(pattern_para, '&para;<br>');
     switch (op) {
       case DIFF_INSERT:
+      if (showIns) {
         html[x] = '<ins>' + text + '</ins>';
+        }
         break;
       case DIFF_DELETE:
+      if (showDel) {
         html[x] = '<del>' + text + '</del>';
+        }
         break;
       case DIFF_EQUAL:
         html[x] = '<span>' + text + '</span>';
