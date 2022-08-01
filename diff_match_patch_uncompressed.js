@@ -1,6 +1,6 @@
 // Nate got this from https://github.com/google/diff-match-patch
-// I changed the appearance of the <ins> and <del> tags in diff_match_patch.prototype.diff_prettyHtml
-// (by taking out the formatting that used to be here) but that's it. 
+// I changed stuff in diff_match_patch.prototype.diff_prettyHtml
+// but that's all. 
 
 /**
  * Diff Match and Patch
@@ -1254,33 +1254,37 @@ diff_match_patch.prototype.diff_xIndex = function(diffs, loc) {
  */
 diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 // the last two parameters determine whether the insertions and deletions are shown, respectively.
-  var html = [];
-  var pattern_amp = /&/g;
-  var pattern_lt = /</g;
-  var pattern_gt = />/g;
-  var pattern_para = /\n/g;
-  for (var x = 0; x < diffs.length; x++) {
-    var op = diffs[x][0];    // Operation (insert, delete, equal)
-    var data = diffs[x][1];  // Text of change.
-    var text = data.replace(pattern_amp, '&amp;').replace(pattern_lt, '&lt;')
-        .replace(pattern_gt, '&gt;').replace(pattern_para, '&para;<br>');
-    switch (op) {
-      case DIFF_INSERT:
-      if (showIns) {
-        html[x] = '<ins>' + text + '</ins>';
-        }
-        break;
-      case DIFF_DELETE:
-      if (showDel) {
-        html[x] = '<del>' + text + '</del>';
-        }
-        break;
-      case DIFF_EQUAL:
-        html[x] = '<span>' + text + '</span>';
-        break;
-    }
-  }
-  return html.join('');
+	var html = [];
+//   var pattern_amp = /&/g;
+//   var pattern_lt = /</g;
+//   var pattern_gt = />/g;
+//   var pattern_para = /\n/g;
+	for (var x = 0; x < diffs.length; x++) {
+		var op = diffs[x][0];    // Operation (insert, delete, equal)
+		var data = diffs[x][1];  // Text of change.
+		var text = data;
+
+		// I got rid of the line below because it messed up some of the formatting by replacing some special characters. 
+		// I don't know why that was deemed a good idea in the first place, though. 
+		//     var text = data.replace(pattern_amp, '&amp;').replace(pattern_lt, '&lt;').replace(pattern_gt, '&gt;').replace(pattern_para, '&para;<br>');
+
+		switch (op) {
+		  case DIFF_INSERT:
+			if (showIns) {
+				html[x] = '<ins>' + text + '</ins>';
+			}
+			break;
+		  case DIFF_DELETE:
+			if (showDel) {
+				html[x] = '<del>' + text + '</del>';
+			}
+			break;
+		  case DIFF_EQUAL:
+			html[x] = text;
+			break;
+		}
+	}
+return html.join('');
 };
 
 

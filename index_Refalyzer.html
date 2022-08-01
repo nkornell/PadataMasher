@@ -10,6 +10,7 @@ https://doi.org/10.1016/S0749-596X(02)00537-5
 - handle network errors (start by testing with wifi turned off)
 
 - when it formats json, have it return notes about what it got wrong 
+-   Like, if there are no page numbers, for example, in the JSON. 
 -   And maybe even fix the errors?? like if eds are missing, use the user input to insert them?
 -   do this by having it return an object, and have the object include, like, .apa (so the user could type something like, returnthing(x).apa)
 
@@ -348,10 +349,13 @@ Basic procedure:
             	
             try { 
                 // update html
-                var d = dmp.diff_main(this.user_input, temp_ref_to_show.replace(/(<([^>]+)>)/gi, "").trim(), false); //dfdd there are two optional parameters, 
+                // d is the object that represents the difference between the two strings. 
+                var d = dmp.diff_main(this.user_input, temp_ref_to_show.trim(), false); //dfdd there are two optional parameters, but just use one and set it to false.  
                 document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true); 
                 document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false);
                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
+
+// this is the old way where it doesn't show the insertions and deletions
 //                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
 //                 document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show;
 //                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
