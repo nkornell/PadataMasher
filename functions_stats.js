@@ -70,21 +70,67 @@ function Mean(input) {
 	return total / numbers.length;
 }
 
-function Median(input) {
-	var numbers = removeNonNumbersFromArray(input);
-	var median = 0;
-	var numsLen = numbers.length;
-	numbers.sort(function(a, b){return a - b}); // does a numerical sort
-	
-	if ((numsLen % 2) === 0) { // is even
-		// average of two middle numbers
-		median = (numbers[numsLen/2-1] + numbers[numsLen/2])/2;
-	} else { // is odd
-		// middle number only
-		median = numbers[(numsLen-1)/2];
-	}
-	return median;  
+function Median(data) {
+  return Quartile(data, 0.5);
 }
+
+function Quartile(data, q) {
+	// this can give you whatever quartile value you want. Like you could say Quartile(data,.5) for the median,
+	// or Quartile(data, .391) or whatever. (Quartile is a misnomer, because it's not just quarters.)
+	// I got it from https://stackoverflow.com/questions/48719873/how-to-get-median-and-quartiles-percentiles-of-an-array-in-javascript-or-php
+	data = removeNonNumbersFromArray(data);
+
+	data=Array_Sort_Numbers(data);
+	var pos = ((data.length) - 1) * q;
+	var base = Math.floor(pos);
+	var rest = pos - base;
+	if( (data[base+1]!==undefined) ) {
+		return data[base] + rest * (data[base+1] - data[base]);
+	} else {
+		return data[base];
+	}
+}
+
+function Array_Sort_Numbers(inputarray){
+  return inputarray.sort(function(a, b) {
+    return a - b;
+  });
+}
+
+// function Median(input) {
+// 	var numbers = removeNonNumbersFromArray(input);
+// 	var median = 0;
+// 	var numsLen = numbers.length;
+// 	numbers.sort(function(a, b){return a - b}); // does a numerical sort
+// 	
+// 	if ((numsLen % 2) === 0) { // is even
+// 		// average of two middle numbers
+// 		median = (numbers[numsLen/2-1] + numbers[numsLen/2])/2;
+// 	} else { // is odd
+// 		// middle number only
+// 		median = numbers[(numsLen-1)/2];
+// 	}
+// 	return median;  
+// }
+
+// function percentile_75_roughly(input) {
+// 	// this returns the 75th percentile. But it's not exactly right (it's right
+// 	// sometimes, like when there are 5 numbers, not not when there are 6, etc.)
+// 	// but it's close enough for me. 
+// 	var numbers = removeNonNumbersFromArray(input);
+// 	var out = [];
+// 	var numsLen = numbers.length;
+// 	var newNums_high = [];
+// 	var mid_index = Math.floor(numsLen/2)
+// 	
+// 	numbers.sort(function(a, b){return a - b}); // does a numerical sort
+// 
+// 	for (i = mid_index; i <= numsLen; i++) {
+// 		newNums_high.push(numbers[i]);
+// 	}
+// 	
+// 	return Median(newNums_high);  
+// }
 
 function Mode(input) {
 	// This returns an object with 3 values. Let's assume the mode in your data is 11 and it occurred 21 times.

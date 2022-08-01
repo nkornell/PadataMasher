@@ -1,5 +1,12 @@
 <!-- 
 To do: 
+- I don't like the way it delets the first line of user input here:
+Hicks, J. L., & Cockman, D. W. (2003). The effect of general knowledge on source memory
+and decision processes. Journal of Memory and Language, 48, 489–501.
+https://doi.org/10.1016/S0749-596X(02)00537-5
+
+- When it gets a non-doi reference, maybe have it look at the first 2 or 3 that are returned, and see if they have a matching year, author, etc? 
+
 - handle network errors (start by testing with wifi turned off)
 
 - when it formats json, have it return notes about what it got wrong 
@@ -185,12 +192,21 @@ Basic procedure:
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script> <!-- this is to use citation-js -->
     <script src="functions_stats.js"></script>
-<!-- 	<script src="https://cdn.jsdelivr.net/npm/string-similarity"></script> -->
-<!-- 	<script src="https://cdn.jsdelivr.net/npm/string-algorithms"></script> -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/string-similarity@4/package.json"></script> -->
+<!--     <script src="functions_string_diff.js"></script> -->
+    <script src="functions_tables.js"></script>
+    <script src="diff.js"></script>
 
+<!-- <script src="../jsdiff/runtime.js"></script> -->
+<!-- <script src="../jsdiff/"></script> -->
+<!-- 
+<script src="https://cdn.jsdelivr.net/npm/string-similarity"></script>
+<script src="https://unpkg.com/string-similarity/umd/string-similarity.min.js"></script>
+ -->
 
 <script>
+// 	var diff = JsDiff["Char"](a.textContent, b.textContent);
+
+
 	var author_obj = [];
 	var reference_obj = [];
 	var text_obj = []
@@ -210,7 +226,8 @@ Basic procedure:
 // 	var doi_pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
 
 	let Cite = require('citation-js');
-
+//     var diff = require("diff");
+    
 	function Text_object(input_userInput, input_doi, input_doi_type, input_ord) { 
 		this.user_input = input_userInput;
         this.doi = input_doi.toLowerCase();
@@ -254,12 +271,10 @@ Basic procedure:
                 this.doi_type = 'not_found_yet';
             }
             
-            // dfd do something with this?!?!
+            // if the start of a row doesn't have uppercase letters, or has weird characters, mark it as weird
             // const regex pattern("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[-+_!@#$%^&*.,?]).+$");
-            // if a row doesn't have an uppercase letter near the start, mark it as weird
             this.weird_first_letters = false;
-            var flim = this.user_input.slice(0,4) // first four letters of the string
-            
+            var flim = this.user_input.slice(0,4) // first four letters of the string 
             // if there are no uppercase letters in the string and it's not http
             const pattern_uppercase = new RegExp("^(?=.*[A-Z]).+$"); // uppercase letters
             if (pattern_uppercase.test(flim) == false) {
@@ -267,16 +282,16 @@ Basic procedure:
                     this.weird_first_letters = true;
                 }
             }
-            
              // if there are non-letters in the string
+            // dfd maybe move this to parse user input and have it combine when it finds (some?) of these?
             const pattern_non_letters = new RegExp("^(?=.*[-+_!@ #$%^&*.,?]).+$"); // non-letters (including space character)
             if (pattern_non_letters.test(flim)) {
                 this.weird_first_letters = true;
             }
+//             if (this.weird_first_letters) {
+//                 console.log('weird_first_letters: '+flim)
+//             }
 
-            if (this.weird_first_letters) {
-                console.log('weird_first_letters: '+flim)
-            }
 
             try {
                 if (typeof reference_obj[this.doi] != 'undefined') { 
@@ -308,13 +323,12 @@ Basic procedure:
                         temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
                         temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
                         temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
+                    } else {
                         if (this.weird_first_letters) {
                             temp_stringToShow += '<div>weird first letters</div>'
                         }
-                        this.notes = temp_stringToShow;
-                    } else {
-                        this.notes = '';
                     }
+                    this.notes = temp_stringToShow;
                 } else {
                     // it wasn't found
                     this.match_status = 'unknown';
@@ -347,7 +361,8 @@ Basic procedure:
             try { 
                 // update html
                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
-                document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show; 
+                document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show;
+                this.notes = diffString(this.user_input, temp_ref_to_show.replace(/(<([^>]+)>)/gi, "")) //dfdd
                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
             } catch(err) {
                 console.log( '<---------')
@@ -557,7 +572,7 @@ Basic procedure:
         if (row_queue.length > 0) {
 		    current_mode = "searching for dois"
             for (i = 0; i < row_queue.length; i++) {
-                getOneURL(row_queue[i]); 
+                getOneURL(row_queue[i]); // dfdd
             }
 		}
 	}	
@@ -1365,27 +1380,35 @@ Basic procedure:
         }
         
         // compute median string length
-        const strLenArray = urlSuffix.map(myFunction);
-        function myFunction(input_string) {
-            const x = input_string.trim();
-            return input_string.length;
-        }
-        const median_string_length = Median(strLenArray)
-        console.log('Median='+median_string_length)
+//         const strLenArray = urlSuffix.map(myFunction);
+//         function myFunction(input_string) {
+// //             const x = input_string.trim();
+//             return input_string.length;
+//             return Math.floor(input_string.length/10)*10;
+//         }
+//         strLenArray.sort(function(a, b){return a - b});
+//         console.log( strLenArray)
+//         const string_length_median = Median(strLenArray)
+//         const string_length_upper = Quartile(strLenArray, .80)
+//         const string_length_lower = Quartile(strLenArray, .20)
+//         console.log('Median='+string_length_median)
+//         console.log('Upper='+string_length_upper)
+//         console.log('Lower='+string_length_lower)
+//         console.log('Upper gap: '+Math.abs(string_length_upper - string_length_median));
+//         console.log('Lower gap: '+Math.abs(string_length_lower - string_length_median));
         
-//             const pattern_non_letters = new RegExp("^(?=.*[-+_!@ #$%^&*.,?]).+$"); // non-letters (including space character)
-//             if (pattern_non_letters.test(flim)) {
-//                 this.weird_first_letters = true;
-//             }
-dfdd
-        
-		// combine rows if they're too, short or end with -
-        // dfd: right now, if's combining based on median. but that's only good if there re line breaks. so first, check if there are
-		const min_length = median_string_length/2;
+		// combine rows if 
+		// - they're too short and don't contiain a doi, combine with above
+		// - end with '-', combine with below
+
+// 		const min_length = Math.min(40, string_length_median/2); // dfd could use this, but it just doesn't seem necessary because references can't really be shorter than 40 
+		const min_length = 40; // This seems good. If you go to 50, it makes a mistake on Dweck's book.  
+		console.log('Min length='+min_length);
 		for (i = urlSuffix.length - 1; i >= 0; i--) {
-			// dfd         
-        
-			if (urlSuffix[i].length < min_length) {
+		    if (urlSuffix[i].length < min_length*2 && urlSuffix[i].length > min_length) {
+			        pagelog(urlSuffix[i]+' ('+urlSuffix[i].length+')'); // show the ones that are close to being combined 
+            }
+			if (urlSuffix[i].length < min_length && urlSuffix[i].match(doi_pattern) == null) {
         		// if a row has too few characters, combine it with the previous row
 			    if (i > 0) { // if it's not the first row (bc there's no previous row)
                     urlSuffix[i-1] = urlSuffix[i-1] + urlSuffix[i];
@@ -1677,11 +1700,97 @@ dfdd
 		console.log( '---------finish----------')
 		console.log( '')
 	}
+	
+	
+
+
+
+
+
+var a = document.getElementById('a');
+var b = document.getElementById('b');
+var result = document.getElementById('result');
+
+function changed() {
+	var diff = JsDiff[window.diffType](a.textContent, b.textContent);
+	var fragment = document.createDocumentFragment();
+	for (var i=0; i < diff.length; i++) {
+
+		if (diff[i].added && diff[i + 1] && diff[i + 1].removed) {
+			var swap = diff[i];
+			diff[i] = diff[i + 1];
+			diff[i + 1] = swap;
+		}
+
+		var node;
+		if (diff[i].removed) {
+			node = document.createElement('del');
+			node.appendChild(document.createTextNode(diff[i].value));
+		} else if (diff[i].added) {
+			node = document.createElement('ins');
+			node.appendChild(document.createTextNode(diff[i].value));
+		} else {
+			node = document.createTextNode(diff[i].value);
+		}
+		fragment.appendChild(node);
+	}
+
+	result.textContent = '';
+	result.appendChild(fragment);
+}
+
+window.onload = function() {
+	onDiffTypeChange(document.querySelector('#settings [name="diff_type"]:checked'));
+	changed();
+};
+
+// a.onpaste = a.onchange =
+// b.onpaste = b.onchange = changed;
+
+// if ('oninput' in a) {
+// 	a.oninput = b.oninput = changed;
+// } else {
+// 	a.onkeyup = b.onkeyup = changed;
+// }
+
+function onDiffTypeChange(radio) {
+	window.diffType = radio.value;
+	document.title = "Diff " + radio.value.slice(4);
+}
+
+var radio = document.getElementsByName('diff_type');
+for (var i = 0; i < radio.length; i++) {
+	radio[i].onchange = function(e) {
+		onDiffTypeChange(e.target);
+		changed();
+	}
+}
 </script>
 </head>
 
 
 <body onload='show_previous_user_input()'>
+
+
+
+
+
+
+<div id="settings">
+	<h1>Diff</h1>
+	<label><input type="radio" name="diff_type" value="diffChars" checked> Chars</label>
+	<label><input type="radio" name="diff_type" value="diffWords"> Words</label>
+	<label><input type="radio" name="diff_type" value="diffLines"> Lines</label>
+</div>
+
+<table>
+	<tr>
+		<td contenteditable="true" id="a">restaurant</td>
+		<td contenteditable="true" id="b">aura</td>
+		<td><pre id="result"></pre></td>
+	</tr>
+</table>
+<p><button onclick="changed()">changed</button>
 
 	<!--  navigation menu -->
 <!-- 
@@ -1695,8 +1804,7 @@ dfdd
 	</nav>
  -->
 
-<textarea id="myText" name="inputTextArea" rows="20" cols="80">
-</textarea>
+<textarea id="myText" name="inputTextArea" rows="20" style='width:100%'></textarea>
 
 <!-- 
 Finley, J. R., Tullis, J. G., Benjamin, A. S. (2010). Metacognitive control of learning and remembering. In M. S. Knine I. M. Saleh (Eds.), New Science of Learning (pp. 109– 131). New York, NY: Springer. https://doi.org/10.1007/978-1-4419-5716-0_6	
@@ -1788,8 +1896,6 @@ project.org/package=metaBMA.
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~- -->
 
 
-<script src="functions_stats.js"></script>
-<script src="functions_tables.js"></script>
 
 
 <p>Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. https://doi.org/10.1037/xlm0000246

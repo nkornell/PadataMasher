@@ -224,6 +224,16 @@ a:link {
   float: left;
 }
 
+ins {
+	background-color: Aquamarine;
+    text-decoration: none;
+}
+
+del {
+	background-color: Orange;
+    text-decoration: none;
+}
+
 .navMenuItem:hover:not(.selected) {
 	background-color: eee;
 }
