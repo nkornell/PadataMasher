@@ -263,7 +263,7 @@ Basic procedure:
             // if the start of a row doesn't have uppercase letters, or has weird characters, mark it as weird
             // const regex pattern("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[-+_!@#$%^&*.,?]).+$");
             this.weird_first_letters = false;
-            var flim = this.user_input.slice(0,4) // first four letters of the string 
+            var flim = this.user_input.slice(0,3) // first three letters of the string (this will be bad for people with two-letter names )
             // if there are no uppercase letters in the string and it's not http
             const pattern_uppercase = new RegExp("^(?=.*[A-Z]).+$"); // uppercase letters
             if (pattern_uppercase.test(flim) == false) {
@@ -354,8 +354,7 @@ Basic procedure:
                 document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true); 
                 document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false);
                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
-
-// this is the old way where it doesn't show the insertions and deletions
+// 				this is the old way where it doesn't show the insertions and deletions
 //                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
 //                 document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show;
 //                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
@@ -377,20 +376,22 @@ Basic procedure:
 		this.json = input_json;
 		this.doi = this.json.DOI;
 		
+		// dfd maybe check here if it's a chapter, and if it is see if it can find the book by cutting off the last 1-2 numbers of the doi and checking crossref?
+		// then it would have to check whether the title seems right, and if it does, it could find the editors and amend the reference object? 
+		// this sounds risky because what if something (the title, the editors) seems right but it's wrong?
+
         try {
             if (input_apa == '') {
-		        // dfd maybe check here if it's a chapter, and if it is see if it can find the book by cutting off the last 1-2 numbers of the doi and checking crossref?
-		        // then it would have to check whether the title seems right, and if it does, it could find the editors and amend the reference object? 
-		        // this sounds risky because what if something (the title, the editors) seems right but it's wrong?
-
                 // figure out the reference by myself
                 this.apa = get_apa_from_json(input_json);
-                this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, ""); // dfd this should be moved into get apa from json, once it's returning an object
             } else {
                 // using cite
-                this.apa = input_apa; 
-        		this.apa_no_html = jQuery(this.apa).text().trim(); // apa without the html tags        		
+                this.apa = input_apa.toString().replace(/(<div([^>]+)>)/gi,'').replace(/(<\/div>)/gi, '').trim(); // remove all div tags
+// 				the old way
+//              this.apa = input_apa;
+//         		this.apa_no_html = jQuery(this.apa).text().trim(); // apa without the html tags        		
             }
+			this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, ""); // dfd this should be moved into get apa from json, once it's returning an object
 
     	} catch(err) {
     	    console.log ('**error in new reference obj')
@@ -567,7 +568,7 @@ Basic procedure:
         if (row_queue.length > 0) {
 		    current_mode = "searching for dois"
             for (i = 0; i < row_queue.length; i++) {
-                getOneURL(row_queue[i]); // dfdd
+                getOneURL(row_queue[i]);
             }
 		}
 	}	

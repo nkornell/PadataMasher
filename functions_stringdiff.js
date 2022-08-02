@@ -1256,47 +1256,69 @@ diff_match_patch.prototype.diff_xIndex = function(diffs, loc) {
 diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 // the last two parameters determine whether the insertions and deletions are shown, respectively.
 	var html = [];
+	var case_change = false;
 //   var pattern_amp = /&/g;
 //   var pattern_lt = /</g;
 //   var pattern_gt = />/g;
 //   var pattern_para = /\n/g;
+
 	for (var x = 0; x < diffs.length; x++) {
 		var op = diffs[x][0];    // Operation (insert, delete, equal)
 		var data = diffs[x][1];  // Text of change.
 		var text = data;
 		var text_length_no_html = 0;
-		var min_length_to_display = 1; // don't bother with highlights shorter than this (they're just distracting)
-
+		var min_length_to_display = 1; // this is a setting. It says, don't bother with highlights shorter than this (they're just distracting)
+		
 		// I got rid of the line below because it messed up some of the formatting by replacing some special characters. 
 		// I don't know why that was deemed a good idea in the first place, though. 
 		//     var text = data.replace(pattern_amp, '&amp;').replace(pattern_lt, '&lt;').replace(pattern_gt, '&gt;').replace(pattern_para, '&para;<br>');
 
 		text_length_no_html = text.replace(/(<([^>]+)>)/gi, "").length
-		switch (op) {
-		  case DIFF_INSERT:
-			if (showIns) {				
-				if (text_length_no_html > min_length_to_display) {
-					html[x] = '<ins>' + text + '</ins>';
-					html[x] = html[x].replace(/<ins><\/i>/gi, "</i><ins>") // special case where it sticks an ins surrounding an end tag for italics
-				} else {
-					html[x] = text;
-				}
-			}
-			break;
-		  case DIFF_DELETE:
-			if (showDel) {
-				if (text_length_no_html > min_length_to_display) {
-					html[x] = '<del>' + text + '</del>';
-				} else {
-					html[x] = text;
-				}
-			}
-			break;
-		  case DIFF_EQUAL:
-			html[x] = text;
-			break;
+
+		// if the lowercase value of the changed text is equal to the lowercase value of the adjacent changed text
+		if (x < diffs.length-1 && diffs[x][1].toLowerCase() == diffs[x+1][1].toLowerCase()) {
+			case_change = true;
+		} else if (x > 0 && diffs[x][1].toLowerCase() == diffs[x-1][1].toLowerCase()){
+			case_change = true;
+		} else {
+			case_change = false;
 		}
-// 		replace(/is/g,'was')
+
+		switch (op) {
+			case DIFF_INSERT:
+				if (showIns) {				
+					if (text_length_no_html > min_length_to_display) {
+						if (case_change) {
+							html[x] = '<chg>' + text + '</chg>';
+						} else {				
+							html[x] = '<ins>' + text + '</ins>';
+						}
+					} else {
+						html[x] = text;
+					}
+				}
+				break;
+			case DIFF_DELETE:
+				if (showDel) {
+					if (text_length_no_html > min_length_to_display) {
+						if (case_change) {
+							html[x] = '<chg>' + text + '</chg>';
+						} else {				
+							html[x] = '<del>' + text + '</del>';
+						}
+					} else {
+						html[x] = text;
+					}
+				}
+				break;
+			case DIFF_EQUAL:
+				html[x] = text;
+				break;
+		}
+		if (typeof html[x] != 'undefined' && html[x] != null) {
+			// special case where an end tag for italics are inside the ins. it changes <ins></i> to </i><ins>. I don't think other special cases are possible??
+			html[x] = html[x].replace(/<ins><\/i>/gi, "</i><ins>") 
+		}
 	}
 return html.join('');
 };

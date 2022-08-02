@@ -234,6 +234,11 @@ del {
     text-decoration: none;
 }
 
+chg {
+	background-color: LightGrey;
+    text-decoration: none;
+}
+
 .navMenuItem:hover:not(.selected) {
 	background-color: eee;
 }
