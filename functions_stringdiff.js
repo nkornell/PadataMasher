@@ -1,5 +1,6 @@
-// Nate got this from https://github.com/google/diff-match-patch
-// I changed stuff in diff_match_patch.prototype.diff_prettyHtml
+// Nate got this from https://github.com/google/diff-match-patch. 
+// The original filename was diff_match_patch_uncompressed.js
+// I changed stuff in the function called diff_match_patch.prototype.diff_prettyHtml
 // but that's all. 
 
 /**
@@ -1263,26 +1264,39 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 		var op = diffs[x][0];    // Operation (insert, delete, equal)
 		var data = diffs[x][1];  // Text of change.
 		var text = data;
+		var text_length_no_html = 0;
+		var min_length_to_display = 1; // don't bother with highlights shorter than this (they're just distracting)
 
 		// I got rid of the line below because it messed up some of the formatting by replacing some special characters. 
 		// I don't know why that was deemed a good idea in the first place, though. 
 		//     var text = data.replace(pattern_amp, '&amp;').replace(pattern_lt, '&lt;').replace(pattern_gt, '&gt;').replace(pattern_para, '&para;<br>');
 
+		text_length_no_html = text.replace(/(<([^>]+)>)/gi, "").length
 		switch (op) {
 		  case DIFF_INSERT:
-			if (showIns) {
-				html[x] = '<ins>' + text + '</ins>';
+			if (showIns) {				
+				if (text_length_no_html > min_length_to_display) {
+					html[x] = '<ins>' + text + '</ins>';
+					html[x] = html[x].replace(/<ins><\/i>/gi, "</i><ins>") // special case where it sticks an ins surrounding an end tag for italics
+				} else {
+					html[x] = text;
+				}
 			}
 			break;
 		  case DIFF_DELETE:
 			if (showDel) {
-				html[x] = '<del>' + text + '</del>';
+				if (text_length_no_html > min_length_to_display) {
+					html[x] = '<del>' + text + '</del>';
+				} else {
+					html[x] = text;
+				}
 			}
 			break;
 		  case DIFF_EQUAL:
 			html[x] = text;
 			break;
 		}
+// 		replace(/is/g,'was')
 	}
 return html.join('');
 };
