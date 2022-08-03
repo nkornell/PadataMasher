@@ -1,9 +1,5 @@
 <!-- 
 To do: 
-- I don't like the way it delets the first line of user input here:
-Hicks, J. L., & Cockman, D. W. (2003). The effect of general knowledge on source memory
-and decision processes. Journal of Memory and Language, 48, 489–501.
-https://doi.org/10.1016/S0749-596X(02)00537-5
 
 - When it gets a non-doi reference, maybe have it look at the first 2 or 3 that are returned, and see if they have a matching year, author, etc? 
 
@@ -34,13 +30,10 @@ https://doi.org/10.1016/S0749-596X(02)00537-5
 - based on total length? (Is it already?)
 - Learning and Motivation: Advances in Research and Theory, vol. 54, ed. BH Ross, pp. 103–40. San Diego, CA: Elsevier
 
-- find second-order authors
-
-- this returns wrong. what it means is, the user was wrong. that's different than thinking the answer it's giving is wrong. 
+- this returns wrong. what it means is, the user was wrong. in other words, the user had stuff that needed to be deleted. 
+-   that's different than thinking the answer it's giving is wrong. 
 - make the program differentiate between 'my answer is wrong' and 'your input was wrong'
 	Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. go to the store and buy a carpet, buy a floor https://doi.org/10.1037/xlm0000246
-- same here, except here, maybe the user was right. it's not showing the subtitle
-	Zhang, Y., Pan, Z., Li, K., & Guo, Y. (2018). Self-serving bias in memories: Selectively forgetting the connection between negative information and the self. Experimental Psychology, 65, 236–244. http://dx.doi.org/10.1027/1618-3169/a000409	
 
 - Add google analytics tags so i can see if it gets used. 
 
@@ -51,7 +44,6 @@ Find second-order authors
 - this tells you the papers cited by this paper. Looking at them would make it easy to get second-order citation information although that would be a lot of doi calls 
     this could be useful in two ways. first, to figure out co-authors if 2 fails. Second, to figure out who's getting cited in this area of research. 
 
-- maybe download the whole doi database and do the searching locally. 
 
 - With two non-user-doi rows, it's possible that neither doi it finds is right. In this case, maybe it could find the right doi if they were combined and then sent
 - to the server, but as of now the program doesn't check the database for the combo. 
@@ -350,10 +342,12 @@ Basic procedure:
             try { 
                 // update html
                 // d is the object that represents the difference between the two strings. 
-                var d = dmp.diff_main(this.user_input, temp_ref_to_show.trim(), false); //dfdd there are two optional parameters, but just use one and set it to false.  
+                var d = dmp.diff_main(this.user_input, temp_ref_to_show.trim(), false); // note, after the two strings, there are two optional parameters. Just use one and set it to false.  
                 document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true); 
                 document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false);
                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
+                console.log( dmp.diff_prettyHtml(d, true, true))
+
 // 				this is the old way where it doesn't show the insertions and deletions
 //                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
 //                 document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show;
@@ -638,6 +632,9 @@ Basic procedure:
                 } else {
                     temp_search_string = input_string;
                 }
+		temp_search_string = temp_search_string.replace(/&/g, '%26'); // encode ampersand for the url 
+
+                console.log( 'temp_search_string=' + temp_search_string) //dfdd
                 stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
                 myJSON = await $.getJSON(encodeURI(stringToSend));
                 myJSONobj = myJSON.message.items[0];
@@ -1099,6 +1096,9 @@ Basic procedure:
                 } else {
                     if (input_string == bestcombo) {
 //                         console.log( "[didn't change user input] they're the same")
+//                         console.log( 'input_string='+input_string)
+//                         console.log( 'otherRow_input_string='+otherRow_input_string)
+//                         console.log( 'bestcombo='+bestcombo)
                     } else {
                         console.log( "[didn't change user input] "+input_string + " != "+bestcombo)
                     }
@@ -1159,8 +1159,12 @@ Basic procedure:
 
 		// if the new piece by itself is not a good percentage match for the target, don't combine
 		var addition_Score_percent = compute_letter_match_percentage(user_input_addition, goal);
-		if (addition_Score_percent < good_match_threshold) {
-			return user_input_target;
+        if (addition_Score_percent < good_match_threshold) {
+            if (text_obj[user_input_addition].doi != text_obj[user_input_target].doi) { 
+                // If they have the same doi, go ahead and let them get combined. Why? Because it's going to remove one of them if you don't (if two rows have the same doi, one gets removed).
+                // But if they don't have the same doi, go ahead and return the target (i.e., don't combine). 
+                return user_input_target;
+            }
 		}
 
 		// figure out the input, and put it in the order of the table (so that only forward combos will be accepted)
@@ -1197,7 +1201,7 @@ Basic procedure:
             console.log('aText was='+aText);
             console.log('bText was='+bText);
         }
-        
+           
         reverse_comboScore = 0; // doing this makes it so reverse can't win. 
 		maxScore = Math.max(aScore,bScore,comboScore,reverse_comboScore);
 		if (maxScore == comboScore) {
@@ -1355,10 +1359,12 @@ Basic procedure:
 	function parse_user_input() {
 		var inputText = document.getElementById("myText").value;
 		localStorage.setItem('nates_previous_input',inputText)
-		// below, not taking out the ampersand causes errors. so I take it out even though it does change the input in a meaningful way. If you want to make things 100% perfect, leave it in the input but do not send it to the server.
+		// dfdd below, not taking out the ampersand causes errors. so I take it out even though it does change the input 
+		// in a meaningful way. If you want to make things 100% perfect, leave it in the input but do not send it to the server.
 		// also, I took out the question mark (it used to be /[&\\#$~%'"*?{}]/g) but that seems to work just fine.
-		inputText = inputText.replace(/[&\\#$~%'"*{}]/g, ''); // remove illegal characters. 
+		inputText = inputText.replace(/[\\#$~%'"*{}]/g, ''); // remove illegal characters. 
 		inputText = inputText.replaceAll("- ","-"); 
+		pagelog( inputText)
 		
 		var tempDOIArray = [];
 		var tempDOItype = "";
