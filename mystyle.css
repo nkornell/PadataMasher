@@ -239,6 +239,11 @@ chg {
     text-decoration: none;
 }
 
+searching {
+	color: LightGrey;
+    text-decoration: none;
+}
+
 .navMenuItem:hover:not(.selected) {
 	background-color: eee;
 }

@@ -39,16 +39,22 @@ To do:
 
 - It would speed things up to not wait for all of the lines to come in before trying to combine. Maybe if an obj is correct it should try to combine right away?
 
-Find second-order authors
-- if possible, maybe find all co-authors by checking the database. (i.e.,, is there a way to ask for coauthors using crossref? or maybe orcid or something? 
-- this tells you the papers cited by this paper. Looking at them would make it easy to get second-order citation information although that would be a lot of doi calls 
-    this could be useful in two ways. first, to figure out co-authors if 2 fails. Second, to figure out who's getting cited in this area of research. 
-
 
 - With two non-user-doi rows, it's possible that neither doi it finds is right. In this case, maybe it could find the right doi if they were combined and then sent
 - to the server, but as of now the program doesn't check the database for the combo. 
 
 - Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
+
+-->
+
+
+
+<!-- author stuff-->
+<!--
+Find second-order authors
+- if possible, maybe find all co-authors by checking the database. (i.e.,, is there a way to ask for coauthors using crossref? or maybe orcid or something? 
+- this tells you the papers cited by this paper. Looking at them would make it easy to get second-order citation information although that would be a lot of doi calls 
+    this could be useful in two ways. first, to figure out co-authors if 2 fails. Second, to figure out who's getting cited in this area of research. 
 
 
 Author table
@@ -56,6 +62,7 @@ Author table
 Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring case
 
 -->
+
 
 <!-- stuff to test-->
 <!--
@@ -269,17 +276,13 @@ Basic procedure:
             if (pattern_non_letters.test(flim)) {
                 this.weird_first_letters = true;
             }
-//             if (this.weird_first_letters) {
-//                 console.log('weird_first_letters: '+flim)
-//             }
-
 
             try {
                 if (typeof reference_obj[this.doi] != 'undefined') { 
                     // compute scores and statuses
                     const temp_apa_no_html = reference_obj[this.doi].apa_no_html;
                     temp_ref_to_show = reference_obj[this.doi].apa;
-                    temp_ref_to_show = temp_ref_to_show.replace('&#38;amp;', "&"); // otherwise it shows &amp; in place of the & character (actually this problem might go away when you're showing the html)
+                    temp_ref_to_show = temp_ref_to_show.replaceAll('&amp;', "&").replaceAll('&#38;', "&").trim(); // otherwise it shows &amp; or &#38; in place of the & character
                     this.score = compute_score(temp_apa_no_html, this.user_input); // order has to be database version, user version 
                     this.letter_match = compute_letter_match(temp_apa_no_html, this.user_input);
                     this.letter_match_percentage = compute_letter_match_percentage(this.user_input, temp_apa_no_html); // order has to be user, database
@@ -341,17 +344,19 @@ Basic procedure:
             	
             try { 
                 // update html
-                // d is the object that represents the difference between the two strings. 
-                var d = dmp.diff_main(this.user_input, temp_ref_to_show.trim(), false); // note, after the two strings, there are two optional parameters. Just use one and set it to false.  
-                document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true); 
-                document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false);
-                document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
-                console.log( dmp.diff_prettyHtml(d, true, true))
-
-// 				this is the old way where it doesn't show the insertions and deletions
-//                 document.getElementById('inputText_'+this.user_input).innerHTML = this.user_input; 
-//                 document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show;
-//                 document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
+                if (this.search_status == 'done') {
+					// d is the object that represents the difference between the two strings. 
+					var d = dmp.diff_main(this.user_input, temp_ref_to_show, false); // note, after the two strings, there are two optional parameters. Just use one and set it to false.  
+					document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true); 
+					document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false);
+					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
+					// console.log( dmp.diff_prettyHtml(d, true, true))
+				} else {
+					// this is the old way where it doesn't show the insertions and deletions
+					document.getElementById('inputText_'+this.user_input).innerHTML = '<searching>' + this.user_input + '</searching>'; 
+					document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show;
+					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
+				}
             } catch(err) {
                 console.log( '<---------')
     		    console.log('*error in update input, for: ');
@@ -360,7 +365,6 @@ Basic procedure:
     		    console.log( err);
                 console.log( '--------->')
             }
-//             console.log( 'up this.updateinput')
     		update_progress(); // if this comes before the update html above, it causes errors (at least in the console). I failed to figure out why. 
 		}
 	}
@@ -614,8 +618,6 @@ Basic procedure:
                 myJSONobj = myJSON.data[0];
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // if using cite, encode in local storage using the search string as the key
                 localStorage.setItem(input_string+'\t'+'cite_bib', bibliography); // and also store the bibliography
-//                 console.log( 'bib')
-//                 console.log( bibliography)
 
             } else if (local_JSON != null && local_JSON != '') {
                 // if the JSON is in local storage, retrieve it (and the stored bibliography if possible) without having to talk to the server
@@ -632,9 +634,8 @@ Basic procedure:
                 } else {
                     temp_search_string = input_string;
                 }
-		temp_search_string = temp_search_string.replace(/&/g, '%26'); // encode ampersand for the url 
+				temp_search_string = temp_search_string.replace(/&/g, '%26'); // encode ampersand for the url 
 
-                console.log( 'temp_search_string=' + temp_search_string) //dfdd
                 stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
                 myJSON = await $.getJSON(encodeURI(stringToSend));
                 myJSONobj = myJSON.message.items[0];
@@ -680,7 +681,10 @@ Basic procedure:
 			    console.log( 'Network request failed: '+input_string);
                 text_obj[input_string].update_input('done');            
 			} else {
+			console.log('Initially ' + (window.navigator.onLine ? 'on' : 'off') + 'line'); // dfdd
+
 			    console.log('*error in get one url: '+input_string);
+                text_obj[input_string].update_input('done');            
 				console.log(err);
 			}
 		}
@@ -1359,12 +1363,8 @@ Basic procedure:
 	function parse_user_input() {
 		var inputText = document.getElementById("myText").value;
 		localStorage.setItem('nates_previous_input',inputText)
-		// dfdd below, not taking out the ampersand causes errors. so I take it out even though it does change the input 
-		// in a meaningful way. If you want to make things 100% perfect, leave it in the input but do not send it to the server.
-		// also, I took out the question mark (it used to be /[&\\#$~%'"*?{}]/g) but that seems to work just fine.
-		inputText = inputText.replace(/[\\#$~%'"*{}]/g, ''); // remove illegal characters. 
+		inputText = inputText.replace(/[\\#$~%'"*{}]/g, ''); // remove illegal characters. I took out the question mark (it used to be /[&\\#$~%'"*?{}]/g) but that seems to work just fine.
 		inputText = inputText.replaceAll("- ","-"); 
-		pagelog( inputText)
 		
 		var tempDOIArray = [];
 		var tempDOItype = "";
@@ -1405,11 +1405,11 @@ Basic procedure:
 
 // 		const min_length = Math.min(40, string_length_median/2); // dfd could use this, but it just doesn't seem necessary because references can't really be shorter than 40 
 		const min_length = 40; // This seems good. If you go to 50, it makes a mistake on Dweck's book.  
-		console.log('Min length='+min_length);
+// 		console.log('Min length='+min_length);
 		for (i = urlSuffix.length - 1; i >= 0; i--) {
-		    if (urlSuffix[i].length < min_length*2 && urlSuffix[i].length > min_length) {
-			        pagelog(urlSuffix[i]+' ('+urlSuffix[i].length+')'); // show the ones that are close to being combined 
-            }
+// 		    if (urlSuffix[i].length < min_length*2 && urlSuffix[i].length > min_length) {
+// 			        pagelog(urlSuffix[i]+' ('+urlSuffix[i].length+')'); // show the ones that are close to being combined 
+//             }
 			if (urlSuffix[i].length < min_length && urlSuffix[i].match(doi_pattern) == null) {
         		// if a row has too few characters, combine it with the previous row
 			    if (i > 0) { // if it's not the first row (bc there's no previous row)
@@ -1417,9 +1417,11 @@ Basic procedure:
                     urlSuffix.splice(i, 1);
                 }
 			} else if (urlSuffix[i].charAt(urlSuffix[i].length-1) == '-') {
-        		// if it ends with - combine it with the following row.
-			    urlSuffix[i+1] = urlSuffix[i] + urlSuffix[i+1];
-				urlSuffix.splice(i, 1);
+        		// if it ends with - combine it with the following row (if there is one).
+        		if (typeof urlSuffix[i+1] != undefined && urlSuffix[i+1] != null) {
+					urlSuffix[i+1] = urlSuffix[i] + urlSuffix[i+1];
+					urlSuffix.splice(i, 1);
+				}
 			}
 		}
 			

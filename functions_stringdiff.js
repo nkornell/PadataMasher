@@ -1273,8 +1273,7 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 		// I don't know why that was deemed a good idea in the first place, though. 
 		//     var text = data.replace(pattern_amp, '&amp;').replace(pattern_lt, '&lt;').replace(pattern_gt, '&gt;').replace(pattern_para, '&para;<br>');
 
-		text_length_no_html = text.replace(/(<([^>]+)>)/gi, "").length
-
+		text_length_no_html = text.replace(/(<([^>]+)>)/gi, "").length		
 		// if the lowercase value of the changed text is equal to the lowercase value of the adjacent changed text
 		if (x < diffs.length-1 && diffs[x][1].toLowerCase() == diffs[x+1][1].toLowerCase()) {
 			case_change = true;
