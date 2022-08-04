@@ -3,8 +3,6 @@ To do:
 
 - When it gets a non-doi reference, maybe have it look at the first 2 or 3 that are returned, and see if they have a matching year, author, etc? 
 
-- handle network errors (start by testing with wifi turned off)
-
 - when it formats json, have it return notes about what it got wrong 
 -   Like, if there are no page numbers, for example, in the JSON. 
 -   And maybe even fix the errors?? like if eds are missing, use the user input to insert them?
@@ -319,7 +317,11 @@ Basic procedure:
                     temp_ref_to_show = '';
                     if (this.search_status == 'done') {
                         this.combine_status = 'cannot be combined';
-                        this.notes = "not found";
+                        if (window.navigator.onLine) {
+                            this.notes = "not found";
+                        } else {
+                            this.notes = "not found<br>(no internet connection)";
+                        }
                     }
                 }
             
@@ -609,7 +611,18 @@ Basic procedure:
         }
 
 		try {
-            if (text_obj[input_string].use_Cite == true) {
+            if (local_JSON != null && local_JSON != '') {
+                // if the JSON is in local storage, retrieve it (and the stored bibliography if possible) without having to talk to the server
+                myJSONobj = JSON.parse(local_JSON);
+                bibliography = localStorage.getItem(input_string+'\t'+'cite_bib') // get the bibliography created by cite (if there is one)
+                if (bibliography == null) { // if there wasn't one, change the value to a blank string
+                    bibliography = '';
+                }
+            } else if (window.navigator.onLine == false) {
+                console.log('offline')
+                text_obj[input_string].update_input('done');
+                return
+            } else if (text_obj[input_string].use_Cite == true) {
                 // if we're using Cite because this function already called create reference, but it couldn't handle the json so it called this again
                 myJSON = await Cite.async(inputDOI);
                 bibliography = myJSON.format ('bibliography', {
@@ -618,14 +631,6 @@ Basic procedure:
                 myJSONobj = myJSON.data[0];
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // if using cite, encode in local storage using the search string as the key
                 localStorage.setItem(input_string+'\t'+'cite_bib', bibliography); // and also store the bibliography
-
-            } else if (local_JSON != null && local_JSON != '') {
-                // if the JSON is in local storage, retrieve it (and the stored bibliography if possible) without having to talk to the server
-                myJSONobj = JSON.parse(local_JSON);
-                bibliography = localStorage.getItem(input_string+'\t'+'cite_bib') // get the bibliography created by cite (if there is one)
-                if (bibliography == null) { // if there wasn't one, change the value to a blank string
-                    bibliography = '';
-                }
             } else if (inputDOI === "" || temp_ignore_doi == true) {
                 // search Crossref without a doi (either there isn't one or it's bad)
                 if (temp_ignore_doi) {
@@ -1612,8 +1617,6 @@ Basic procedure:
 		
 		// dfd
 // 		get_author('nate kornell')
-
-		console.log('Initially ' + (window.navigator.onLine ? 'on' : 'off') + 'line'); // dfdd 
 
 		document.getElementById("outputText").innerHTML = "";
         document.getElementById("myProgress").style = "display: flex;"
