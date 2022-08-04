@@ -681,8 +681,6 @@ Basic procedure:
 			    console.log( 'Network request failed: '+input_string);
                 text_obj[input_string].update_input('done');            
 			} else {
-			console.log('Initially ' + (window.navigator.onLine ? 'on' : 'off') + 'line'); // dfdd
-
 			    console.log('*error in get one url: '+input_string);
                 text_obj[input_string].update_input('done');            
 				console.log(err);
@@ -1614,6 +1612,8 @@ Basic procedure:
 		
 		// dfd
 // 		get_author('nate kornell')
+
+		console.log('Initially ' + (window.navigator.onLine ? 'on' : 'off') + 'line'); // dfdd 
 
 		document.getElementById("outputText").innerHTML = "";
         document.getElementById("myProgress").style = "display: flex;"
