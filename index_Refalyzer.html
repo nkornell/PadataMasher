@@ -611,7 +611,7 @@ Basic procedure:
         }
 
 		try {
-            if (local_JSON != null && local_JSON != '') {
+            if (local_JSON != null && local_JSON != '' && text_obj[input_string].use_Cite == false) {
                 // if the JSON is in local storage, retrieve it (and the stored bibliography if possible) without having to talk to the server
                 myJSONobj = JSON.parse(local_JSON);
                 bibliography = localStorage.getItem(input_string+'\t'+'cite_bib') // get the bibliography created by cite (if there is one)
@@ -622,7 +622,8 @@ Basic procedure:
                 console.log('offline')
                 text_obj[input_string].update_input('done');
                 return
-            } else if (text_obj[input_string].use_Cite == true) {
+            } else if (text_obj[input_string].use_Cite) {
+                console.log('called cite')
                 // if we're using Cite because this function already called create reference, but it couldn't handle the json so it called this again
                 myJSON = await Cite.async(inputDOI);
                 bibliography = myJSON.format ('bibliography', {
@@ -1614,8 +1615,8 @@ Basic procedure:
 		
 		console.log( '')
 		console.log( '---------start----------')
-		
-		// dfd
+
+        // dfd
 // 		get_author('nate kornell')
 
 		document.getElementById("outputText").innerHTML = "";
