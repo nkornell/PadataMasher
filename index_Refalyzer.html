@@ -3,26 +3,17 @@ To do:
 
 - When it gets a non-doi reference, maybe have it look at the first 2 or 3 that are returned, and see if they have a matching year, author, etc? 
 
-- when it formats json, have it return notes about what it got wrong 
--   Like, if there are no page numbers, for example, in the JSON. 
+- when it gts a reference json (for any reference), have it return notes about what it got wrong or is missing
+-   Like, if there are no authors, year, or title, flag it. Regardless of format. 
+-   And if it's a known format (journal article), if there are no page numbers, for example, in the JSON. 
+- 
 -   And maybe even fix the errors?? like if eds are missing, use the user input to insert them?
 -   do this by having it return an object, and have the object include, like, .apa (so the user could type something like, returnthing(x).apa)
 
 - look at strings more
--   figure out median length of input
--   figure out whether there's line breaks (are there a lot of lines about the same length, and then about 25% that are shorter, but few/none that are longer?)
--   A string can be...
--       shorter than median, which means it should be combined with the line above probably 
--       median, which means it should be combined with rows above or below probably 
--       longer than median, which means... it could mean multiple things. maybe it's a duplicate. maybe it's a full reference. but if it's about 2x (or 3x etc) the 
-            median, it could be that a line break got missed.  
--   A string probably isn't the start of a reference (and should be combined with what's above it) if...
--       it doesn't start with a capital letter (or maybe have a capital in the first 4 characters without a space, for vanDerGroot or whatever)
--       this includes rows that don't start with a letter. 
 -       by the way, at some point worry about line numbers. like, find them and remove them.
 -       I could try to characterize the typical last character of rows. Like, is it usually a number? usually a period? and then if something deviates, 
 -           maybe it's not the last character? 
--       if the last character is - then it should probably be deleted and combined with the next row. (shouldn't always be deleted, but as far as sending stuff to crossref, it can)
 
 - this returns a crazy reference that's way too long. It returns fragment but it should probably return wrong. So maybe part of the right/wrong score should be
 - based on total length? (Is it already?)
@@ -44,7 +35,6 @@ To do:
 - Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
 
 -->
-
 
 
 <!-- author stuff-->
