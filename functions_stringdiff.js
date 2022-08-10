@@ -1257,6 +1257,7 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 // the last two parameters determine whether the insertions and deletions are shown, respectively.
 	var html = [];
 	var case_change = false;
+  var min_length_to_display = 0; // this is a setting. It says, don't bother with highlights shorter than this (they're just distracting)
 //   var pattern_amp = /&/g;
 //   var pattern_lt = /</g;
 //   var pattern_gt = />/g;
@@ -1267,7 +1268,6 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 		var data = diffs[x][1];  // Text of change.
 		var text = data;
 		var text_length_no_html = 0;
-		var min_length_to_display = 1; // this is a setting. It says, don't bother with highlights shorter than this (they're just distracting)
 		
 		// I got rid of the line below because it messed up some of the formatting by replacing some special characters. 
 		// I don't know why that was deemed a good idea in the first place, though. 
@@ -1282,6 +1282,7 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 		} else {
 			case_change = false;
 		}
+
 
 		switch (op) {
 			case DIFF_INSERT:
@@ -1311,8 +1312,21 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 				}
 				break;
 			case DIFF_EQUAL:
-				html[x] = text;
-				break;
+        if (text_length_no_html < 2 && x > 0 && x < diffs.length-1) { // dfdd
+          if (diffs[x-1][0] == diffs[x+1][0]) {
+            console.log(diffs[x-1][1]+'['+data+']'+diffs[x+1][1])
+            if (diffs[x-1][0] == -1 && showDel) {
+              html[x] = '<del>' + text + '</del>';
+              break;
+            } else if (diffs[x-1][0] == 1 && showIns) {
+              html[x] = '<ins>' + text + '</ins>';
+              break;
+            }
+            // console.log("-this one (above)-")
+          }
+        }
+        html[x] = text;
+        break;
 		}
 		if (typeof html[x] != 'undefined' && html[x] != null) {
 			// special case where an end tag for italics are inside the ins. it changes <ins></i> to </i><ins>. I don't think other special cases are possible??
