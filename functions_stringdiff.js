@@ -37,7 +37,7 @@ var diff_match_patch = function() {
   // Redefine these in your program to override the defaults.
 
   // Number of seconds to map a diff before giving up (0 for infinity).
-  this.Diff_Timeout = 1.0;
+  this.Diff_Timeout = 0;
   // Cost of an empty edit operation in terms of edit characters.
   this.Diff_EditCost = 4;
   // At what point is no match declared (0.0 = perfection, 1.0 = very loose).
@@ -1267,7 +1267,7 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 		var op = diffs[x][0];    // Operation (insert, delete, equal)
 		var data = diffs[x][1];  // Text of change.
 		var text = data;
-		var text_length_no_html = 0;
+		var text_length_no_html = 0; // dfd this (and the other?) defs of var should be outside teh loop?)
 		
 		// I got rid of the line below because it messed up some of the formatting by replacing some special characters. 
 		// I don't know why that was deemed a good idea in the first place, though. 
@@ -1282,7 +1282,7 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 		} else {
 			case_change = false;
 		}
-
+    console.log(data+'['+op+']')
 
 		switch (op) {
 			case DIFF_INSERT:
@@ -1312,19 +1312,19 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 				}
 				break;
 			case DIFF_EQUAL:
-        if (text_length_no_html < 2 && x > 0 && x < diffs.length-1) { // dfdd
-          if (diffs[x-1][0] == diffs[x+1][0]) {
-            console.log(diffs[x-1][1]+'['+data+']'+diffs[x+1][1])
-            if (diffs[x-1][0] == -1 && showDel) {
-              html[x] = '<del>' + text + '</del>';
-              break;
-            } else if (diffs[x-1][0] == 1 && showIns) {
-              html[x] = '<ins>' + text + '</ins>';
-              break;
-            }
-            // console.log("-this one (above)-")
-          }
-        }
+        // if (text_length_no_html < 2 && x > 0 && x < diffs.length-1) { // dfdd
+        //   if (diffs[x-1][0] == diffs[x+1][0]) {
+        //     console.log('--'+diffs[x-1][1]+'['+data+']'+diffs[x+1][1])
+        //     if (diffs[x-1][0] == -1 && showDel) {
+        //       html[x] = '<del>' + text + '</del>';
+        //       break;
+        //     } else if (diffs[x-1][0] == 1 && showIns) {
+        //       html[x] = '<ins>' + text + '</ins>';
+        //       break;
+        //     }
+        //     // console.log("-this one (above)-")
+        //   }
+        // }
         html[x] = text;
         break;
 		}
