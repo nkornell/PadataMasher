@@ -341,9 +341,9 @@ Basic procedure:
 					var d = dmp.diff_main(this.user_input, temp_ref_to_show, false); // note, after the two strings, there are two optional parameters. Just use one and set it to false.  
 					document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true); 
 					document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false);
-					// document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
-					document.getElementById('notes_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, true); 
-					// console.log( dmp.diff_prettyHtml(d, true, true))
+					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
+// 					document.getElementById('notes_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, true); 
+					console.log( dmp.diff_prettyHtml(d, true, true))
 				} else {
 					// this is the old way where it doesn't show the insertions and deletions
 					document.getElementById('inputText_'+this.user_input).innerHTML = '<searching>' + this.user_input + '</searching>'; 
