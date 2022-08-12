@@ -1311,62 +1311,8 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 			html[x] = html[x].replace(/<ins><\/i>/gi, "</i><ins>") 
 		}
 	}
-	var html_out = html.join('');
-	const min_highlight_length = 1
-	html_out = remove_surrounding_tags(html_out,"ins",min_highlight_length,false)
-	html_out = remove_surrounding_tags(html_out,"ins",min_highlight_length,true)
-	html_out = remove_surrounding_tags(html_out,"del",min_highlight_length,false)
-	html_out = remove_surrounding_tags(html_out,"del",min_highlight_length,true)
-	html_out = remove_surrounding_tags(html_out,"chg",min_highlight_length,false)	
-	html_out = remove_surrounding_tags(html_out,"chg",min_highlight_length,true)	
-	
-	return html_out;
+return html.join('');
 };
-
-function remove_surrounding_tags(input_text, tag, max_length, invert) {
-	// dfd don't forget about lowercasing the 
-  if (invert) {
-    console.log('invert')
-  }
-
-	if (input_text.indexOf('<'+tag+'>') == -1) {
-		return input_text;
-	}
-
-	var return_text = input_text;
-	var result = '';
-	
-// 	var return_text = "Hello <ins>no</ins> what are you <ins>yes</ins> doing yes"
-	  if (invert) {
-      var removeStr = '<\/'+tag+'>.{0,'+max_length+'}<'+tag+'>';
-    } else {
-      var removeStr = '<'+tag+'>.{0,'+max_length+'}<\/'+tag+'>';
-    }
-// 	console.log( removeStr)
-	const regex =  new RegExp(removeStr,'gi');
-	
-	try {
-// 		console.log( return_text)
-		if (typeof return_text.match(regex) != 'undefined' && return_text.match(regex) != null) {
-			result = return_text.match(regex);
-			if (result != null) {
-				for (i = 0; i < result.length; i++) {
-					replacement = result[i].slice(tag.length + 2, result[i].indexOf('</'+tag+'>'));
-// 					console.log(result[i]+ ' - ' + replacement);
-					return_text = return_text.replace(result[i],replacement)
-				}
-			}
-		}
-// 	console.log( return_text)
-	
-	} catch (err) {
-		console.log( '**error in remove surrounding tags: ')
-		console.log( err)
-	}
-return return_text;
-}
-
-
 
 
 /**
