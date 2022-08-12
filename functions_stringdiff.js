@@ -1282,59 +1282,91 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 		} else {
 			case_change = false;
 		}
-    console.log(data+'['+op+']')
 
 		switch (op) {
 			case DIFF_INSERT:
 				if (showIns) {				
-					if (text_length_no_html > min_length_to_display) {
 						if (case_change) {
 							html[x] = '<chg>' + text + '</chg>';
 						} else {				
 							html[x] = '<ins>' + text + '</ins>';
 						}
-					} else {
-						html[x] = text;
-					}
 				}
 				break;
 			case DIFF_DELETE:
 				if (showDel) {
-					if (text_length_no_html > min_length_to_display) {
-						if (case_change) {
-							html[x] = '<chg>' + text + '</chg>';
-						} else {				
-							html[x] = '<del>' + text + '</del>';
-						}
-					} else {
-						html[x] = text;
+					if (case_change) {
+						html[x] = '<chg>' + text + '</chg>';
+					} else {				
+						html[x] = '<del>' + text + '</del>';
 					}
 				}
 				break;
 			case DIFF_EQUAL:
-        // if (text_length_no_html < 2 && x > 0 && x < diffs.length-1) { // dfdd
-        //   if (diffs[x-1][0] == diffs[x+1][0]) {
-        //     console.log('--'+diffs[x-1][1]+'['+data+']'+diffs[x+1][1])
-        //     if (diffs[x-1][0] == -1 && showDel) {
-        //       html[x] = '<del>' + text + '</del>';
-        //       break;
-        //     } else if (diffs[x-1][0] == 1 && showIns) {
-        //       html[x] = '<ins>' + text + '</ins>';
-        //       break;
-        //     }
-        //     // console.log("-this one (above)-")
-        //   }
-        // }
-        html[x] = text;
-        break;
+				html[x] = text;
+				break;
 		}
 		if (typeof html[x] != 'undefined' && html[x] != null) {
 			// special case where an end tag for italics are inside the ins. it changes <ins></i> to </i><ins>. I don't think other special cases are possible??
 			html[x] = html[x].replace(/<ins><\/i>/gi, "</i><ins>") 
 		}
 	}
-return html.join('');
+	var html_out = html.join('');
+	const min_highlight_length = 1
+	html_out = remove_surrounding_tags(html_out,"ins",min_highlight_length,false)
+	html_out = remove_surrounding_tags(html_out,"ins",min_highlight_length,true)
+	html_out = remove_surrounding_tags(html_out,"del",min_highlight_length,false)
+	html_out = remove_surrounding_tags(html_out,"del",min_highlight_length,true)
+	html_out = remove_surrounding_tags(html_out,"chg",min_highlight_length,false)	
+	html_out = remove_surrounding_tags(html_out,"chg",min_highlight_length,true)	
+	
+	return html_out;
 };
+
+function remove_surrounding_tags(input_text, tag, max_length, invert) {
+	// dfd don't forget about lowercasing the 
+  if (invert) {
+    console.log('invert')
+  }
+
+	if (input_text.indexOf('<'+tag+'>') == -1) {
+		return input_text;
+	}
+
+	var return_text = input_text;
+	var result = '';
+	
+// 	var return_text = "Hello <ins>no</ins> what are you <ins>yes</ins> doing yes"
+	  if (invert) {
+      var removeStr = '<\/'+tag+'>.{0,'+max_length+'}<'+tag+'>';
+    } else {
+      var removeStr = '<'+tag+'>.{0,'+max_length+'}<\/'+tag+'>';
+    }
+// 	console.log( removeStr)
+	const regex =  new RegExp(removeStr,'gi');
+	
+	try {
+// 		console.log( return_text)
+		if (typeof return_text.match(regex) != 'undefined' && return_text.match(regex) != null) {
+			result = return_text.match(regex);
+			if (result != null) {
+				for (i = 0; i < result.length; i++) {
+					replacement = result[i].slice(tag.length + 2, result[i].indexOf('</'+tag+'>'));
+// 					console.log(result[i]+ ' - ' + replacement);
+					return_text = return_text.replace(result[i],replacement)
+				}
+			}
+		}
+// 	console.log( return_text)
+	
+	} catch (err) {
+		console.log( '**error in remove surrounding tags: ')
+		console.log( err)
+	}
+return return_text;
+}
+
+
 
 
 /**
