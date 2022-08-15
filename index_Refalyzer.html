@@ -466,8 +466,8 @@ Basic procedure:
                 // add together title, colon, then subtitle
                 title = title + ': ' + input_json.subtitle.toString().trim();
             }
-            // if it doesn't end with a period, end it
-            if (title.charAt(title.length-1) != '.') {
+            // if it doesn't end with a period or question mark, end it
+            if (title.charAt(title.length-1) != '.' && title.charAt(title.length-1) != '?') {
                 title = title + '.';
             }
 

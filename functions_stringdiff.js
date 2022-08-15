@@ -31,7 +31,7 @@
  * Class containing the diff, match and patch methods.
  * @constructor
  */
-var diff_match_patch = function() {
+ var diff_match_patch = function() {
 
   // Defaults.
   // Redefine these in your program to override the defaults.
@@ -1307,12 +1307,79 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 				break;
 		}
 		if (typeof html[x] != 'undefined' && html[x] != null) {
-			// special case where an end tag for italics are inside the ins. it changes <ins></i> to </i><ins>. I don't think other special cases are possible??
+			// special case where an end tag for italics are inside the ins. it changes <ins></i> to </i><ins>. I don't think other special cases are possible, assuming the input is plain text and the only formatting added is italics??
 			html[x] = html[x].replace(/<ins><\/i>/gi, "</i><ins>") 
 		}
 	}
-return html.join('');
+
+  // dfd
+  // Robey, A. M., Dougherty, M. R., & Buttaccio, D. R. (2017).   Making retrospective confidence judgments improves learners’ ability to decide what Not to Study. Psychological Science, 28, 1683–1893. https://doi.org/10.1177/0956797617718800
+
+  try {
+    var html_out = html.join('');
+    // dfd is this order always best?
+    const min_highlight_gap_length = 0 // if there's a gap between highlights this small or smaller than this, highlight it.
+    const min_highlight_length = 0 // if there's a highlight this small or smaller than this, don't highlight it.
+    html_out = remove_surrounding_tags(html_out,"ins",min_highlight_gap_length,true)
+    html_out = remove_surrounding_tags(html_out,"del",min_highlight_gap_length,true)
+    html_out = remove_surrounding_tags(html_out,"chg",min_highlight_gap_length,true)	
+    html_out = remove_surrounding_tags(html_out,"ins",min_highlight_length,false)
+    html_out = remove_surrounding_tags(html_out,"del",min_highlight_length,false)
+    html_out = remove_surrounding_tags(html_out,"chg",min_highlight_length,false)	
+    
+  } catch(err) {
+    console.log('error in pretty html when calling remove surrouding tags')
+  }
+	return html_out;
 };
+
+function remove_surrounding_tags(input_text, tag, max_length, end_then_start) {
+	// dfd don't forget about lowercasing the tags
+  var start_tag = '';
+  var end_tag = '';
+  var replacement = '';
+
+	if (input_text.indexOf('<'+tag+'>') == -1) {
+		return input_text;
+	}
+
+	var return_text = input_text;
+	var result = '';
+
+  try {
+	  if (end_then_start) {
+      start_tag = '<\/'+tag+'>';
+      end_tag = '<'+tag+'>';
+    } else {
+      start_tag = '<'+tag+'>';
+      end_tag = '<\/'+tag+'>';
+    }
+
+    var removeStr = start_tag + '.{0,'+max_length+'}' + end_tag;
+// 	console.log( removeStr)
+	const regex =  new RegExp(removeStr,'gi');
+	
+// 		console.log( return_text)
+		if (typeof return_text.match(regex) != 'undefined' && return_text.match(regex) != null) {
+			result = return_text.match(regex);
+			if (result != null) {
+				for (i = 0; i < result.length; i++) {
+					replacement = result[i].slice(start_tag.length, result[i].indexOf(end_tag));
+					// console.log(result[i]+ ' - ' + replacement);
+					return_text = return_text.replace(result[i],replacement)
+				}
+			}
+		}
+// 	console.log( return_text)
+	
+	} catch (err) {
+		console.log( '**error in remove surrounding tags: ')
+		console.log( err)
+	}
+return return_text;
+}
+
+
 
 
 /**
