@@ -1333,6 +1333,37 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 	return html_out;
 };
 
+function merge_tags(a, b) {
+  var combined_length = 0;
+  var a1 = '';
+  var b1 = '';
+  var result = '';
+
+  a = "The <b>king</b> is <ins>not</ins> tall"
+  b = "The king <i>is</i> not tall"
+
+do {
+  a1 = a.slice(0,1);
+  b1 = b.slice(0,1);
+
+  a = a.slice(1)
+  b = b.slice(1)
+
+  // pagelog(a)
+
+  if (a1 == '<' && b1 == '<') {
+    // sg 
+  } else if (a1 == '<') {
+    // extract the first tag and add it to result
+  } else if (a1 == b1) {
+    result += a1;
+}
+  console.log(result)
+  combined_length = a.length + b.length
+}
+while (combined_length > 0)
+}
+
 function remove_surrounding_tags(input_text, tag, max_length, end_then_start) {
 	// dfd don't forget about lowercasing the tags
   var start_tag = '';
