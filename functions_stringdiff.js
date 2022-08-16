@@ -1262,7 +1262,16 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 //   var pattern_lt = /</g;
 //   var pattern_gt = />/g;
 //   var pattern_para = /\n/g;
+// 	console.log( diffs);
 
+// 	var og_full_string = '';
+// 	for (var x = 0; x < diffs.length; x++) {
+// 		og_full_string += diffs[x][1];
+// 	}
+// 	console.log(' og full string:')
+// 	console.log(og_full_string)
+	
+	
 	for (var x = 0; x < diffs.length; x++) {
 		var op = diffs[x][0];    // Operation (insert, delete, equal)
 		var data = diffs[x][1];  // Text of change.
@@ -1286,17 +1295,18 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 		switch (op) {
 			case DIFF_INSERT:
 				if (showIns) {				
-						if (case_change) {
-							html[x] = '<chg>' + text + '</chg>';
-						} else {				
-							html[x] = '<ins>' + text + '</ins>';
-						}
+					if (case_change) {
+						html[x] = '<chg>' + text + '</chg>';
+					} else {				
+						html[x] = '<ins>' + text + '</ins>';
+					}
 				}
 				break;
 			case DIFF_DELETE:
 				if (showDel) {
 					if (case_change) {
 						html[x] = '<chg>' + text + '</chg>';
+// 						console.log( html[x] + ' <- diff del')
 					} else {				
 						html[x] = '<del>' + text + '</del>';
 					}
@@ -1312,55 +1322,134 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 		}
 	}
 
-  // dfd
-  // Robey, A. M., Dougherty, M. R., & Buttaccio, D. R. (2017).   Making retrospective confidence judgments improves learnersâ€™ ability to decide what Not to Study. Psychological Science, 28, 1683â€“1893. https://doi.org/10.1177/0956797617718800
+	// dfd
+	// Robey, A. M., Dougherty, M. R., & Buttaccio, D. R. (2017).   Making retrospective confidence judgments improves learnersÕ ability to decide what Not to Study. Psychological Science, 28, 1683Ð1893. https://doi.org/10.1177/0956797617718800
 
-  try {
-    var html_out = html.join('');
-    // dfd is this order always best?
-    const min_highlight_gap_length = 0 // if there's a gap between highlights this small or smaller than this, highlight it.
-    const min_highlight_length = 0 // if there's a highlight this small or smaller than this, don't highlight it.
-    html_out = remove_surrounding_tags(html_out,"ins",min_highlight_gap_length,true)
-    html_out = remove_surrounding_tags(html_out,"del",min_highlight_gap_length,true)
-    html_out = remove_surrounding_tags(html_out,"chg",min_highlight_gap_length,true)	
-    html_out = remove_surrounding_tags(html_out,"ins",min_highlight_length,false)
-    html_out = remove_surrounding_tags(html_out,"del",min_highlight_length,false)
-    html_out = remove_surrounding_tags(html_out,"chg",min_highlight_length,false)	
-    
-  } catch(err) {
-    console.log('error in pretty html when calling remove surrouding tags')
-  }
+
+// dfdd move this into pretty thing (and then I can put back charlie)
+	try {
+		var html_out = html.join('');
+		console.log( 'html out = '+html_out)
+
+		// dfd is this order always best?
+		const min_highlight_gap_length = 0 // if there's a gap between highlights this small or smaller than this, highlight it.
+		const min_highlight_length = 0 // if there's a highlight this small or smaller than this, don't highlight it.
+		html_out = remove_surrounding_tags(html_out,"ins",min_highlight_gap_length,true)
+		html_out = remove_surrounding_tags(html_out,"del",min_highlight_gap_length,true)
+		html_out = remove_surrounding_tags(html_out,"chg",min_highlight_gap_length,true)
+		html_out = remove_surrounding_tags(html_out,"ins",min_highlight_length,false)
+		html_out = remove_surrounding_tags(html_out,"del",min_highlight_length,false)
+		html_out = remove_surrounding_tags(html_out,"chg",min_highlight_length,false)
+	} catch(err) {
+		console.log('error in pretty html when calling remove surrouding tags')
+	}
+
+// 	pagelog('merged:')
+// 	pagelog(merge_tags(og_full_string, html_out));
+
 	return html_out;
 };
 
+function pretty_thing(user_input, ref_to_show, show_ins, show_del) {
+	var ref_to_show_no_tags = ref_to_show.replace(/(<([^>]+)>)/gi, "")
+	var d = dmp.diff_main(user_input, ref_to_show_no_tags, false); // note, after the two strings, there are two optional parameters. Just use one and set it to false.  
+	console.log('ref to show='+ ref_to_show)
+	var result = dmp.diff_prettyHtml(d, show_ins, show_del); 
+// 	console.log( '-- result then reference to show--')
+// 	console.log(result)
+// 	console.log(ref_to_show_no_tags)
+	return merge_tags(ref_to_show, result);
+}
+
 function merge_tags(a, b) {
 // this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, ""); // dfdd
-  var combined_length = 0;
-  var a1 = '';
-  var b1 = '';
-  var result = '';
+	var counter = 0
+	var combined_length = 0;
+	var a_start = '';
+	var b_start = '';
+	var result = '';
+	
+// 	a = "The <b>king</b> is <ins>not</ins> tall"
+// 	b = "The king<i> is</i> not tall"
+	
+// 	pagelog (a);
+// 	pagelog (b);
+	
+	if (a.toLowerCase().indexOf('<del>') >= 0) {
+		// make sure deletion tags (and ins etc) are in b, not a. 
+		if (b.toLowerCase().indexOf('<del>') >= 0) {
+			console.log( '**error, <del> tag found in both strings.')
+		}
+		var foof = a;
+		a = b;
+		b = foof;
+	}
 
-  a = "The <b>king</b> is <ins>not</ins> tall"
-  b = "The king <i>is</i> not tall"
-
-do {
-  a1 = a.slice(0,1); // first letter of a
-  b1 = b.slice(0,1);
-
-  a = a.slice(1)
-  b = b.slice(1)
-
-  if (a1 == '<' && b1 == '<') {
-    // sg 
-  } else if (a1 == '<') {
-    // extract the first tag and add it to result
-  } else if (a1 == b1) {
-    result += a1;
-}
-  console.log(result)
-  combined_length = a.length + b.length
-}
-while (combined_length > 0)
+	do {
+		counter++;
+		if (a.charAt(0) == '<') {
+			a_start = a.match(/(<([^>]+)>)/i)[0]; // the first tag. btw, match returns an array, even if you only search for one.
+		} else {
+			a_start = a.charAt(0); // first letter of a
+		}
+		
+		if (b.charAt(0) == '<') {
+			b_start = b.match(/(<([^>]+)>)/i)[0];			
+			if (b_start == '<del>') {
+				b_start = b.match(/(<del>([^>]+)<\/del>)/i)[0]
+			} else if (b_start == '<chg>') {
+				// remove the first change tag (and what's inside it)
+				b_start = b.match(/(<chg>([^>]+)<\/chg>)/i)[0]
+				b = b.slice(b_start.length)
+				// make the second change tag the start
+				b_start = b.match(/(<chg>([^>]+)<\/chg>)/i)[0]
+				console.log( 'b start = ' + b_start)
+			}
+		} else {
+			b_start = b.charAt(0); // first letter of a
+		}
+			
+		if (a_start.charAt(0) == '<' && b_start.charAt(0) == '<') {
+			a = a.slice(a_start.length)
+			b = b.slice(b_start.length)
+			if (a.charAt(1) == '/') {
+				result += a_start + b_start;
+			} else {
+				result += b_start + a_start;
+			}
+// 			console.log( '111')
+		} else if (a_start.charAt(0) == '<') {
+			result += a_start;
+			a = a.slice(a_start.length)
+// 			console.log( '222')
+		} else if (b_start.charAt(0) == '<') {
+			result += b_start;
+			b = b.slice(b_start.length)
+// 			console.log( "b_start.toLowerCase().indexOf('<chg>') = " + b_start.toLowerCase().indexOf('<chg>'))
+			if (b_start.toLowerCase().indexOf('<chg>') >= 0) {
+				console.log('['+b_start.length+'] ' + a)
+				a = a.slice(b_start.length - 11) // get rid of the same text (wo tags) in a. 
+				console.log('a= ' + a)
+			}
+			console.log( '333')
+		} else if (a_start == b_start) {
+			result += a_start;
+			a = a.slice(1);
+			b = b.slice(1);
+// 			console.log( '444')
+		} else {
+			// if there aren't tags but the letters aren't the same
+			console.log( '---555 non match in merge tags--')
+			console.log( 'result: '+ result)
+			console.log( 'a: '+ a)
+			console.log( 'b: '+ b)
+			return null;
+		}
+// 		console.log(result)
+		combined_length = a.length + b.length
+		}
+	while (combined_length > 0 && counter < 10000) // the counter is just to make sure there's no infinite loop nonsense. 
+	return result;
 }
 
 function remove_surrounding_tags(input_text, tag, max_length, end_then_start) {
@@ -1396,7 +1485,10 @@ function remove_surrounding_tags(input_text, tag, max_length, end_then_start) {
 				for (i = 0; i < result.length; i++) {
 					replacement = result[i].slice(start_tag.length, result[i].indexOf(end_tag));
 					// console.log(result[i]+ ' - ' + replacement);
-					return_text = return_text.replace(result[i],replacement)
+					if (replacement.length > 0) {
+						// this might seem dumb, but for <chg> tags, it needs to know where one ends and the other begins. but later I can get rid of this charlie
+						return_text = return_text.replace(result[i],replacement)
+					}
 				}
 			}
 		}

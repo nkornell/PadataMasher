@@ -343,7 +343,9 @@ Basic procedure:
 					document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false);
 					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
 // 					document.getElementById('notes_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, true); 
-					console.log( dmp.diff_prettyHtml(d, true, true))
+// 					console.log( dmp.diff_prettyHtml(d, true, true))
+// 					console.log( 'new pretty thing')
+					pagelog( pretty_thing(this.user_input, temp_ref_to_show, true, true));
 				} else {
 					// this is the old way where it doesn't show the insertions and deletions
 					document.getElementById('inputText_'+this.user_input).innerHTML = '<searching>' + this.user_input + '</searching>'; 
@@ -1749,7 +1751,7 @@ project.org/package=metaBMA.
 <p><button onclick="start()">run</button> 
 <button onclick="localStorage.clear()">clear local storage</button> 
 <button onclick="reset_user_input()">reset user input</button>
-<button onclick="merge_tags('abc', 'def')">merge tags</button>
+<button onclick="pagelog(merge_tags('abc', 'a<strong>b</strong>c'))">merge tags</button>
 
 <!-- 
 <button onclick="update_progress()">update_progress</button>
