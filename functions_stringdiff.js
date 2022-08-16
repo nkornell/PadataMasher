@@ -1257,7 +1257,7 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 // the last two parameters determine whether the insertions and deletions are shown, respectively.
 	var html = [];
 	var case_change = false;
-  var min_length_to_display = 0; // this is a setting. It says, don't bother with highlights shorter than this (they're just distracting)
+  	var min_length_to_display = 0; // this is a setting. It says, don't bother with highlights shorter than this (they're just distracting)
 //   var pattern_amp = /&/g;
 //   var pattern_lt = /</g;
 //   var pattern_gt = />/g;
@@ -1334,6 +1334,7 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 };
 
 function merge_tags(a, b) {
+// this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, ""); // dfdd
   var combined_length = 0;
   var a1 = '';
   var b1 = '';
@@ -1343,13 +1344,11 @@ function merge_tags(a, b) {
   b = "The king <i>is</i> not tall"
 
 do {
-  a1 = a.slice(0,1);
+  a1 = a.slice(0,1); // first letter of a
   b1 = b.slice(0,1);
 
   a = a.slice(1)
   b = b.slice(1)
-
-  // pagelog(a)
 
   if (a1 == '<' && b1 == '<') {
     // sg 
