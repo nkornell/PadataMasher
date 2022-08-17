@@ -339,14 +339,14 @@ Basic procedure:
                 if (this.search_status == 'done') {
 					// d is the object that represents the difference between the two strings. 
 					var d = dmp.diff_main(this.user_input, temp_ref_to_show, false); // note, after the two strings, there are two optional parameters. Just use one and set it to false.  
-// 					document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true); 
-// 					document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false);
-					document.getElementById('inputText_'+this.user_input).innerHTML = pretty_thing(this.user_input, temp_ref_to_show, false, true); 
-					document.getElementById('reference_'+this.user_input).innerHTML = pretty_thing(this.user_input, temp_ref_to_show, true, false);
+					document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false); 
+					document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true);
+// 					document.getElementById('inputText_'+this.user_input).innerHTML = pretty_thing(this.user_input, temp_ref_to_show, false, true); 
+// 					document.getElementById('reference_'+this.user_input).innerHTML = pretty_thing(this.user_input, temp_ref_to_show, true, false);
 					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
-					pagelog('showing all:')
-					pagelog(pretty_thing(this.user_input, temp_ref_to_show, true, true));
-// 					pagelog(pretty_thing(this.user_input, temp_ref_to_show, true, false));
+					
+// 					pagelog('showing all:')
+// 					pagelog(dmp.diff_prettyHtml(d, true, true))
 				} else {
 					// this is the old way where it doesn't show the insertions and deletions
 					document.getElementById('inputText_'+this.user_input).innerHTML = '<searching>' + this.user_input + '</searching>'; 
@@ -1368,6 +1368,11 @@ Basic procedure:
 		var tempDOItype = "";
         var tempDOI = '';
         var tempDOIsFoundSoFar = [];
+        
+        
+        inputText = inputText.replace(/\t+/g, ' '); // turn tabs into single spaces
+        inputText = inputText.replace(/  +/g, ' '); // turn multiple space strings into single spaces
+
 		var urlSuffix = inputText.split(/\r\n|\r|\n/g);
         
 		for (i = urlSuffix.length - 1; i >= 0; i--) {
@@ -1633,7 +1638,7 @@ Basic procedure:
 // 	    console.log('current mode: ' + current_mode)
 	
 	    if (current_mode == "completely done") {
-	        console.log( ' called up when completely done [returning]')
+// 	        console.log( ' called up when completely done [returning]')
 	        return; // is this ok?
 	    }
 	    
@@ -1752,7 +1757,7 @@ project.org/package=metaBMA.
 <p><button onclick="start()">run</button> 
 <button onclick="localStorage.clear()">clear local storage</button> 
 <button onclick="reset_user_input()">reset user input</button>
-<button onclick="pagelog(merge_tags('abc', 'a<strong>b</strong>c'))">merge tags</button>
+<!-- <button onclick="pagelog(merge_tags('abc', 'a<strong>b</strong>c'))">merge tags</button> -->
 
 <!-- 
 <button onclick="update_progress()">update_progress</button>
