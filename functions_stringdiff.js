@@ -1296,7 +1296,7 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 			case DIFF_INSERT:
 				if (showIns) {				
 					if (case_change) {
-						html[x] = '<chg>' + text + '</chg>';
+						html[x] = '<chgins>' + text + '</chgins>';
 					} else {				
 						html[x] = '<ins>' + text + '</ins>';
 					}
@@ -1305,7 +1305,7 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 			case DIFF_DELETE:
 				if (showDel) {
 					if (case_change) {
-						html[x] = '<chg>' + text + '</chg>';
+						html[x] = '<chgdel>' + text + '</chgdel>';
 // 						console.log( html[x] + ' <- diff del')
 					} else {				
 						html[x] = '<del>' + text + '</del>';
@@ -1327,22 +1327,9 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 
 
 // dfdd move this into pretty thing (and then I can put back charlie)
-	try {
 		var html_out = html.join('');
-		console.log( 'html out = '+html_out)
+// 		console.log( 'html out = '+html_out)
 
-		// dfd is this order always best?
-		const min_highlight_gap_length = 0 // if there's a gap between highlights this small or smaller than this, highlight it.
-		const min_highlight_length = 0 // if there's a highlight this small or smaller than this, don't highlight it.
-		html_out = remove_surrounding_tags(html_out,"ins",min_highlight_gap_length,true)
-		html_out = remove_surrounding_tags(html_out,"del",min_highlight_gap_length,true)
-		html_out = remove_surrounding_tags(html_out,"chg",min_highlight_gap_length,true)
-		html_out = remove_surrounding_tags(html_out,"ins",min_highlight_length,false)
-		html_out = remove_surrounding_tags(html_out,"del",min_highlight_length,false)
-		html_out = remove_surrounding_tags(html_out,"chg",min_highlight_length,false)
-	} catch(err) {
-		console.log('error in pretty html when calling remove surrouding tags')
-	}
 
 // 	pagelog('merged:')
 // 	pagelog(merge_tags(og_full_string, html_out));
@@ -1350,14 +1337,31 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 	return html_out;
 };
 
-function pretty_thing(user_input, ref_to_show, show_ins, show_del) {
+function pretty_thing(user_input, ref_to_show, show_ins, show_del) { // dfd rename
 	var ref_to_show_no_tags = ref_to_show.replace(/(<([^>]+)>)/gi, "")
 	var d = dmp.diff_main(user_input, ref_to_show_no_tags, false); // note, after the two strings, there are two optional parameters. Just use one and set it to false.  
-	console.log('ref to show='+ ref_to_show)
 	var result = dmp.diff_prettyHtml(d, show_ins, show_del); 
 // 	console.log( '-- result then reference to show--')
 // 	console.log(result)
-// 	console.log(ref_to_show_no_tags)
+// 	console.log(ref_to_show)
+
+	try {
+		const min_highlight_gap_length = 2 // if there's a gap between highlights this small or smaller than this, highlight it.
+		const min_highlight_length = 2 // if there's a highlight this small or smaller than this, don't highlight it.
+		
+		result = remove_surrounding_tags(result,"ins",min_highlight_gap_length,true)
+		result = remove_surrounding_tags(result,"del",min_highlight_gap_length,true)
+		result = remove_surrounding_tags(result,"chgins",min_highlight_gap_length,true)
+		result = remove_surrounding_tags(result,"chgdel",min_highlight_gap_length,true)
+		result = remove_surrounding_tags(result,"ins",min_highlight_length,false)
+		result = remove_surrounding_tags(result,"del",min_highlight_length,false)
+		result = remove_surrounding_tags(result,"chgins",min_highlight_length,false)
+		result = remove_surrounding_tags(result,"chgdel",min_highlight_length,false)
+	} catch(err) {
+		console.log('error in pretty when calling remove surrouding tags')
+	}
+
+
 	return merge_tags(ref_to_show, result);
 }
 
@@ -1375,10 +1379,10 @@ function merge_tags(a, b) {
 // 	pagelog (a);
 // 	pagelog (b);
 	
-	if (a.toLowerCase().indexOf('<del>') >= 0) {
+	if (a.toLowerCase().indexOf('<del>') >= 0 || a.toLowerCase().indexOf('<ins>') >= 0 || a.toLowerCase().indexOf('<chg') >= 0) {
 		// make sure deletion tags (and ins etc) are in b, not a. 
-		if (b.toLowerCase().indexOf('<del>') >= 0) {
-			console.log( '**error, <del> tag found in both strings.')
+		if (b.toLowerCase().indexOf('<del>') >= 0 || b.toLowerCase().indexOf('<ins>') >= 0 || b.toLowerCase().indexOf('<chg') >= 0) {
+			console.log( '**error, <del> or <ins> or <chg> tag found in both strings.')
 		}
 		var foof = a;
 		a = b;
@@ -1394,49 +1398,52 @@ function merge_tags(a, b) {
 		}
 		
 		if (b.charAt(0) == '<') {
-			b_start = b.match(/(<([^>]+)>)/i)[0];			
+			b_start = b.match(/(<([^>]+)>)/i)[0]; // any tag	
 			if (b_start == '<del>') {
-				b_start = b.match(/(<del>([^>]+)<\/del>)/i)[0]
-			} else if (b_start == '<chg>') {
-				// remove the first change tag (and what's inside it)
-				b_start = b.match(/(<chg>([^>]+)<\/chg>)/i)[0]
+				b_start = b.match(/(<del>([^>]+)<\/del>)/i)[0] // 
+			} else if (b_start == '<chgdel>') {
+				// remove the deleted change tag (and what's inside it)
+				b_start = b.match(/(<chgdel>([^>]+)<\/chgdel>)/i)[0]
 				b = b.slice(b_start.length)
 				// make the second change tag the start
 				b_start = b.match(/(<chg>([^>]+)<\/chg>)/i)[0]
-				console.log( 'b start = ' + b_start)
+// 				console.log( 'b start = ' + b_start)
 			}
 		} else {
 			b_start = b.charAt(0); // first letter of a
 		}
 			
-		if (a_start.charAt(0) == '<' && b_start.charAt(0) == '<') {
-			a = a.slice(a_start.length)
-			b = b.slice(b_start.length)
-			if (a.charAt(1) == '/') {
-				result += a_start + b_start;
-			} else {
-				result += b_start + a_start;
-			}
-// 			console.log( '111')
-		} else if (a_start.charAt(0) == '<') {
+		
+		if (a_start == b_start) {
 			result += a_start;
-			a = a.slice(a_start.length)
-// 			console.log( '222')
+			a = a.slice(a_start.length);
+			b = b.slice(a_start.length);
+// 			console.log( '444')
+		} else if (a_start.charAt(0) == '<' && b_start.charAt(0) == '<' && a.charAt(1) == '/') {
+			// if they're both tags, and a is an end tag, take care of a. otherwise, it'll start with b (in the next else)
+// 			b = b.slice(b_start.length)
+// 			if () {
+				a = a.slice(a_start.length)
+				result += a_start;
+// 			} else {
+// 				result += b_start + a_start;
+// 			}
+			console.log( '111')
 		} else if (b_start.charAt(0) == '<') {
 			result += b_start;
 			b = b.slice(b_start.length)
 // 			console.log( "b_start.toLowerCase().indexOf('<chg>') = " + b_start.toLowerCase().indexOf('<chg>'))
-			if (b_start.toLowerCase().indexOf('<chg>') >= 0) {
-				console.log('['+b_start.length+'] ' + a)
-				a = a.slice(b_start.length - 11) // get rid of the same text (wo tags) in a. 
-				console.log('a= ' + a)
+			if (b_start.toLowerCase().indexOf('<chg>') >= 0) { 
+// 				console.log('['+b_start.length+'] ' + a)
+				a = a.slice(b_start.length - 11) // get rid of the same text (without tags) in a. (e.g.,, <chg>dog</chg> becomes dog, which gets removed)
+// 				console.log('a= ' + a)
 			}
 			console.log( '333')
-		} else if (a_start == b_start) {
+// 			console.log( result)
+		} else if (a_start.charAt(0) == '<') {
 			result += a_start;
-			a = a.slice(1);
-			b = b.slice(1);
-// 			console.log( '444')
+			a = a.slice(a_start.length)
+// 			console.log( '222')
 		} else {
 			// if there aren't tags but the letters aren't the same
 			console.log( '---555 non match in merge tags--')
@@ -1449,6 +1456,13 @@ function merge_tags(a, b) {
 		combined_length = a.length + b.length
 		}
 	while (combined_length > 0 && counter < 10000) // the counter is just to make sure there's no infinite loop nonsense. 
+	
+	if (counter == 10000) {
+		console.log( '*** error: merge tags ended prematurely')
+	}
+	
+// 	console.log( 'result=')
+// 	console.log( result)
 	return result;
 }
 

@@ -234,7 +234,12 @@ del {
     text-decoration: none;
 }
 
-chg {
+chgins {
+	background-color: LightGrey;
+    text-decoration: none;
+}
+
+chgdel {
 	background-color: LightGrey;
     text-decoration: none;
 }
