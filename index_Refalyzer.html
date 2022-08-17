@@ -339,13 +339,14 @@ Basic procedure:
                 if (this.search_status == 'done') {
 					// d is the object that represents the difference between the two strings. 
 					var d = dmp.diff_main(this.user_input, temp_ref_to_show, false); // note, after the two strings, there are two optional parameters. Just use one and set it to false.  
-					document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true); 
-					document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false);
+// 					document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true); 
+// 					document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false);
+					document.getElementById('inputText_'+this.user_input).innerHTML = pretty_thing(this.user_input, temp_ref_to_show, false, true); 
+					document.getElementById('reference_'+this.user_input).innerHTML = pretty_thing(this.user_input, temp_ref_to_show, true, false);
 					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
-// 					document.getElementById('notes_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, true); 
-// 					console.log( dmp.diff_prettyHtml(d, true, true))
-// 					console.log( 'new pretty thing')
-					pagelog( pretty_thing(this.user_input, temp_ref_to_show, true, true));
+					pagelog('showing all:')
+					pagelog(pretty_thing(this.user_input, temp_ref_to_show, true, true));
+// 					pagelog(pretty_thing(this.user_input, temp_ref_to_show, true, false));
 				} else {
 					// this is the old way where it doesn't show the insertions and deletions
 					document.getElementById('inputText_'+this.user_input).innerHTML = '<searching>' + this.user_input + '</searching>'; 
