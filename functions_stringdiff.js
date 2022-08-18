@@ -1,7 +1,7 @@
 // Nate got this from https://github.com/google/diff-match-patch. 
 // The original filename was diff_match_patch_uncompressed.js
-// I changed stuff in the function called diff_match_patch.prototype.diff_prettyHtml
-// but that's all. 
+// I changed stuff in the function called diff_match_patch.prototype.diff_prettyHtml.
+// And I added some functions. I don't think I changed any of the others. 
 
 /**
  * Diff Match and Patch
@@ -1325,22 +1325,57 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 		html_out = remove_surrounding_tags(html_out,"del",min_highlight_length,false)
 		html_out = remove_surrounding_tags(html_out,"chg",min_highlight_length,false)
 	} catch(err) {
-		console.log('error in pretty when calling remove surrouding tags')
+		console.log('**error in pretty when calling remove surrouding tags')
 	}
+	
+	// dfd if I was going to check for html tags in bad orders, this would be a good place to do it. 
+	html_out = fix_html_tag_order(html_out);
 
 	return html_out;
 };
 
-function remove_surrounding_tags(input_text, tag, max_length, end_then_start) {
-	// smooth out the appearance of the highlighting
+function fix_html_tag_order(input) {
+	var tag_array = [];
+	var i = 0;
+	var current = [];
+	var foof = ''; 
+	
+	try {
+		console.log( '-fix_html_tag_order-')
+		console.log (input)
+		tag_array = input.match(/(<([^>]+)>)/gi)
+		console.log( tag_array)
+		for (i = 0; i < tag_array.length; i++){
+			if (tag_array[i].indexOf('/') > -1) {
+				foof = tag_array[i].replace('/', '')
+				if (foof == current[current.length - 1]) {
+					current.pop();
+				} else {
+					console.log( 'bad tag found (below).')				
+				}
+			} else {
+				current.push(tag_array[i])
+			}
+			console.log(tag_array[i])
+			console.log('current='+ current.toString())
+		}
+		console.log( '-end-')
+	} catch (err) {
+		console.log('**error in fix_html_tag_order')
+	}
+	return input;
+}
+
+function remove_surrounding_tags(input_text, tag, min_length, end_then_start) {
+	// The goal is to smooth out the appearance of the highlighting.
 	// search input text for the start and end tag. if the number of characters in between them
 	// is less than max length, get rid of the tags. 
 	// If end then start is true, it looks for things like </ins>hello<ins> in other words, 
 	// it gets rid of small areas of non-highlighting. 
 	
-  var start_tag = '';
-  var end_tag = '';
-  var replacement = '';
+	var start_tag = '';
+	var end_tag = '';
+	var replacement = '';
 
 	if (input_text.indexOf('<'+tag+'>') == -1) {
 		return input_text;
@@ -1349,17 +1384,17 @@ function remove_surrounding_tags(input_text, tag, max_length, end_then_start) {
 	var return_text = input_text;
 	var result = '';
 
-  try {
-	  if (end_then_start) {
-      start_tag = '<\/'+tag+'>';
-      end_tag = '<'+tag+'>';
-    } else {
-      start_tag = '<'+tag+'>';
-      end_tag = '<\/'+tag+'>';
-    }
+	if (end_then_start) {
+		  start_tag = '<\/'+tag+'>';
+		  end_tag = '<'+tag+'>';
+	} else {
+		  start_tag = '<'+tag+'>';
+		  end_tag = '<\/'+tag+'>';
+	}
 
-    var removeStr = start_tag + '.{0,'+max_length+'}' + end_tag; // the string to remove
-	const regex =  new RegExp(removeStr,'gi');
+	try {
+		var removeStr = start_tag + '.{0,'+min_length+'}' + end_tag; // the type of string to find (and remove)
+		const regex =  new RegExp(removeStr,'gi');
 	
 		if (typeof return_text.match(regex) != 'undefined' && return_text.match(regex) != null) {
 			result = return_text.match(regex);
