@@ -1333,6 +1333,8 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 };
 
 function fix_html_tag_order(input) {
+	// dfd known issues: this doesn't work if there's an ending of a tag that's more than one tag back. For example, if it found <i><ins><chg></i> it wouldn't work. I don't think. 
+	
 	// Tags don't work when they start/end in the wrong order. For example 
 	// <i>This<ins> doesn't</i> work</ins>
 	// because the italics end inside the ins. This function changes that to be 
@@ -1340,10 +1342,13 @@ function fix_html_tag_order(input) {
 	var tag_array = [];
 	var i = 0;
 	var current = [];
-// 	var foof = ''; 
 	var text = '';
 	var result = '';
-	var tag_to_add = '';
+	var tag_to_add = '', stuff_after = '', stuff_before = '';
+	
+	var foof = input; 
+	input = "<i>italic <ins> ins <b>bold </i> end italic</b> end bold</ins> end ins"
+	pagelog(input)
 	
 	try {
 		console.log( '-fix_html_tag_order-')
@@ -1363,36 +1368,40 @@ function fix_html_tag_order(input) {
 
 			// keep track of current
 			tag_to_add = tag_array[i];
-			if (tag_array[i].indexOf('/') > -1) {
-				tag_without_end_char = tag_array[i].replace('/', '')
-				if (tag_without_end_char == current[current.length - 1]) { // if this is the end tag for the most recent tag. 
+			if (tag_to_add.indexOf('/') > -1) {
+				tag_to_add_without_end_char = tag_to_add.replace('/', '')
+				if (tag_to_add_without_end_char == current[current.length - 1]) { // if this is the end tag for the most recent tag. 
 					current.pop();
 				} else {
-					// current[current.length - 1] = <i>, tag_to_add = </ins>. I want </i></ins><i>
-					// <ins><i></ins>
-					tag_to_add = '</' + current[current.length - 1].slice(1) + tag_array[i] + current[current.length - 1];
-					// change current by removing the most recently added tag that's the same as tag_without_end_char
-					
+					console.log( 'these should be equal ['+tag_to_add_without_end_char+']: '+(current.length-2)+", "+current.lastIndexOf(tag_to_add_without_end_char))
+					// example: <ins><i> and the next tag is </ins>
+					// here, current[current.length - 1] = <i>, tag_to_add = </ins>.
+					stuff_after = current.slice(current.lastIndexOf(tag_to_add_without_end_char)).join('')
+					stuff_before = stuff_after.replace(/</g, '</')
+					tag_to_add = '</' + current[current.length - 1].slice(1) + tag_to_add + current[current.length - 1]; // in this example, this will equal </i></ins><i>
+					current.splice(current.length-2, 1) // remove the second-to-last element of the array called current. that's the one whose end tag we're dealing with. in this example, it would remove <ins>, leaving just <i>
+					console.log( '---start')
+					console.log( result)
 					console.log( 'current.length='+current.length)
 					console.log( 'current='+current.toString())
+					console.log( 'stuff_before='+stuff_before)
+					console.log( 'stuff_after='+stuff_after)
 					console.log( 'tag_array[i]='+tag_array[i])
-					console.log( result)
-// 					current[0] = tag_array[i];
-// 					console.log( 'bad tag found (below).')				
-// 					console.log( 'tag_to_add='+tag_to_add)
-			
+					console.log( 'tag_to_add='+tag_to_add)
+					console.log( '---end')
 				}
 			} else {
-				current.push(tag_array[i])
+				current.push(tag_to_add)
 			}
 			// add tag
 			result += tag_to_add;
-			input = input.slice(tag_array[i].length)
-// 			console.log( result)
-// 			console.log(tag_array[i])
+			input = input.slice(tag_to_add.length)
+			
 // 			console.log('current='+ current.toString())
 		}
-		console.log('At the end, current='+current) // dfd If it works correctly, I think current should be empty??
+		if (current.length > 0) {
+			console.log('**Warning: At the end, current='+current) // dfd If it works correctly, I think current should be empty??
+		}
 		result += input; // get whatever's left
 		
 	} catch (err) {
@@ -1400,9 +1409,9 @@ function fix_html_tag_order(input) {
 		console.log( err)
 	}
 	
-// 	console.log( result)
-// 	pagelog(result)
-	console.log( '-end fix thml tag order-')
+	pagelog (result)
+	console.log( result)
+	return foof;
 	return result;
 }
 
