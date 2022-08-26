@@ -1328,42 +1328,82 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 		console.log('**error in pretty when calling remove surrouding tags')
 	}
 	
-	// dfd if I was going to check for html tags in bad orders, this would be a good place to do it. 
 	html_out = fix_html_tag_order(html_out);
-
 	return html_out;
 };
 
 function fix_html_tag_order(input) {
+	// Tags don't work when they start/end in the wrong order. For example 
+	// <i>This<ins> doesn't</i> work</ins>
+	// because the italics end inside the ins. This function changes that to be 
+	// <i>This<ins> doesn't</ins></i><ins> work</ins> so it works. 
 	var tag_array = [];
 	var i = 0;
 	var current = [];
-	var foof = ''; 
+// 	var foof = ''; 
+	var text = '';
+	var result = '';
+	var tag_to_add = '';
 	
 	try {
 		console.log( '-fix_html_tag_order-')
-		console.log (input)
-		tag_array = input.match(/(<([^>]+)>)/gi)
-		console.log( tag_array)
+		tag_array = input.match(/(<([^>]+)>)/gi);
+		if (tag_array == null) {
+			return input;
+		}
+				
 		for (i = 0; i < tag_array.length; i++){
+		
+			// add text that comes prior to the next tag
+			text = input.slice(0, input.indexOf('<')); // the part before the next tag
+			if (text != null && text.length > 0) {
+				input = input.slice(text.length)
+				result += text;
+			}
+
+			// keep track of current
+			tag_to_add = tag_array[i];
 			if (tag_array[i].indexOf('/') > -1) {
-				foof = tag_array[i].replace('/', '')
-				if (foof == current[current.length - 1]) {
+				tag_without_end_char = tag_array[i].replace('/', '')
+				if (tag_without_end_char == current[current.length - 1]) { // if this is the end tag for the most recent tag. 
 					current.pop();
 				} else {
-					console.log( 'bad tag found (below).')				
+					// current[current.length - 1] = <i>, tag_to_add = </ins>. I want </i></ins><i>
+					// <ins><i></ins>
+					tag_to_add = '</' + current[current.length - 1].slice(1) + tag_array[i] + current[current.length - 1];
+					// change current by removing the most recently added tag that's the same as tag_without_end_char
+					
+					console.log( 'current.length='+current.length)
+					console.log( 'current='+current.toString())
+					console.log( 'tag_array[i]='+tag_array[i])
+					console.log( result)
+// 					current[0] = tag_array[i];
+// 					console.log( 'bad tag found (below).')				
+// 					console.log( 'tag_to_add='+tag_to_add)
+			
 				}
 			} else {
 				current.push(tag_array[i])
 			}
-			console.log(tag_array[i])
-			console.log('current='+ current.toString())
+			// add tag
+			result += tag_to_add;
+			input = input.slice(tag_array[i].length)
+// 			console.log( result)
+// 			console.log(tag_array[i])
+// 			console.log('current='+ current.toString())
 		}
-		console.log( '-end-')
+		console.log('At the end, current='+current) // dfd If it works correctly, I think current should be empty??
+		result += input; // get whatever's left
+		
 	} catch (err) {
 		console.log('**error in fix_html_tag_order')
+		console.log( err)
 	}
-	return input;
+	
+// 	console.log( result)
+// 	pagelog(result)
+	console.log( '-end fix thml tag order-')
+	return result;
 }
 
 function remove_surrounding_tags(input_text, tag, min_length, end_then_start) {
