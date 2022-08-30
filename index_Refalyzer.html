@@ -1651,6 +1651,9 @@ Basic procedure:
         try {
             for (i = 1; i <= rows_total; i++) { // start at 1 to skip header row
                 row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
+                if (typeof text_obj[row_text] == undefined || text_obj[row_text] == null) {
+                    console.log("Can't find text_obj[row_text]. The text in the table probably got altered. See error below.")
+                }
                 if (text_obj[row_text].search_status == "done") {
                     rows_searched++;
                 }
@@ -1662,7 +1665,8 @@ Basic procedure:
                 }
             }
         } catch (err) {
-            console.log('*error in update progress: '+row_text);
+            console.log('*error in update progress: ')
+            console.log( row_text);
             console.log( err);
         }
 		

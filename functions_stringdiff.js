@@ -1256,8 +1256,6 @@ diff_match_patch.prototype.diff_xIndex = function(diffs, loc) {
 diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 // the last two parameters determine whether the insertions and deletions are shown, respectively.
 	var html = [];
-	var case_change = false;
-  	var min_length_to_display = 0; // this is a setting. It says, don't bother with highlights shorter than this (they're just distracting)
 //   var pattern_amp = /&/g;
 //   var pattern_lt = /</g;
 //   var pattern_gt = />/g;
@@ -1267,25 +1265,31 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 		var op = diffs[x][0];    // Operation (insert, delete, equal)
 		var data = diffs[x][1];  // Text of change.
 		var text = data;
-		
+		var case_change = false;
+		var all_tags = false;
 		// I got rid of the line below because it messed up some of the formatting by replacing some special characters. 
 		// I don't know why that was deemed a good idea in the first place, though. 
 		//     var text = data.replace(pattern_amp, '&amp;').replace(pattern_lt, '&lt;').replace(pattern_gt, '&gt;').replace(pattern_para, '&para;<br>');
 
 			
-		// if the lowercase value of the changed text is equal to the lowercase value of the adjacent changed text
-		if (x < diffs.length-1 && diffs[x][1].toLowerCase() == diffs[x+1][1].toLowerCase()) {
+		// if the lowercase value of the changed text is equal to the lowercase value of the adjacent changed text (e.g., "The" and "the"), it's a case change
+		if (x < diffs.length-1 && diffs[x][1].toLowerCase() == diffs[x+1][1].toLowerCase()) { // this is equal to the one after it
 			case_change = true;
-		} else if (x > 0 && diffs[x][1].toLowerCase() == diffs[x-1][1].toLowerCase()){
+		} else if (x > 0 && diffs[x][1].toLowerCase() == diffs[x-1][1].toLowerCase()){ // this is equal to the one before it
 			case_change = true;
-		} else {
-			case_change = false;
+		}
+
+		// if the text is all tags, don't mark it as an ins or del, because the tags are not visible to the user anyway.
+		if (text.replace(/(<([^<>]+)>)/gi, '') == '') {
+			all_tags = true;
 		}
 
 		switch (op) {
 			case DIFF_INSERT:
-				if (showDel) {
-					if (case_change) {
+				if (showDel) { // isn't this backwards????
+					if (all_tags) {
+						html[x] = text;
+					} else if (case_change) {
 						html[x] = '<chg>' + text + '</chg>';
 					} else {
 						html[x] = '<ins>' + text + '</ins>';
@@ -1294,7 +1298,9 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 				break;
 			case DIFF_DELETE:
 				if (showIns) { 
-					if (case_change) {
+					if (all_tags) {
+						html[x] = text;
+					} else if (case_change) {
 						html[x] = '<chg>' + text + '</chg>';
 					} else {
 						html[x] = '<del>' + text + '</del>';
@@ -1304,10 +1310,6 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 			case DIFF_EQUAL:
 				html[x] = text;
 				break;
-		}
-		if (typeof html[x] != 'undefined' && html[x] != null) {
-			// special case where an end tag for italics are inside the ins. it changes <ins></i> to </i><ins>. I don't think other special cases are possible, assuming the input is plain text and the only formatting added is italics??
-			html[x] = html[x].replace(/<ins><\/i>/gi, "</i><ins>") 
 		}
 	}
 
@@ -1328,91 +1330,90 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 		console.log('**error in pretty when calling remove surrouding tags')
 	}
 	
+
 	html_out = fix_html_tag_order(html_out);
+
 	return html_out;
 };
 
-function fix_html_tag_order(input) {
-	// dfd known issues: this doesn't work if there's an ending of a tag that's more than one tag back. For example, if it found <i><ins><chg></i> it wouldn't work. I don't think. 
-	
-	// Tags don't work when they start/end in the wrong order. For example 
-	// <i>This<ins> doesn't</i> work</ins>
+function fix_html_tag_order(input) {	
+	// This function is needed because tags don't work when they start/end in the wrong order. For example 
+	// <i> a <ins> b </i> c </ins>
 	// because the italics end inside the ins. This function changes that to be 
-	// <i>This<ins> doesn't</ins></i><ins> work</ins> so it works. 
+	// <i> a <ins> b </ins></i><ins> c </ins>.
+	// This works even when the tag is more than one tag back. For example, if it found <i><ins><chg></i>, it would work.
+ 
 	var tag_array = [];
 	var i = 0;
 	var current = [];
+	var tags_to_append = [];
 	var text = '';
-	var result = '';
-	var tag_to_add = '', stuff_after = '', stuff_before = '';
-	
-	var foof = input; 
-	input = "<i>italic <ins> ins <b>bold </i> end italic</b> end bold</ins> end ins"
-	pagelog(input)
-	
-	try {
-		console.log( '-fix_html_tag_order-')
-		tag_array = input.match(/(<([^>]+)>)/gi);
+	var output = '';
+	var tag_to_add = '', tags_after = '', tags_before = '';	
+	var original_input = input;
+
+	try { 
+		tag_array = input.match(/(<([^<>]+)>)/gi); // this array holds all of the tags in the string.
+// 		tag_array = input.match(/(<([^>]+)>)/gi); // this version allows the < character inside a tag.
 		if (tag_array == null) {
 			return input;
 		}
 				
 		for (i = 0; i < tag_array.length; i++){
 		
-			// add text that comes prior to the next tag
-			text = input.slice(0, input.indexOf('<')); // the part before the next tag
+			// -- add text that comes prior to the next tag --
+			text = input.slice(0, input.indexOf(tag_array[i])); // the text before the next tag
 			if (text != null && text.length > 0) {
-				input = input.slice(text.length)
-				result += text;
+				input = input.slice(text.length); // remove it from input
+				output += text; // add it to output
 			}
 
-			// keep track of current
-			tag_to_add = tag_array[i];
-			if (tag_to_add.indexOf('/') > -1) {
+			// -- figure out what the next tag should be --
+			tag_to_add = tag_array[i]; // the next tag to deal with
+			input = input.slice(tag_to_add.length) // remove it from input.
+
+			if (tag_to_add.indexOf('/') == 1 || tag_to_add.indexOf('/') == 2) { // if it's an end tag
 				tag_to_add_without_end_char = tag_to_add.replace('/', '')
 				if (tag_to_add_without_end_char == current[current.length - 1]) { // if this is the end tag for the most recent tag. 
 					current.pop();
 				} else {
-					console.log( 'these should be equal ['+tag_to_add_without_end_char+']: '+(current.length-2)+", "+current.lastIndexOf(tag_to_add_without_end_char))
-					// example: <ins><i> and the next tag is </ins>
-					// here, current[current.length - 1] = <i>, tag_to_add = </ins>.
-					stuff_after = current.slice(current.lastIndexOf(tag_to_add_without_end_char)).join('')
-					stuff_before = stuff_after.replace(/</g, '</')
-					tag_to_add = '</' + current[current.length - 1].slice(1) + tag_to_add + current[current.length - 1]; // in this example, this will equal </i></ins><i>
-					current.splice(current.length-2, 1) // remove the second-to-last element of the array called current. that's the one whose end tag we're dealing with. in this example, it would remove <ins>, leaving just <i>
-					console.log( '---start')
-					console.log( result)
-					console.log( 'current.length='+current.length)
-					console.log( 'current='+current.toString())
-					console.log( 'stuff_before='+stuff_before)
-					console.log( 'stuff_after='+stuff_after)
-					console.log( 'tag_array[i]='+tag_array[i])
-					console.log( 'tag_to_add='+tag_to_add)
-					console.log( '---end')
+					// If we've come to an end tag that doesn't go with the most recent tag,
+					// for example: <ins><b><i> and the next tag is </ins>
+					tags_to_append = current.slice(current.lastIndexOf(tag_to_add_without_end_char) + 1) // an array with all of the tags after the one that needs to end. e.g. <b><i>
+					tags_after = tags_to_append.join(''); 
+					tags_before = tags_to_append.reverse().join('').replace(/</g, '</') // this reverses the order of the tags and makes all of them end tags, (e.g., </i></b>
+					tag_to_add = tags_before + tag_to_add + tags_after;
+					current.splice(current.lastIndexOf(tag_to_add_without_end_char), 1) // remove the start tag from the list of tags that are in use. (e.g., remove <ins> from current)
 				}
-			} else {
-				current.push(tag_to_add)
+			} else { // if it's a start tag
+				current.push(tag_to_add) // add it to current
 			}
-			// add tag
-			result += tag_to_add;
-			input = input.slice(tag_to_add.length)
 			
-// 			console.log('current='+ current.toString())
+			// - add the next tag(s) -- 
+			output += tag_to_add;
 		}
-		if (current.length > 0) {
-			console.log('**Warning: At the end, current='+current) // dfd If it works correctly, I think current should be empty??
-		}
-		result += input; // get whatever's left
 		
+		if (current.length > 0) {
+			console.log('**Warning: At the end, current='+current) // If it works correctly, current should be empty
+		}
+		
+		output += input; // get whatever's left after the last tag (this happens after the looping is done)
+		output = output.replace(/(<([^<>]+)><\/([^<>]+)>)/gi, '') // Remove all cases of an end tag right next to a start tag (e.g., <ins></ins>.
+		
+		if (original_input.replace(/(<([^<>]+)>)/gi, "") != output.replace(/(<([^<>]+)>)/gi, "")) {
+			pagelog( '--mismatch--')
+			pagelog( original_input)
+			pagelog( output)
+			return original_input;
+		} else {
+			return output;
+		}
+
 	} catch (err) {
 		console.log('**error in fix_html_tag_order')
 		console.log( err)
+		return original_input;
 	}
-	
-	pagelog (result)
-	console.log( result)
-	return foof;
-	return result;
 }
 
 function remove_surrounding_tags(input_text, tag, min_length, end_then_start) {
@@ -1450,10 +1451,9 @@ function remove_surrounding_tags(input_text, tag, min_length, end_then_start) {
 			if (result != null) {
 				for (i = 0; i < result.length; i++) {
 					replacement = result[i].slice(start_tag.length, result[i].indexOf(end_tag)); // the part inside the tags
-					// console.log(result[i]+ ' - ' + replacement);
-					if (replacement.length > 0) { // this might seem dumb, but for <chg> tags, it needs to know where one ends and the other begins. 
+// 					if (replacement.length > 0) { // I don't think this is true anymore, but I once said: this might seem dumb, but for <chg> tags, it needs to know where one ends and the other begins. 
 						return_text = return_text.replace(result[i],replacement) // replace the tags and their contents with just the contents.
-					}
+// 					}
 				}
 			}
 		}	
