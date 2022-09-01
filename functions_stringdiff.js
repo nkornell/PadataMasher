@@ -1318,7 +1318,7 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 
 	try {
 		const min_highlight_gap_length = 4 // if there's a gap between highlights this small or smaller than this, highlight it.
-		const min_highlight_length = 1 // if there's a highlight this small or smaller than this, don't highlight it.
+		const min_highlight_length = 0 // if there's a highlight this small or smaller than this, don't highlight it.
 
 		html_out = remove_surrounding_tags(html_out,"ins",min_highlight_gap_length,true)
 		html_out = remove_surrounding_tags(html_out,"del",min_highlight_gap_length,true)

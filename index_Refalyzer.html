@@ -339,10 +339,12 @@ Basic procedure:
                 if (this.search_status == 'done') {
 					// d is the object that represents the difference between the two strings. 
 					var d = dmp.diff_main(this.user_input, temp_ref_to_show, false); // note, after the two strings, there are two optional parameters. Just use one and set it to false.  
-					document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false); 
-					document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true);
-// 					document.getElementById('inputText_'+this.user_input).innerHTML = pretty_thing(this.user_input, temp_ref_to_show, false, true); 
-// 					document.getElementById('reference_'+this.user_input).innerHTML = pretty_thing(this.user_input, temp_ref_to_show, true, false);
+// 					document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false); 
+// 					document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true);
+// dfd the next line doesn't work because what it puts in the left column != the user input. 
+					document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, true);
+					document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show;
+// dfd maybe count up and display (in notes) total insertions and deletions and changes
 					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
 					
 // 					pagelog('showing all:')
@@ -1652,7 +1654,7 @@ Basic procedure:
             for (i = 1; i <= rows_total; i++) { // start at 1 to skip header row
                 row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
                 if (typeof text_obj[row_text] == undefined || text_obj[row_text] == null) {
-                    console.log("Can't find text_obj[row_text]. The text in the table probably got altered. See error below.")
+                    console.log("*error Can't find text_obj[row_text]. The text in the table probably got altered. See next error.")
                 }
                 if (text_obj[row_text].search_status == "done") {
                     rows_searched++;
