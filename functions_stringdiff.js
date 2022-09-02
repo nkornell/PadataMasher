@@ -1466,7 +1466,28 @@ function remove_surrounding_tags(input_text, tag, min_length, end_then_start) {
 	return return_text;
 }
 
-	
+diff_match_patch.prototype.diff_percentage_unchanged = function(diffs) {
+	// Return the number of changes. Insertions = 1, deletions = 1, changes = 1. 
+	var equal_count = 0, change_count = 0;
+
+	for (var x = 0; x < diffs.length; x++) {
+		var op = diffs[x][0];    // Operation (insert, delete, equal)
+		var text = diffs[x][1];  // Text of change.
+		text = text.replace(/(<([^<>]+)>)/gi, ""); // remove tags from text for counting purposes
+		
+		if (op == DIFF_EQUAL) {
+			equal_count += text.length;
+		} else {
+			if (x < diffs.length-1 && diffs[x][1].toLowerCase() == diffs[x+1][1].toLowerCase()) { // this is equal to the one after it
+				// if it's a case change don't count it now or else it'll be double-counted (it'll count again at x+1). So just count it at x+1. 
+			} else {
+				change_count += text.length;
+			}
+		}
+	}
+	return Math.round(100*equal_count/(equal_count+change_count));
+}
+
 // --note--
 // pretty_thing and merge_tags didn't end up working out. After going over it and stuff I decided it wasn't worth it. 
 

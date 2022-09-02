@@ -217,10 +217,10 @@ Basic procedure:
 		this.score = 0;
 		this.letter_match = 0;
 		this.letter_match_percentage = 0;
+		this.percent_unchanged = 0;
 		this.use_Cite = false;
 		this.weird_first_letters = false;
 		
-
 
         this.table_row_number = function() {
             return document.getElementById(this.user_input).rowIndex;
@@ -271,6 +271,11 @@ Basic procedure:
                     const temp_apa_no_html = reference_obj[this.doi].apa_no_html;
                     temp_ref_to_show = reference_obj[this.doi].apa;
                     temp_ref_to_show = temp_ref_to_show.replaceAll('&amp;', "&").replaceAll('&#38;', "&").trim(); // otherwise it shows &amp; or &#38; in place of the & character
+
+					// d is the object that represents the difference between the two strings. 
+					var d = dmp.diff_main(this.user_input, temp_ref_to_show, false); // note, after the two strings, there are two optional parameters. Just use one and set it to false.  
+					this.percent_unchanged = dmp.diff_percentage_unchanged(d);
+
                     this.score = compute_score(temp_apa_no_html, this.user_input); // order has to be database version, user version 
                     this.letter_match = compute_letter_match(temp_apa_no_html, this.user_input);
                     this.letter_match_percentage = compute_letter_match_percentage(this.user_input, temp_apa_no_html); // order has to be user, database
@@ -295,6 +300,7 @@ Basic procedure:
                         temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
                         temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
                         temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
+                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.percent_unchanged/60)] + ';">' + this.percent_unchanged+"=percent_unchanged</div>"; 
                     } else {
                         if (this.weird_first_letters) {
                             temp_stringToShow += '<div>weird first letters</div>'
@@ -337,13 +343,11 @@ Basic procedure:
             try { 
                 // update html
                 if (this.search_status == 'done') {
-					// d is the object that represents the difference between the two strings. 
-					var d = dmp.diff_main(this.user_input, temp_ref_to_show, false); // note, after the two strings, there are two optional parameters. Just use one and set it to false.  
-// 					document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false); 
-// 					document.getElementById('reference_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true);
+					document.getElementById('leftColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false); 
+					document.getElementById('rightColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true);
 // dfd the next line doesn't work because what it puts in the left column != the user input. 
-					document.getElementById('inputText_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, true);
-					document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show;
+// 					document.getElementById('leftColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, true);
+// 					document.getElementById('rightColumn_'+this.user_input).innerHTML = temp_ref_to_show;
 // dfd maybe count up and display (in notes) total insertions and deletions and changes
 					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
 					
@@ -351,8 +355,8 @@ Basic procedure:
 // 					pagelog(dmp.diff_prettyHtml(d, true, true))
 				} else {
 					// this is the old way where it doesn't show the insertions and deletions
-					document.getElementById('inputText_'+this.user_input).innerHTML = '<searching>' + this.user_input + '</searching>'; 
-					document.getElementById('reference_'+this.user_input).innerHTML = temp_ref_to_show;
+					document.getElementById('leftColumn_'+this.user_input).innerHTML = '<searching>' + this.user_input + '</searching>'; 
+					document.getElementById('rightColumn_'+this.user_input).innerHTML = temp_ref_to_show;
 					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
 				}
             } catch(err) {
@@ -1281,8 +1285,8 @@ Basic procedure:
 	function change_elementIDs(from, to) {
 	    try {
             document.getElementById(from).id = to;
-            document.getElementById('reference_'+from).id = 'reference_'+to;
-            document.getElementById('inputText_'+from).id = 'inputText_'+to;
+            document.getElementById('rightColumn_'+from).id = 'rightColumn_'+to;
+            document.getElementById('leftColumn_'+from).id = 'leftColumn_'+to;
             document.getElementById('notes_'+from).id = 'notes_'+to;			
         } catch(err) {
             console.log( '*error in change element IDs')
@@ -1488,8 +1492,8 @@ Basic procedure:
 		for (let key in text_obj) { // this loops through all of text_obj
             s = text_obj[key].user_input;
             articleTableText += "<tr id='"+s+"'>";
-            articleTableText += "<td id='inputText_"+ s +"'>"+ s +"</td>";
-            articleTableText += "<td id='reference_" + s + "'></td>";
+            articleTableText += "<td id='leftColumn_"+ s +"'>"+ s +"</td>";
+            articleTableText += "<td id='rightColumn_" + s + "'></td>";
             articleTableText += "<td id='notes_" + s + "'></td>";
             articleTableText += "</tr>";
 		}
