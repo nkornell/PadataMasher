@@ -347,12 +347,7 @@ Basic procedure:
 					document.getElementById('rightColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true);
 // dfd the next line doesn't work because what it puts in the left column != the user input. 
 // 					document.getElementById('leftColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, true);
-// 					document.getElementById('rightColumn_'+this.user_input).innerHTML = temp_ref_to_show;
-// dfd maybe count up and display (in notes) total insertions and deletions and changes
 					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
-					
-// 					pagelog('showing all:')
-// 					pagelog(dmp.diff_prettyHtml(d, true, true))
 				} else {
 					// this is the old way where it doesn't show the insertions and deletions
 					document.getElementById('leftColumn_'+this.user_input).innerHTML = '<searching>' + this.user_input + '</searching>'; 

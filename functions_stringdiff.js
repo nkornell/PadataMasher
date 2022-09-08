@@ -1332,7 +1332,6 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 	
 
 	html_out = fix_html_tag_order(html_out);
-
 	return html_out;
 };
 
@@ -1398,9 +1397,12 @@ function fix_html_tag_order(input) {
 		}
 		
 		output += input; // get whatever's left after the last tag (this happens after the looping is done)
-		output = output.replace(/(<([^<>]+)><\/([^<>]+)>)/gi, '') // Remove all cases of an end tag right next to a start tag (e.g., <ins></ins>.
-		
+
+// 		output = output.replace(/(<([^<>]+)><\/([^<>]+)>)/gi, '') // old version of what follows. this one will catch consecutive tags even if they're different, (e.g., <i></ins>
+		output = output.replace(/(<\s*([^<>]+)><\s*\/\s*(\2+)>)/gi, '') // Remove all cases of an end tag right next to a start tag (e.g., <ins></ins>.
+
 		if (original_input.replace(/(<([^<>]+)>)/gi, "") != output.replace(/(<([^<>]+)>)/gi, "")) {
+			// if the output (wo tags) is different than the input (wo tags)
 			pagelog( '--mismatch--')
 			pagelog( original_input)
 			pagelog( output)
@@ -1408,6 +1410,7 @@ function fix_html_tag_order(input) {
 		} else {
 			return output;
 		}
+		
 
 	} catch (err) {
 		console.log('**error in fix_html_tag_order')
