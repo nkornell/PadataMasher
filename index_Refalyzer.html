@@ -6,6 +6,7 @@ To do:
 - when it gts a reference json (for any reference), have it return notes about what it got wrong or is missing
 -   Like, if there are no authors, year, or title, flag it. Regardless of format. 
 -   And if it's a known format (journal article), if there are no page numbers, for example, in the JSON. 
+-   This means figuring out the elements (e.g., date) for both the json and the input. 
 - 
 -   And maybe even fix the errors?? like if eds are missing, use the user input to insert them?
 -   do this by having it return an object, and have the object include, like, .apa (so the user could type something like, returnthing(x).apa)
@@ -196,8 +197,8 @@ Basic procedure:
     cc['wrong'] = 'red';
     var good_match_threshold = 80;
     var current_mode = '';
-	let Cite = require('citation-js');
     let dmp = new diff_match_patch();
+	let Cite = require('citation-js');
 
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
 // 	var doi_pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
@@ -346,6 +347,7 @@ Basic procedure:
 					document.getElementById('leftColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false); 
 					document.getElementById('rightColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true);
 // dfd the next line doesn't work because what it puts in the left column != the user input. 
+// I think the best plan is to make the first column invisible and leave it alone, but add a second column that can be userinput at first and then change to showing differences later. 
 // 					document.getElementById('leftColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, true);
 					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
 				} else {
