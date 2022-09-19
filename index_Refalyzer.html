@@ -163,7 +163,6 @@ Basic procedure:
 // Step 2: search crossref for DOIs. Once they're all returned, try to combine.
 -->
 
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -205,6 +204,9 @@ Basic procedure:
 // 	var doi_pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
 
     
+// dfd I should make it so that the left column that's shown doesn't have to be the same as the text they said. 
+// that way, I could show whatever I want over there (or nothing) and format the way I'd like
+
 	function Text_object(input_userInput, input_doi, input_doi_type, input_ord) { 
 		this.user_input = input_userInput;
         this.doi = input_doi.toLowerCase();
@@ -373,7 +375,7 @@ Basic procedure:
 		this.json = input_json;
 		this.doi = this.json.DOI;
 		
-		// dfd maybe check here if it's a chapter, and if it is see if it can find the book by cutting off the last 1-2 numbers of the doi and checking crossref?
+		// maybe check here if it's a chapter, and if it is see if it can find the book by cutting off the last 1-2 numbers of the doi and checking crossref?
 		// then it would have to check whether the title seems right, and if it does, it could find the editors and amend the reference object? 
 		// this sounds risky because what if something (the title, the editors) seems right but it's wrong?
 
@@ -414,6 +416,8 @@ Basic procedure:
 // https://doi.org/10.1037/0000157-002
 
  	function get_apa_from_json(input_json) {
+ 		// Use json to create a properly formatted reference. 
+ 		
         // https://apastyle.apa.org/instructional-aids/reference-examples.pdf
         var firstname = '';
 	    var all_author = '';
@@ -514,16 +518,26 @@ Basic procedure:
         }
  	}
 
+
+// 	Author plan
+//	If you want to be able to see secondary authors (i.e., authors cited by the articles that are in the list pasted by the user)...
+// 	for each reference, you can find the dois that it cites in its json.
+// 	go through everything it cites (by getting its json locally or from the server) and extract authors from each of htem. 
+// 	add those authors with a secondary tag. 
+// 	some articles might be cited multiple times (e.g., it was pasted in and then also cited twice by other articles that were pasted in). 
+// 	maybe don't allow an article to be counted more than once. 
+//	But of course, an author could be counted multiple times. Each author would probably have two counters, one for primary citations
+//	and one for secondary citations.
+
+
+	
+
 	function Author_object(input_familyname, input_firstname) {
 		// this creates instances of an author object, which is how I keep track of authors. 
 		this.name = input_familyname + ", " + input_firstname;
 		this.citation_count = 1;
 		this.coauthors = [];
 		this.checked = false;
-		
-		// dfd
-// 		give this a new variable... or maybe do two counters, one for primary citations and one for secondary?
-// 		also, there might need to be two types of co-authorship, primary and secondary
 		
 		var firstName_array = input_firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
 		this.name_apa = input_familyname + ", " + first_letters(firstName_array);
@@ -615,6 +629,7 @@ Basic procedure:
                 if (bibliography == null) { // if there wasn't one, change the value to a blank string
                     bibliography = '';
                 }
+                // console.log( myJSONobj)
             } else if (window.navigator.onLine == false) {
                 console.log('offline')
                 text_obj[input_string].update_input('done');
@@ -739,6 +754,7 @@ Basic procedure:
 
 	async function get_author(input_string) {
     	// dfd this function isn't done. but the idea was to get authors from the database. 
+    	// I don't think I'd actually use this. Unless if there was a thing that would let a user dig deeper on a specific person. 
 
 	    var i = 0, j = 0;
 	    var temp_name = '';
@@ -759,7 +775,7 @@ Basic procedure:
 //                 console.log(temp_obj.author[j]);
                 temp_name = temp_obj.author[j].given + ' ' + temp_obj.author[j].family;
                 temp_name_array.push(temp_name)
-    	    // dfd once you have the author json, use parse json for authors
+    	    // once you have the author json, use parse json for authors to turn the json into a string
             }
         }
         console.log(temp_name_array)
@@ -1303,7 +1319,7 @@ Basic procedure:
         return foof;
 	}
 	
-	function parse_JSON_for_authors(input_json) { // dfd give this a second parameter, type of author
+	function parse_JSON_for_authors(input_json) { // give this a second parameter, type of article (primary or secondary), if you're looking at secondary authors
 		var temp_firstname = '';
 		var tempAuthor_full = "";
 		var temp_list_of_co_authors_from_this_article = [];
@@ -1371,7 +1387,6 @@ Basic procedure:
 		var tempDOItype = "";
         var tempDOI = '';
         var tempDOIsFoundSoFar = [];
-        
         
         inputText = inputText.replace(/\t+/g, ' '); // turn tabs into single spaces
         inputText = inputText.replace(/  +/g, ' '); // turn multiple space strings into single spaces
@@ -1617,9 +1632,6 @@ Basic procedure:
 		
 		console.log( '')
 		console.log( '---------start----------')
-
-        // dfd
-// 		get_author('nate kornell')
 
 		document.getElementById("outputText").innerHTML = "";
         document.getElementById("myProgress").style = "display: flex;"
