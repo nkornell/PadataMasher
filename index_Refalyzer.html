@@ -216,6 +216,7 @@ Basic procedure:
         this.match_status = "unknown";
         this.combine_status = "not done";
 		this.notes = "";
+		this.output = "";
 		this.removed = false;
 		this.score = 0;
 		this.letter_match = 0;
@@ -223,7 +224,7 @@ Basic procedure:
 		this.percent_unchanged = 0;
 		this.use_Cite = false;
 		this.weird_first_letters = false;
-		
+
 
         this.table_row_number = function() {
             return document.getElementById(this.user_input).rowIndex;
@@ -338,6 +339,13 @@ Basic procedure:
                 if (this.notes == '') {
                     this.notes = temp_search_status_to_show + temp_match_status_to_show; 
                 }
+                
+                // set the value of output dfdd
+                if (this.match_status == 'correct') {
+                	this.output = reference_obj[this.doi].apa;
+                } else {
+                	this.output = this.user_input;
+                }
             } catch (err) {
                 console.log('**error in update input part 1 for '+this.user_input)
                 console.log( err)
@@ -352,11 +360,12 @@ Basic procedure:
 // I think the best plan is to make the first column invisible and leave it alone, but add a second column that can be userinput at first and then change to showing differences later. 
 // 					document.getElementById('leftColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, true);
 					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
+					document.getElementById('output_'+this.user_input).innerHTML = this.output; 
 				} else {
 					// this is the old way where it doesn't show the insertions and deletions
 					document.getElementById('leftColumn_'+this.user_input).innerHTML = '<searching>' + this.user_input + '</searching>'; 
 					document.getElementById('rightColumn_'+this.user_input).innerHTML = temp_ref_to_show;
-					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
+					document.getElementById('notes_'+this.user_input).innerHTML = this.notes;  
 				}
             } catch(err) {
                 console.log( '<---------')
@@ -530,7 +539,18 @@ Basic procedure:
 //	and one for secondary citations.
 
 
-	
+	function export_to_clipboard() {
+		// dfdd
+		
+		var i = 0;
+		var s = '';
+		
+		for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
+			s += '<p>'+document.getElementById("article_table").rows[i].cells[3].innerHTML+'</p>';
+		}
+pagelog( s)
+navigator.clipboard.writeText(s);
+	}
 
 	function Author_object(input_familyname, input_firstname) {
 		// this creates instances of an author object, which is how I keep track of authors. 
@@ -1301,6 +1321,7 @@ Basic procedure:
             document.getElementById('rightColumn_'+from).id = 'rightColumn_'+to;
             document.getElementById('leftColumn_'+from).id = 'leftColumn_'+to;
             document.getElementById('notes_'+from).id = 'notes_'+to;			
+            document.getElementById('output_'+from).id = 'output_'+to;			
         } catch(err) {
             console.log( '*error in change element IDs')
             console.log( 'from = '+from)
@@ -1497,16 +1518,22 @@ Basic procedure:
 		var s = '';
 		
 		articleTableText = "<table id='article_table'>";
-		articleTableText += "<tr><th style='width:40%' onclick='sortTable(0, "+'"articleTable","letters"'+")' title='Click to Sort'>Input text</th>";
-    	articleTableText += "<th style='width:40%' onclick='sortTable(1, "+'"articleTable","letters"'+")' title='Click to Sort'>Article found</th>";
-    	articleTableText += "<th style='width:20%' onclick='sortTable(2, "+'"articleTable","letters"'+")' title='Click to Sort'>Notes</th></tr>";
-    	
+//this would make columns 3, 4, and 5 invisible
+// 		<colgroup>
+//     <col span="2">
+//     <col span="3" style="visibility: collapse">
+//   </colgroup>
+		articleTableText += "<tr><th style='width:25%' onclick='sortTable(0, "+'"articleTable","letters"'+")' title='Click to Sort'>Input text</th>";
+    	articleTableText += "<th style='width:25%' onclick='sortTable(1, "+'"articleTable","letters"'+")' title='Click to Sort'>Article found</th>";
+    	articleTableText += "<th style='width:25%' onclick='sortTable(2, "+'"articleTable","letters"'+")' title='Click to Sort'>Notes</th>";
+    	articleTableText += "<th style='width:25%' onclick='sortTable(3, "+'"articleTable","letters"'+")' title='Click to Sort'>Output</th></tr>";
 		for (let key in text_obj) { // this loops through all of text_obj
             s = text_obj[key].user_input;
             articleTableText += "<tr id='"+s+"'>";
             articleTableText += "<td id='leftColumn_"+ s +"'>"+ s +"</td>";
             articleTableText += "<td id='rightColumn_" + s + "'></td>";
             articleTableText += "<td id='notes_" + s + "'></td>";
+			articleTableText += "<td id='output_"+ s +"'></td>";
             articleTableText += "</tr>";
 		}
 
@@ -1776,6 +1803,8 @@ project.org/package=metaBMA.
 <p><button onclick="start()">run</button> 
 <button onclick="localStorage.clear()">clear local storage</button> 
 <button onclick="reset_user_input()">reset user input</button>
+<button onclick="export_to_clipboard()">copy to clipboard</button>
+
 <!-- <button onclick="pagelog(merge_tags('abc', 'a<strong>b</strong>c'))">merge tags</button> -->
 
 <!-- 
