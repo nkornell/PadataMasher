@@ -17,6 +17,15 @@ body {
     background-color: var(--backyground);		
 }
 
+.boxOfText {
+	padding-left: 8px;
+	padding-right: 8px;
+	padding-top: 6px;
+	padding-bottom: 6px;
+	text-align: left;
+    background-color: white;
+}
+
 table {
 	border-collapse: collapse;
 }
@@ -66,7 +75,7 @@ th {
 .dataTable td {
     border: 1px solid var(--greywolf);
 	font-family: monospace;
-
+	word-break: break-all; /* this makes it so  a word that is too long to fit gets broken onto the next line (instead of forcing the column to be wider)*/
 }
 
 .dataTable th {
