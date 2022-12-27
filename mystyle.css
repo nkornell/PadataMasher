@@ -75,7 +75,7 @@ th {
 .dataTable td {
     border: 1px solid var(--greywolf);
 	font-family: monospace;
-	word-break: break-all; /* this makes it so  a word that is too long to fit gets broken onto the next line (instead of forcing the column to be wider)*/
+/* 	word-break: break-all; /* this makes it so  a word that is too long to fit gets broken onto the next line (instead of forcing the column to be wider)*/ */
 }
 
 .dataTable th {
@@ -285,6 +285,24 @@ ul {
   width: 1%;
   height: 20px;
   background-color: dodgerblue;
+}
+
+.noselect { /* from https://stackoverflow.com/questions/826782/how-to-disable-text-selection-highlighting */
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}
+
+.reference {
+	padding-left: 5ex; 
+	text-indent:-5ex;
+	line-height: 2em;
+	vertical-align: top;
+	/* margin-bottom: 1.5em; */
 }
 
 /* end navigation menu */

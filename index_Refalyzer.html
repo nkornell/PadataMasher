@@ -226,6 +226,15 @@ Basic procedure:
 		this.weird_first_letters = false;
 
 
+        this.swap_output = function() {
+            if (this.output == reference_obj[this.doi].apa) {
+                this.output = this.user_input;
+            } else {
+                this.output = reference_obj[this.doi].apa;
+            }
+            show_simple_output();
+        }
+
         this.table_row_number = function() {
             return document.getElementById(this.user_input).rowIndex;
         }
@@ -341,7 +350,7 @@ Basic procedure:
                 }
                 
                 // set the value of output dfdd
-                if (this.match_status == 'correct') {
+                if (this.match_status == 'correct' || this.match_status == 'fragment') {
                 	this.output = reference_obj[this.doi].apa;
                 } else {
                 	this.output = this.user_input;
@@ -544,15 +553,37 @@ Basic procedure:
 		// dfdd
 		
 		var i = 0;
-		var s = '';
+// 		var s = ''; // for the text box
+		var t = ''; // for the table 
+		
+		var y = document.getElementById("simpleOutputTable");
+		y.style.display = "flex";
 		
 		for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
-			s += '<p>'+document.getElementById("article_table").rows[i].cells[3].innerHTML+'</p>';
-		}
+// 			s += '<p>'+document.getElementById("article_table").rows[i].cells[3].innerHTML+'</p>';
 
-		var x = document.getElementById("simpleOutputBox");
-		x.style.display = "flex";
-		document.getElementById('simple_output').innerHTML = s;
+			var t_o = text_obj[document.getElementById("article_table").rows[i].cells[0].textContent]
+			t += '<tr>'
+			if (t_o.match_status != 'correct') {
+    			t += '<td style="vertical-align: top;"><div class="noselect">'+t_o.match_status+'<button onclick="foof(\''+t_o.user_input+'\')">swap</button>'+'</div></td>'
+    		} else {
+    			t += '<td><div class="noselect"></div></td>'
+    		}
+			t += '<td><div class="reference">'+t_o.output+'</div></td>'; // document.getElementById("article_table").rows[i].cells[3].innerHTML
+			t += '</tr>'
+		}
+		
+// 		var x = document.getElementById("simpleOutputBox");
+// 		x.style.display = "flex";
+// 		document.getElementById('simple_output').innerHTML = s;
+
+		var y = document.getElementById("simpleOutputTable");
+		y.style.display = "flex";
+		document.getElementById('simple_table').innerHTML = '<table>'+t+'</table>';
+	}
+	
+	function foof(user_input) {
+	    text_obj[user_input].swap_output();
 	}
 
 	function Author_object(input_familyname, input_firstname) {
@@ -1667,6 +1698,7 @@ Basic procedure:
 		document.getElementById("outputText").innerHTML = "";
         document.getElementById("myProgress").style = "display: flex;"
         document.getElementById("refalyzerAuthorsBox").style = "display: none;"
+        document.getElementById("simpleOutputTable").style = "display: none;"
 
 		showBoxes();
 		
@@ -1754,6 +1786,15 @@ Basic procedure:
 		build_author_table();
 		document.getElementById("refalyzerAuthorsBox").style = "display: flex;"	
 		
+		// if keeping things simple...
+		show_simple_output();
+//         document.getElementById("refalyzerArticleListBox").style = "display: none;"
+//         document.getElementById("refalyzerAuthorsBox").style = "display: none;"	
+//         document.getElementById("progressBox").style = "display: none;"
+//         document.getElementById("myText").style = "display: none;"
+        document.getElementById("extra_references").style = "display: none;"
+
+		
 		console.log( '---------finish----------')
 		console.log( '')
 	}
@@ -1803,17 +1844,24 @@ project.org/package=metaBMA.
 
 <div id="outputText"></div>
 
-<p><button onclick="start()">run</button> 
-<button onclick="localStorage.clear()">clear local storage</button> 
-<button onclick="reset_user_input()">reset user input</button>
-<button onclick="show_simple_output()">show simple output</button>
-
+<div id="buttons">
+    <p><button onclick="start()">run</button> 
+    <button onclick="localStorage.clear()">clear local storage</button> 
+<!--     <button onclick="show_simple_output()">show simple output</button> -->
+</div>
 <!-- 
+<button onclick="reset_user_input()">reset user input</button>
 <button onclick="update_progress()">update_progress</button>
 <button onclick="check_table_for_combinations()">check_table_for_combinations</button>
 <button onclick="remove_duplicate_references()">remove_duplicate_references</button>
 <button onclick="finish()">finish</button>
  -->
+
+<div class='bigBox' id='simpleOutputTable' style="display: none">
+	<div class='boxAroundTable'>
+		<div id="simple_table"'></div>
+	</div>
+</div>
 
 <div class='bigBox' id='simpleOutputBox' style="display: none">
 	<div class='boxAroundTable'>
@@ -1864,7 +1912,7 @@ project.org/package=metaBMA.
 
 
 
-
+<div id="extra_references">
 <p>Lamb, K. N., Jolly, J. L., & Lakin, J. M. (2022). Asset-based decision making to address inequity in gifted education services. Gifted Child Quarterly, 66(2), 113–115. https://doi-org.ezproxy2.williams.edu/10.1177/00169862211042910
 <p>Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. https://doi.org/10.1037/xlm0000246
 <p>Besken, M., & Mulligan, N. W. (2013). Easily perceived, easily remembered? Perceptual interference produces a double dissociation between metamemory and memory performance. Memory & Cognition, 41, 897–903. https://doi.org/10.3758/s13421-013-0307-8
@@ -2045,7 +2093,7 @@ DELAYED JUDGMENTS IN SOURCE MONITORING 56
 <p>Yang, C., Potts, R., & Shanks, D. R. (2017). Metacognitive unawareness of the errorful generation benefit and its effects on self-regulated learning. Journal of Experimental Psychology: Learning, Memory, and Cognition, 43, 1073–1092. https://doi.org/10.1037/xlm0000363
 <p>Zechmeister, E. B., & Shaughnessy, J. J. (1980). When you know that you know and when you think that you know but you don’t. Bulletin of the Psychonomic Society, 15, 41–44. https://doi.org/10.3758/BF03329756
 <p>Zhang, Y., Pan, Z., Li, K., & Guo, Y. (2018). Self-serving bias in memories: Selectively forgetting the connection between negative information and the self. Experimental Psychology, 65, 236–244. http://dx.doi.org/10.1027/1618-3169/a000409
-
+</div>
 <!-- from bjork dunlosky kornell -->
 <!-- 
 Benjamin AS, Bjork RA. 1996. Retrieval fluency as a metacognitive index. In Implicit Memory and Metacognition, ed. LM Reder, pp. 309–38. Mahwah, NJ: Erlbaum
