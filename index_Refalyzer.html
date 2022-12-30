@@ -217,6 +217,7 @@ Basic procedure:
         this.combine_status = "not done";
 		this.notes = "";
 		this.output = "";
+		this.output_notusing = "";
 		this.removed = false;
 		this.score = 0;
 		this.letter_match = 0;
@@ -229,8 +230,10 @@ Basic procedure:
         this.swap_output = function() {
             if (this.output == reference_obj[this.doi].apa) {
                 this.output = this.user_input;
+                this.output_notusing = reference_obj[this.doi].apa;
             } else {
                 this.output = reference_obj[this.doi].apa;
+                this.output_notusing = this.user_input;
             }
             show_simple_output();
         }
@@ -245,6 +248,7 @@ Basic procedure:
             //    not started, searching, incorrect doi entered; searching again, done 
 		    // possible match status values
 		    //    unknown, wrong, fragment, correct
+// 		    console.log( this.user_input)
 		    
             if (this.removed) {
                 console.log( 'updateinput called for .removed object (returned instead): '+this.user_input);
@@ -352,8 +356,10 @@ Basic procedure:
                 // set the value of output dfdd
                 if (this.match_status == 'correct' || this.match_status == 'fragment') {
                 	this.output = reference_obj[this.doi].apa;
+                	this.output_notusing = this.user_input
                 } else {
                 	this.output = this.user_input;
+//                 	this.output_notusing = reference_obj[this.doi].apa;
                 }
             } catch (err) {
                 console.log('**error in update input part 1 for '+this.user_input)
@@ -561,16 +567,32 @@ Basic procedure:
 		
 		for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
 // 			s += '<p>'+document.getElementById("article_table").rows[i].cells[3].innerHTML+'</p>';
-
+            // dfdd
 			var t_o = text_obj[document.getElementById("article_table").rows[i].cells[0].textContent]
 			t += '<tr>'
-			if (t_o.match_status != 'correct') {
-    			t += '<td style="vertical-align: top;"><div class="noselect">'+t_o.match_status+'<button onclick="foof(\''+t_o.user_input+'\')">swap</button>'+'</div></td>'
+			if (t_o.match_status == 'correct') {
+    			t += '<td style="vertical-align: middle">'
+    			t += '<div style="border-right:5px solid; border-right-color: lawngreen">'
+    			t += '<div class="noselect"><br><br><br><br><br></div></td>'
+    		} else if (t_o.match_status == 'wrong') {
+    			t += '<td style="vertical-align: middle">'
+    			t += '<div style="border-right:5px solid; border-right-color: red">'
+    			t += '<div class="noselect">not found<br><br><br><br><br></div></div></td>'
     		} else {
-    			t += '<td><div class="noselect"></div></td>'
+    			t += '<td>'
+    			t += '<div style="border-right:5px solid; border-right-color: orange">'
+    			t += '<div class="noselect"><button style="margin-right: 10px" onclick="show__or_hide_other_row(\''+t_o.user_input+'\');">check accuracy</button><br><br><br><br><br></div></div></td>'
     		}
-			t += '<td><div class="reference">'+t_o.output+'</div></td>'; // document.getElementById("article_table").rows[i].cells[3].innerHTML
+			t += '<td style="vertical-align: top"><div class="reference" style="">'+t_o.output+'</div></td>'; // document.getElementById("article_table").rows[i].cells[3].innerHTML
 			t += '</tr>'
+    		
+    		if (t_o.match_status != 'correct' && t_o.match_status != 'wrong') {
+			    t += '<tr style="visibility: collapse" id="'+t_o.user_input+'_other_row">'
+			    t += '<td> </td>'
+			    t += '<td style="color: #aaa;"><div class="noselect; reference">'+t_o.output_notusing+'<a href="javascript:void(0);" onclick="button_in_table_press(\''+t_o.user_input+'\')"> use this instead</a> | '
+			    t += '<a href="javascript:void(0);" onclick="show__or_hide_other_row(\''+t_o.user_input+'\')">cancel</a>'
+			    t += '</div></div></td></tr>'
+    		}
 		}
 		
 // 		var x = document.getElementById("simpleOutputBox");
@@ -581,8 +603,17 @@ Basic procedure:
 		y.style.display = "flex";
 		document.getElementById('simple_table').innerHTML = '<table>'+t+'</table>';
 	}
+
+	function show__or_hide_other_row(user_input) {
+        // dfdd
+        var change_to = "visible"
+        if (document.getElementById(user_input+'_other_row').style.visibility == "visible") {
+            change_to = 'collapse';  
+        }
+        document.getElementById(user_input+'_other_row').style.visibility=change_to;
+    }
 	
-	function foof(user_input) {
+	function button_in_table_press(user_input) {
 	    text_obj[user_input].swap_output();
 	}
 
@@ -1788,11 +1819,12 @@ Basic procedure:
 		
 		// if keeping things simple...
 		show_simple_output();
-//         document.getElementById("refalyzerArticleListBox").style = "display: none;"
-//         document.getElementById("refalyzerAuthorsBox").style = "display: none;"	
-//         document.getElementById("progressBox").style = "display: none;"
-//         document.getElementById("myText").style = "display: none;"
+        document.getElementById("refalyzerArticleListBox").style = "display: none;"
+        document.getElementById("refalyzerAuthorsBox").style = "display: none;"	
+        document.getElementById("progressBox").style = "display: none;"
+        document.getElementById("myText").style = "display: none;"
         document.getElementById("extra_references").style = "display: none;"
+        document.getElementById("buttons").style = "display: none;"
 
 		
 		console.log( '---------finish----------')
