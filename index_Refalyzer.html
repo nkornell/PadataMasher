@@ -1838,19 +1838,32 @@ Basic procedure:
         document.getElementById("buttons_at_beginning").style = d
 	}
 	
-	function copy_to_clipboard() {
+	function copy_to_clipboard() { // dfdd
 	    var copyText = [];
 	    var out = ''
         var i = 0;
         
-		for (i = 0; i <= document.getElementById('simple_table').rows.length - 1; i++) {
-			copyText.push(document.getElementById("simple_table").rows[i].cells[1].innerHTML)
+//         for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) {
+//             copyText.push(text_obj[document.getElementById("article_table").rows[i].cells[0].textContent].output)
+//         }
+        for (i = 0; i <= document.getElementById('simple_table').rows.length - 1; i++) {
+		    copyText.push(document.getElementById("simple_table").rows[i].cells[1].innerHTML)
         }
         
+        out = '<div style="line-height: 2em; margin-left: 5ex; text-indent:-5ex;">'
         for (i = 0; i < copyText.length; i++) {
-            out += '<p>' + copyText[i] + '</p>'
+            out += copyText[i]
         }
-        navigator.clipboard.writeText(out);
+        out += '</div>'
+        
+        document.getElementById('outputText').style = "display:block"
+        document.getElementById('outputText').innerHTML = out;
+        
+        const type = 'text/html'//"text/plain";
+        const blob = new Blob([out], { type });
+        const data = [new ClipboardItem({ [type]: blob })];
+        navigator.clipboard.write(data)
+
     }
 	
 </script>
