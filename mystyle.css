@@ -14,7 +14,7 @@
 
 body {
 	font-family: sans-serif; 
-    background-color: var(--backyground);		
+/*     background-color: var(--backyground);		 */
 }
 
 .boxOfText {
@@ -126,6 +126,20 @@ th {
 	border-radius: 5px;
 	padding: 5px;
 }
+
+.bigButton {
+	display: inline-block;
+	font-size: 16px;
+	margin: 4px 2px;
+	cursor: pointer;
+	padding: 20px 20px;
+	min-width: 120px;
+}
+
+.bigButton:disabled {
+  cursor: not-allowed;
+}
+
 
 .coolButton {
     background-color: var(--backyground);

@@ -998,7 +998,7 @@ Basic procedure:
 	
 	
 	function pagelog(instring) {
-        document.getElementById("outputText").innerHTML += '<p>' +instring;
+        document.getElementById("pagelogOutputText").innerHTML += '<p>' +instring;
 	}
 	
 	function remove_row(input_string) {
@@ -1675,7 +1675,7 @@ Basic procedure:
         var authorTableText = "";
         // create the html table 
         authorTableText = "<table><tr>";
-        authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes"'+")' title='Click to Sort'>Highlight</th>";
+        authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes"'+")' title='Click to Sort'>Highlight <br>co-authors</th>";
         authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Author</th>";
         authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers"'+")' title='Click to Sort'>Citations</th>";
         authorTableText += "<th onclick='sortTable(3, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
@@ -1716,15 +1716,17 @@ Basic procedure:
 		current_mode = "searching for dois"
 		startTime = Date.now();
 		
+		document.getElementById("fix_button").disabled = true;
+		
 		console.log( '')
 		console.log( '---------start----------')
 
-//         document.getElementById("outputText").innerHTML = "";
+//         document.getElementById("pagelogOutputText").innerHTML = "";
 //         document.getElementById("myProgress").style = "display: flex;"
 //         document.getElementById("refalyzerAuthorsBox").style = "display: none;"
-        document.getElementById("simpleOutputTable").style = "display: flex;"
+        document.getElementById("simpleOutputTable").style.display = "flex;"
 //         document.getElementById("refalyzerArticleListBox").style = "display: none"
-        document.getElementById("progressAndButtonBox").style = "display: flex"
+        document.getElementById("progressAndSummaryBox").style.display = "flex"
         
         
         show_or_hide_debugging('hide'); 
@@ -1809,14 +1811,17 @@ Basic procedure:
 		document.getElementById('progressHeader').innerHTML = 'Done ';
 		document.getElementById('progressText').innerHTML = '&nbsp;' + rows_total + " rows (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
 		document.getElementById("myProgress").style = "display: none;"
-		document.getElementById("buttons_at_end").style = "display: block;"
 
 		
 		build_author_table();
 		document.getElementById("refalyzerAuthorsBox").style = "display: flex;"	
 		
 		show_simple_output();
-		show_or_hide_debugging('hide'); 
+		show_or_hide_debugging('hide');
+		
+		
+		document.getElementById("authors_button").disabled = false;
+		document.getElementById("copy_button").disabled = false;
 		
 		console.log( '---------finish----------')
 		console.log( '')
@@ -1830,15 +1835,30 @@ Basic procedure:
 	    } else {
             d = "display: none"	    
 	    }
-        document.getElementById("outputText").style = d
+        document.getElementById("pagelogOutputText").style = d
         document.getElementById("refalyzerArticleListBox").style = d
         document.getElementById("refalyzerAuthorsBox").style = d
-        document.getElementById("myText").style = d
+        document.getElementById("inputTextBox").style = d
         document.getElementById("extra_references").style = d
-        document.getElementById("buttons_at_beginning").style = d
 	}
 	
-	function copy_to_clipboard() { // dfdd
+	function show_or_hide_authors() {
+		var x = document.getElementById("refalyzerAuthorsBox");
+		if (x.style.display === "none") {
+			x.style.display = "block";
+			document.getElementById("authors_button").innerHTML = "hide author analysis"
+		} else {
+			x.style.display = "none";
+			document.getElementById("authors_button").innerHTML = "show author analysis"
+		}
+	}
+	
+	function copy_to_clipboard() { 
+		// dfdd
+		// to do: 
+		// 		show the number of green, red, and yellow refrences in the status report
+		// 		have a checkbox for alphebetize
+		// 		make copying work for plain text
 	    var copyText = [];
 	    var out = ''
         var i = 0;
@@ -1853,17 +1873,27 @@ Basic procedure:
             out += copyText[i]
         }
 
-		// for debugging        
-        document.getElementById('outputText').style = "display:block"
-        document.getElementById('outputText').innerHTML = out;
-        
-        // this makes it preserve formatting
-        const type = 'text/html'//"text/plain";
-        const blob = new Blob([out], { type });
-        const data = [new ClipboardItem({ [type]: blob })];
-        
-        navigator.clipboard.write(data)
-//         navigator.clipboard.writeText(out)
+        document.getElementById('pagelogOutputText').style = "display:block" // the copy thing doesn't work if this isn't made visible
+        document.getElementById('pagelogOutputText').innerHTML = out;
+
+		// below comes (partially) from https://www.nikouusitalo.com/blog/why-isnt-clipboard-write-copying-my-richtext-html/
+		const richTextDiv = document.getElementById("pagelogOutputText");
+
+		const clipboardItem = new ClipboardItem({
+			"text/plain": new Blob(
+				[richTextDiv.innerText],
+				{ type: "text/plain" }
+			),
+			"text/html": new Blob(
+				[richTextDiv.outerHTML],
+				{ type: "text/html" }
+			),
+		});
+
+		navigator.clipboard.write([clipboardItem]);
+
+        document.getElementById('pagelogOutputText').style = "display:none"
+
     }
 	
 </script>
@@ -1907,28 +1937,18 @@ project.org/package=metaBMA.
 
 <body onload='show_previous_user_input()'>
 
-<textarea id="myText" name="inputTextArea" style='width: 100%; height: 500px;'></textarea>
-
-
-<div class='bigBox' id='simpleOutputTable' style="display: none;" >
-	<div class='boxAroundTable'>
-		<div id="simple_table_div"></div>
+<div class='bigBox' id='buttonBox' >
+	<div class='boxAroundTable' id="buttons" style="box-shadow: 0 0 1px 1px white;"> <!-- overide the shadow -->
+		<p>
+		<button onclick="start()" id="fix_button" class="bigButton">fix</button> 
+		<button onclick="copy_to_clipboard()" id="copy_button" class="bigButton" disabled>copy</button>
+		<button onclick="show_or_hide_authors()" id="authors_button" class="bigButton" disabled>show author analysis</button>
+		<p>
+		<button onclick="show_or_hide_debugging()">show/hide everything</button>
+		<button onclick="localStorage.clear()">clear local storage</button> 
 	</div>
-</div>
 
-
-   <div id="buttons_at_beginning">
-        <p>
-        <button onclick="start()">run</button> 
-        <button onclick="localStorage.clear()">clear local storage</button> 
-    </div>
-    <div id="buttons_at_end" style="display: none">
-        <button onclick="copy_to_clipboard()">copy</button>
-        <button onclick="show_or_hide_debugging()">show/hide everything</button>
-    </div>
-
-<div class='bigBox' id='progressBox' style="width: 100%">
-	<div class='boxAroundTable' id='progressAndButtonBox' style="display: none;">
+	<div class='boxAroundTable' id='progressAndSummaryBox' style="display: none; box-shadow: 0 0 1px 1px white;">
 		<div class='heading' id='progressHeader'></div>
 		<div id='progressText'>Working </div>
 		<br>
@@ -1938,7 +1958,25 @@ project.org/package=metaBMA.
    	</div>
 </div>
 
-<div id="outputText"></div>
+<!-- input -->
+<div class='bigBox' id = 'inputTextBox' style="width: 100%">
+	<div class='boxAroundTable' style="box-shadow: 0 0 1px 1px white;"> <!-- overide the shadow -->
+		Paste in the list of references you want to search/fix.
+		<textarea id="myText" name="inputTextArea" style='width: 100%; height: 500px;'></textarea>
+	</div>
+</div>
+
+
+
+<!-- simple output -->
+<div class='bigBox' id='simpleOutputTable' style="display: none;" >
+	<div class='boxAroundTable'>
+		<div id="simple_table_div"></div>
+	</div>
+</div>
+
+
+<div id="pagelogOutputText"></div>
 
 
 <!-- 	Article table 	-->
@@ -1956,7 +1994,8 @@ project.org/package=metaBMA.
 <div class='bigBox' id='refalyzerAuthorsBox' style="display: none">
 	<div class='bigBox' display="block"> 
 		<div class='boxAroundTable'>
-			<div class='heading'>Authors</p></div><br>
+			<div class='heading'>Authors </div>
+			(select an author to highlight their co-authors)
 			<p>
 			<div id='authorTable' class='dataTable'></div>
 		</div>
