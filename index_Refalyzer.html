@@ -1807,9 +1807,24 @@ Basic procedure:
         
         current_mode = 'completely done'
         
+        var c = 0;
+        var m = 0;
+        var w = 0;
         var rows_total = document.getElementById('article_table').rows.length - 1;
+        for (i = 1; i <= rows_total; i++) { // start at 1 to skip header row
+        	temp_match_status = text_obj[document.getElementById("article_table").rows[i].cells[0].textContent].match_status
+			console.log( temp_match_status)
+			if (temp_match_status == 'correct') {
+			    c++;
+			} else if (temp_match_status == 'wrong') {
+			    w++;
+			} else {
+			    m++;
+			}
+		}
+        
 		document.getElementById('progressHeader').innerHTML = 'Done ';
-		document.getElementById('progressText').innerHTML = '&nbsp;' + rows_total + " rows (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
+		document.getElementById('progressText').innerHTML = '&nbsp;' + rows_total + " references <span style='font-weight: bold; color: green'>" + c + " ✔</span>, <span style='font-weight: bold; color: red'>" + w + " ✘</span> , <span style='font-weight: bold; color: orange'>" + m + " maybe</span> (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
 		document.getElementById("myProgress").style = "display: none;"
 
 		
@@ -1937,8 +1952,25 @@ project.org/package=metaBMA.
 
 <body onload='show_previous_user_input()'>
 
-<div class='bigBox' id='buttonBox' >
-	<div class='boxAroundTable' id="buttons" style="box-shadow: 0 0 1px 1px white;"> <!-- overide the shadow -->
+<!-- input -->
+<div class='bigBox' id = 'inputTextBox' style="width: 100%">
+	<div class='boxAroundTable' style="box-shadow: 0 0 1px 1px white; margin-bottom: 0px; padding: 10px"> <!-- overide the shadow -->
+		Paste in the list of references you want to search/fix.
+		<textarea id="myText" name="inputTextArea" style='width: 100%; height: 500px;'></textarea>
+	</div>
+</div>
+
+<!-- simple output -->
+<div class='bigBox' id='simpleOutputTable' style="display: none;" >
+	<div class='boxAroundTable'>
+		<div id="simple_table_div"></div>
+	</div>
+</div>
+
+
+<!-- buttons -->
+<div class='bigBox' id='buttonBox' style="display:flex">
+	<div id="buttons" style="padding: 10px;"> <!-- overide the shadow -->
 		<p>
 		<button onclick="start()" id="fix_button" class="bigButton">fix</button> 
 		<button onclick="copy_to_clipboard()" id="copy_button" class="bigButton" disabled>copy</button>
@@ -1947,8 +1979,11 @@ project.org/package=metaBMA.
 		<button onclick="show_or_hide_debugging()">show/hide everything</button>
 		<button onclick="localStorage.clear()">clear local storage</button> 
 	</div>
+</div>
 
-	<div class='boxAroundTable' id='progressAndSummaryBox' style="display: none; box-shadow: 0 0 1px 1px white;">
+<!-- progress and summary -->
+<div class='bigBox' id='progBox'>
+	<div id='progressAndSummaryBox' style="display: none; padding: 10px;">
 		<div class='heading' id='progressHeader'></div>
 		<div id='progressText'>Working </div>
 		<br>
@@ -1958,22 +1993,6 @@ project.org/package=metaBMA.
    	</div>
 </div>
 
-<!-- input -->
-<div class='bigBox' id = 'inputTextBox' style="width: 100%">
-	<div class='boxAroundTable' style="box-shadow: 0 0 1px 1px white;"> <!-- overide the shadow -->
-		Paste in the list of references you want to search/fix.
-		<textarea id="myText" name="inputTextArea" style='width: 100%; height: 500px;'></textarea>
-	</div>
-</div>
-
-
-
-<!-- simple output -->
-<div class='bigBox' id='simpleOutputTable' style="display: none;" >
-	<div class='boxAroundTable'>
-		<div id="simple_table_div"></div>
-	</div>
-</div>
 
 
 <div id="pagelogOutputText"></div>
