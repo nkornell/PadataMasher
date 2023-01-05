@@ -599,7 +599,7 @@ Basic procedure:
     		if (t_o.match_status == 'unknown') {
     		    t += '<td></td>';
     		} else {
-                t += '<td style="vertical-align: top"><p style="margin-left: 5ex; text-indent:-5ex; line-height: 2; margin-bottom: 0; margin-top: 0">'+t_o.output+'</td>'; // note: this formatting works well with the clipboard (to paste into word, etc.). It doesn't work if you use a div for some reason.
+                t += '<td style="vertical-align: top"><p style="margin-left: 5ex; text-indent:-5ex; line-height: 2; margin-bottom: 0; margin-top: 0">'+t_o.output+'</p></td>'; // note: this formatting works well with the clipboard (to paste into word, etc.). It doesn't work if you use a div for some reason.
             }
 			t += '</tr>'
 		}
@@ -1697,7 +1697,17 @@ Basic procedure:
     
     function show_previous_user_input() {
         document.getElementById("myText").value = localStorage.getItem('nates_previous_input')
+//         let height = innerHeight - 200 //- document.getElementById("progressAndSummaryBox").style.height - document.getElementById("buttonBox").style.height
+//         console.log( height)
+		document.getElementById("inputTextBox").style.height = innerHeight - 200
+		console.log( innerHeight - 200)
+// 		document.getElementById("buttonBox").onload = function() {resize_stuff()};
     }
+
+    
+
+// 	function resize_stuff() {
+//     }
     
     function reset_user_input() {
         console.log('reseting;')
@@ -1721,13 +1731,10 @@ Basic procedure:
 		console.log( '')
 		console.log( '---------start----------')
 
-//         document.getElementById("pagelogOutputText").innerHTML = "";
-//         document.getElementById("myProgress").style = "display: flex;"
-//         document.getElementById("refalyzerAuthorsBox").style = "display: none;"
         document.getElementById("simpleOutputTable").style.display = "flex;"
-//         document.getElementById("refalyzerArticleListBox").style = "display: none"
         document.getElementById("progressAndSummaryBox").style.display = "flex"
-        
+		document.getElementById('myProgress').style.display = "flex"
+
         
         show_or_hide_debugging('hide'); 
         		
@@ -1835,8 +1842,9 @@ Basic procedure:
 		show_or_hide_debugging('hide');
 		
 		
-		document.getElementById("authors_button").disabled = false;
-		document.getElementById("copy_button").disabled = false;
+		document.getElementById("authors_button").style.display = "inline-block";
+		document.getElementById("copy_button").style.display = "inline-block";
+		document.getElementById("clear_storage_button").style.display = "none";
 		
 		console.log( '---------finish----------')
 		console.log( '')
@@ -1846,15 +1854,15 @@ Basic procedure:
 	    var d = ''
 	    
 	    if (document.getElementById("refalyzerArticleListBox").style.display == "none" && input != "hide") {
-	        d = "display: block; width: 100%"
+	        d = "block"
 	    } else {
-            d = "display: none"	    
+            d = "none"	    
 	    }
-        document.getElementById("pagelogOutputText").style = d
-        document.getElementById("refalyzerArticleListBox").style = d
-        document.getElementById("refalyzerAuthorsBox").style = d
-        document.getElementById("inputTextBox").style = d
-        document.getElementById("extra_references").style = d
+        document.getElementById("pagelogOutputText").style.display = d
+        document.getElementById("refalyzerArticleListBox").style.display = d
+        document.getElementById("refalyzerAuthorsBox").style.display = d
+        document.getElementById("inputTextBox").style.display = d
+        document.getElementById("extra_references").style.display = d
 	}
 	
 	function show_or_hide_authors() {
@@ -1868,12 +1876,15 @@ Basic procedure:
 		}
 	}
 	
-	function copy_to_clipboard() { 
-		// dfdd
+	function copy_to_clipboard() { // dfdd
+		// Note: the plain text comes out with blank paragraphs between refs. That's slightly annoying but I tried to fix it and failed. 
 		// to do: 
-		// 		show the number of green, red, and yellow refrences in the status report
-		// 		have a checkbox for alphebetize
-		// 		make copying work for plain text
+		// 		have a checkbox for alphabetize
+		//      make it deal with urls?
+		//		make it show the searching ones at the top when still searching?
+		//		let them sort the simple table
+		//		make it so it doesn't re-draw the whole simple table so often
+		
 	    var copyText = [];
 	    var out = ''
         var i = 0;
@@ -1908,13 +1919,11 @@ Basic procedure:
 		navigator.clipboard.write([clipboardItem]);
 
         document.getElementById('pagelogOutputText').style = "display:none"
-
     }
 	
 </script>
 
 </head>
-
 
 <!-- 
 Finley, J. R., Tullis, J. G., Benjamin, A. S. (2010). Metacognitive control of learning and remembering. In M. S. Knine I. M. Saleh (Eds.), New Science of Learning (pp. 109– 131). New York, NY: Springer. https://doi.org/10.1007/978-1-4419-5716-0_6	
@@ -1953,47 +1962,42 @@ project.org/package=metaBMA.
 <body onload='show_previous_user_input()'>
 
 <!-- input -->
-<div class='bigBox' id = 'inputTextBox' style="width: 100%">
-	<div class='boxAroundTable' style="box-shadow: 0 0 1px 1px white; margin-bottom: 0px; padding: 10px"> <!-- overide the shadow -->
-		Paste in the list of references you want to search/fix.
-		<textarea id="myText" name="inputTextArea" style='width: 100%; height: 500px;'></textarea>
+<div class='bigBox' id = 'inputTextBox'>
+	<div class='boxAroundTable' style="box-shadow: 0 0 1px 1px white; margin: 10px; padding: 0px"> <!-- overide the shadow -->
+		<textarea id="myText" name="inputTextArea" style='width: 100%; height: 500px'></textarea>
 	</div>
 </div>
 
 <!-- simple output -->
 <div class='bigBox' id='simpleOutputTable' style="display: none;" >
-	<div class='boxAroundTable'>
+	<div class='boxAroundTable' style="margin: 10px; padding: 10px">
 		<div id="simple_table_div"></div>
 	</div>
 </div>
 
 
-<!-- buttons -->
-<div class='bigBox' id='buttonBox' style="display:flex">
-	<div id="buttons" style="padding: 10px;"> <!-- overide the shadow -->
-		<p>
-		<button onclick="start()" id="fix_button" class="bigButton">fix</button> 
-		<button onclick="copy_to_clipboard()" id="copy_button" class="bigButton" disabled>copy</button>
-		<button onclick="show_or_hide_authors()" id="authors_button" class="bigButton" disabled>show author analysis</button>
-		<p>
-		<button onclick="show_or_hide_debugging()">show/hide everything</button>
-		<button onclick="localStorage.clear()">clear local storage</button> 
-	</div>
-</div>
-
 <!-- progress and summary -->
-<div class='bigBox' id='progBox'>
-	<div id='progressAndSummaryBox' style="display: none; padding: 10px;">
+<div class='bigBox' id='progBox' style= "height: 3em">
+	<div id='progressAndSummaryBox' style="padding: 10px;">
 		<div class='heading' id='progressHeader'></div>
-		<div id='progressText'>Working </div>
+		<div id='progressText'>Paste in the list of references you'd like to fix. </div>
 		<br>
-        <div id="myProgress">
+        <div id="myProgress" style="display: none;">
           <div id="myBar"></div>
         </div>
    	</div>
 </div>
 
 
+<!-- buttons -->
+<div class='bigBox' id='buttonBox' style="display: inline-block; padding: 10px;"> 
+	<button onclick="start()" id="fix_button" class="bigButton" style="display: inline-block">fix</button> 
+	<button onclick="copy_to_clipboard()" id="copy_button" class="bigButton" style="display: none">copy</button>
+	<button onclick="show_or_hide_authors()" id="authors_button" class="bigButton" style="display: none">show author analysis</button>
+	<p>
+	<button onclick="show_or_hide_debugging()">show/hide everything</button>
+	<button onclick="localStorage.clear()" id="clear_storage_button">clear local storage</button> 
+</div>
 
 <div id="pagelogOutputText"></div>
 
@@ -2014,7 +2018,7 @@ project.org/package=metaBMA.
 	<div class='bigBox' display="block"> 
 		<div class='boxAroundTable'>
 			<div class='heading'>Authors </div>
-			(select an author to highlight their co-authors)
+			&nbsp (select an author to highlight their co-authors)
 			<p>
 			<div id='authorTable' class='dataTable'></div>
 		</div>
