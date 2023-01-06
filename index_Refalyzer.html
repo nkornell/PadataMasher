@@ -942,7 +942,7 @@ Basic procedure:
 	
 	
 	function pagelog(instring) {
-        document.getElementById("pagelogOutputText").innerHTML += '<p>' +instring;
+        document.getElementById("buffer_for_copying").innerHTML += '<p>' +instring;
 	}
 	
 	function remove_row(input_string) {
@@ -1641,11 +1641,8 @@ Basic procedure:
     
     function show_previous_user_input() {
         document.getElementById("myText").value = localStorage.getItem('nates_previous_input')
-
-// 		document.getElementById("inputTextBox").style.height = innerHeight - 200
-// 		console.log( innerHeight - 200)
+		document.getElementById('myText').style.height = (innerHeight-300)+'px';
     }
-
         
     function reset_user_input() {
         console.log('reseting;')
@@ -1674,7 +1671,7 @@ Basic procedure:
 		document.getElementById('myProgress').style.display = "flex"
 
         
-        show_or_hide_debugging('hide'); 
+        show_or_hide_everything('hide'); 
         		
         if (document.getElementById('progressHeader').innerHTML != "Working... ") {
             document.getElementById('progressHeader').innerHTML = "Working... ";
@@ -1689,7 +1686,7 @@ Basic procedure:
 	function update_progress() {	
 	    if (current_mode == "completely done") {
 // 	        console.log( ' called up when completely done [returning]')
-	        return; // is this ok?
+	        return; 
 	    }
 	    
 	    var row_text = '';
@@ -1776,7 +1773,7 @@ Basic procedure:
 		document.getElementById("refalyzerAuthorsBox").style = "display: flex;"	
 		
 		show_simple_output();
-		show_or_hide_debugging('hide');
+		show_or_hide_everything('hide');
 		
 		
 		document.getElementById("authors_button").style.display = "inline-block";
@@ -1788,72 +1785,103 @@ Basic procedure:
 	}
 	
 	function show_simple_output() {
-		// this takes the stuff in article_table and makes it user-friendly
+		// this takes the stuff in article_table and puts in a new table that makes it user-friendly
 		// dfdd // I don't think it needs article_table... maybe it shouldn't rely on that thing? 
-// 		            adjust scroll position when redrawing
-		            
-		var i = 0;
-		var t = ''; // for the table 
 
-        // figure out the scroll position of the table so it can stay there instead of snapping to top on every re-draw (this only applies until the searching is done btw)
+		var i, showingUnknown = 0;
+		var t = ''; // for the table 
         let initial_scroll_top = 0;
+		
+        // figure out the scroll position of the table so it can stay there instead of snapping to top on every re-draw (this only applies until the searching is done btw)
 		if (typeof(document.getElementById('simple_table')) != 'undefined' && document.getElementById('simple_table') != null) {
 		    initial_scroll_top = document.getElementById('simple_table').scrollTop;
+		} else {
+			// this should only happen once, before the simple table has been created. this creates it and formats it. 
+			document.getElementById("simpleOutputTable").style.display = "flex";
+			document.getElementById('simple_table_div').innerHTML = '<table id="simple_table" style="display: flex"></table>';
+			document.getElementById('simple_table').style = "display: flex; overflow-y: scroll;"
+			document.getElementById('simple_table').style.height = (innerHeight-300)+'px';
 		}
 
-		t = '<tr>'
-		t +=  "<th style='line-height: 2' onclick='sortTable(0, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort By Status ▾</th>";
-		t +=  "<th style='line-height: 2' onclick='sortTable(1, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort Alphabetical ▾</th>";
-		t += '</tr>'
-
-		for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
-			var t_o = text_obj[document.getElementById("article_table").rows[i].cells[0].textContent]
-			t += '<tr>'
-			
-			// left column
-   			t += '<td style="vertical-align: middle; text-align: center; min-width: 10em; background-color: #f3f3f3; padding-right: 0px;">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
-			if (t_o.match_status == 'correct') { // correct
-    			t += '<div style="border-right:5px solid; border-right-color: lawngreen; font-size: 3em; color: lawngreen; padding: 10px ">'
-    			t += '✔'
-    			t += '</div>'
-    		} else if (t_o.match_status == 'wrong') { // wrong
-    			t += '<div style="border-right:5px solid; border-right-color: red; font-size: 3em; color: red; padding: 10px">'
-    			t += '✘'
-    			t += '</div>'
-    			t += '</div>'
-    		} else if (t_o.match_status == 'unknown') { // unknown
-    			t += '<div style="border-right:5px solid; border-right-color: white; color: greywolf">searching...</div></div>'
-    		} else { // maybe
-    			t += '<div style="border-right:5px solid; border-right-color: orange; padding: 10px">'
-    			var button_value = 'show user input'
-                if (t_o.output == t_o.user_input) {
-                    button_value = 'show search result'
-                }
-    			t += '<div style="color: orange"><p>match: '+t_o.score+'%</p><button id = "'+t_o.user_input+'_button" onclick="button_in_table_press(\''+t_o.user_input+'\');">'+button_value+'</button><br><br>'
-                t += '</div></div>'
-    		}
-    		t += '</div></td>'
-    		
-    		// right column
-    		if (t_o.match_status == 'unknown') {
-    		    t += '<td></td>';
-    		} else {
-                t += '<td style="vertical-align: top"><p id = "'+t_o.user_input+'_simple_text" style="margin-left: 5ex; text-indent:-5ex; line-height: 2; margin-bottom: 0; margin-top: 0">'+t_o.output+'</p></td>'; // note: this formatting works well with the clipboard (to paste into word, etc.). It doesn't work if you use a div for some reason.
-            }
+		if (current_mode == 'completely done') {
+			t = '<tr>'
+			t +=  "<th style='line-height: 2' onclick='sortTable(0, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort By Status ▾</th>";
+			t +=  "<th style='line-height: 2' onclick='sortTable(1, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort Alphabetical ▾</th>";
 			t += '</tr>'
 		}
+		
+		for (showingUnknown = 0; showingUnknown <= 1; showingUnknown++) {
+			for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
+				var t_o = text_obj[document.getElementById("article_table").rows[i].cells[0].textContent]
+				
+				if ((showingUnknown == 0) == (t_o.match_status != 'unknown')) {
+					// Doing this means it shows all of the unknown stuff at the top of the table when it's being added. 
+					// How it works: showingUnknown = 0 means we are showing the unknown ones. if it's true and 
+					// match_status doesn't equal "unknown", or vice versa, then continue. Continue means skip the rest and loop
+					continue;
+				}
+				
+				t += '<tr>'
+				t += '<td style="vertical-align: middle; text-align: center; min-width: 10em; background-color: #f3f3f3; padding-right: 0px;">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
 
-		document.getElementById("simpleOutputTable").style.display = "flex";
-		document.getElementById('simple_table_div').innerHTML = '<table id="simple_table" style=" display: block; height: 500px; overflow-y: scroll;">'+t+'</table>';
+				// left column
+				if (t_o.match_status == 'unknown') { // unknown
+					t += '<div style="border-right:5px solid; border-right-color: white; color: greywolf">searching...</div>'
+				}
+				else if (t_o.match_status == 'correct') { // correct
+					t += '<div style="border-right:5px solid; border-right-color: lawngreen; font-size: 3em; color: lawngreen; padding: 10px ">'
+					t += '✔'
+					t += '</div>'
+				} else if (t_o.match_status == 'wrong') { // wrong
+					t += '<div style="border-right:5px solid; border-right-color: red; font-size: 3em; color: red; padding: 10px">'
+					t += '✘'
+					t += '</div>'
+					t += '</div>'
+				} else { // maybe
+					t += '<div style="border-right:5px solid; border-right-color: orange; padding: 10px">'
+					var button_value = 'show user input'
+					if (t_o.output == t_o.user_input) {
+						button_value = 'show search result'
+					}
+					t += '<div style="color: orange"><p>match: '+t_o.score+'%</p><button id = "'+t_o.user_input+'_button" onclick="button_in_table_press(\''+t_o.user_input+'\');">'+button_value+'</button><br><br>'
+					t += '</div></div>'
+				}
+				t += '</div></td>'
+		
+				// right column
+				if (t_o.match_status == 'unknown') {
+					t += '<td></td>';
+				} else {
+					t += '<td style="vertical-align: top"><p id = "'+t_o.user_input+'_simple_text" style="margin-left: 5ex; text-indent:-5ex; line-height: 2; margin-bottom: 0; margin-top: 0">'+t_o.output+'</p></td>'; // note: this formatting works well with the clipboard (to paste into word, etc.). It doesn't work if you use a div for some reason.
+				}
+				t += '</tr>'
+// 				}				
+			}
+		}
+		
+		document.getElementById('simple_table').innerHTML = t;
 
         document.getElementById('simple_table').scrollTop = initial_scroll_top;
+// 		if (current_mode == 'completely done') {
+// 	       document.getElementById('simple_table').style.maxHeight = (innerHeight-300)+'px';
+// 	    }
+
 	}
 	
 	function button_in_table_press(user_input) { // dfd is this function necessary?
 	    text_obj[user_input].swap_output();
 	}
+	
+	function show_or_hide_debugging() {
+	    var s = "none"
+	    if (document.getElementById("show_everything_button").style.display == "none") {
+	    	s = "inline-block"
+	    }
+			document.getElementById("show_everything_button").style.display = s
+			document.getElementById("clear_storage_button").style.display = s	
+	}
 
-	function show_or_hide_debugging(input) {
+	function show_or_hide_everything(input) {
 	    var d = ''
 	    
 	    if (document.getElementById("refalyzerArticleListBox").style.display == "none" && input != "hide") {
@@ -1861,7 +1889,7 @@ Basic procedure:
 	    } else {
             d = "none"	    
 	    }
-        document.getElementById("pagelogOutputText").style.display = d
+        document.getElementById("buffer_for_copying").style.display = d
         document.getElementById("refalyzerArticleListBox").style.display = d
         document.getElementById("refalyzerAuthorsBox").style.display = d
         document.getElementById("inputTextBox").style.display = d
@@ -1879,12 +1907,12 @@ Basic procedure:
 		}
 	}
 	
+	
+	
 	function copy_to_clipboard() { // dfdd
 		// Note: the plain text comes out with blank paragraphs between refs. That's slightly annoying but I tried to fix it and failed. 
 		// to do: 
 		//      make it deal with urls?
-		//		make it show the searching ones at the top when still searching?
-		//		make it so it doesn't re-draw the whole simple table so often
 		
 	    var copyText = [];
 	    var out = ''
@@ -1900,11 +1928,11 @@ Basic procedure:
             out += copyText[i]
         }
 
-        document.getElementById('pagelogOutputText').style = "display:block" // the copy thing doesn't work if this isn't made visible
-        document.getElementById('pagelogOutputText').innerHTML = out;
+        document.getElementById('buffer_for_copying').style = "display:block" // the copy thing doesn't work if this isn't made visible
+        document.getElementById('buffer_for_copying').innerHTML = out;
 
 		// below comes (partially) from https://www.nikouusitalo.com/blog/why-isnt-clipboard-write-copying-my-richtext-html/
-		const richTextDiv = document.getElementById("pagelogOutputText");
+		const richTextDiv = document.getElementById("buffer_for_copying");
 
 		const clipboardItem = new ClipboardItem({
 			"text/plain": new Blob(
@@ -1919,7 +1947,7 @@ Basic procedure:
 
 		navigator.clipboard.write([clipboardItem]);
 
-        document.getElementById('pagelogOutputText').style = "display:none"
+        document.getElementById('buffer_for_copying').style = "display:none"
     }
 	
 </script>
@@ -1964,24 +1992,28 @@ project.org/package=metaBMA.
 
 <!-- input -->
 <div class='bigBox' id = 'inputTextBox'>
-	<div class='boxAroundTable' style="box-shadow: 0 0 1px 1px white; margin: 10px; padding: 0px"> <!-- overide the shadow -->
-		<textarea id="myText" name="inputTextArea" style='width: 100%; height: 500px'></textarea>
+	<div class='boxAroundTable' style="box-shadow: 0 0 1px 1px white; margin: 10px; padding: 10px"> <!-- overide the shadow -->
+		<textarea id="myText" name="inputTextArea" style='width: 100%'></textarea>
 	</div>
 </div>
 
 <!-- simple output -->
-<div class='bigBox' id='simpleOutputTable' style="display: none;" >
-	<div class='boxAroundTable' style="margin: 10px; padding: 10px">
-		<div id="simple_table_div"></div>
+<div class='bigBox' id='simpleOutputTable' style="display: none; height: auto" >
+	<div class='boxAroundTable' style="margin: 10px; padding: 10px; height: auto">
+		<div id="simple_table_div" style="height: auto"></div>
 	</div>
 </div>
-
 
 <!-- progress and summary -->
 <div class='bigBox' id='progBox' style= "height: 3em">
 	<div id='progressAndSummaryBox' style="padding: 10px;">
 		<div class='heading' id='progressHeader'></div>
-		<div id='progressText'>Paste in the list of references you'd like to fix. </div>
+		<div id='progressText'>Paste in the list of references you'd like to fix 
+			<span onclick="show_or_hide_debugging()" style="cursor: pointer"> &nbsp︙&nbsp 
+				<button onclick="show_or_hide_everything()" id="show_everything_button" style = "display: none">show/hide everything</button>
+				<button onclick="localStorage.clear()" id="clear_storage_button" style = "display: none">clear local storage</button> 
+			</span>
+		</div>
 		<br>
         <div id="myProgress" style="display: none;">
           <div id="myBar"></div>
@@ -1996,24 +2028,6 @@ project.org/package=metaBMA.
 	<button onclick="copy_to_clipboard()" id="copy_button" class="bigButton" style="display: none">copy</button>
 	<p>
 	<button onclick="show_or_hide_authors()" id="authors_button" style="display: none">show author analysis ▾</button>
-<!-- 	<span style="display: none"> <!~~ dfd get rid of this span to show the debugging buttons ~~> -->
-	<button onclick="show_or_hide_debugging()">show/hide everything</button>
-	<button onclick="localStorage.clear()" id="clear_storage_button">clear local storage</button> 
-<!-- 	</span> -->
-</div>
-
-<div id="pagelogOutputText"></div>
-
-
-<!-- 	Article table 	-->
-<div class='bigBox' id='refalyzerArticleListBox' style="display: none">
-	<div class='bigBox' display="block"> 
-		<div class='boxAroundTable'>
-			<div class='heading'>Articles</div><br>
-			<p>
-			<div id='articleTable' class='dataTable'></div>
-		</div>
-	</div>
 </div>
 
 <!-- 	Author table 	-->
@@ -2027,6 +2041,22 @@ project.org/package=metaBMA.
 		</div>
 	</div>
 </div>
+
+<!-- div where output is displayed so that it can be copied (and then it's hidden again) -->
+<div id="buffer_for_copying"></div>
+
+<!-- 	Article table 	-->
+<div class='bigBox' id='refalyzerArticleListBox' style="display: none">
+	<div class='bigBox' display="block"> 
+		<div class='boxAroundTable'>
+			<div class='heading'>Articles</div><br>
+			<p>
+			<div id='articleTable' class='dataTable'></div>
+		</div>
+	</div>
+</div>
+
+
 
 
 
