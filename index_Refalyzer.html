@@ -240,7 +240,14 @@ Basic procedure:
                 this.output = reference_obj[this.doi].apa;
                 this.output_notusing = this.user_input;
             }
-            show_simple_output();
+            
+            // adjust what's shown in the simple table
+            document.getElementById(this.user_input+'_simple_text').innerHTML = this.output;
+            var button_value = 'show user input'
+            if (this.output == this.user_input) {
+                button_value = 'show search result'
+            }
+            document.getElementById(this.user_input+'_button').innerHTML = button_value;
         }
 
         this.table_row_number = function() {
@@ -557,69 +564,6 @@ Basic procedure:
 //	But of course, an author could be counted multiple times. Each author would probably have two counters, one for primary citations
 //	and one for secondary citations.
 
-
-	function show_simple_output() {
-		// this takes the stuff in article_table and makes it user-friendly
-		// dfdd // I don't think it needs article_table... maybe it shouldn't rely on that thing? 
-		
-		var i = 0;
-		var t = ''; // for the table 
-		
-		
-		for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
-			var t_o = text_obj[document.getElementById("article_table").rows[i].cells[0].textContent]
-			t += '<tr>'
-			
-			// left column
-
-   			t += '<td style="vertical-align: middle; text-align: center; min-width: 10em; background-color: #f3f3f3; padding-right: 0px;">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
-			if (t_o.match_status == 'correct') { // correct
-    			t += '<div style="border-right:5px solid; border-right-color: lawngreen; font-size: 3em; color: lawngreen; padding: 10px ">'
-    			t += '✔'
-    			t += '</div>'
-    		} else if (t_o.match_status == 'wrong') { // wrong
-    			t += '<div style="border-right:5px solid; border-right-color: red; font-size: 3em; color: red; padding: 10px">'
-    			t += '✘'
-    			t += '</div>'
-    			t += '</div>'
-    		} else if (t_o.match_status == 'unknown') { // unknown
-    			t += '<div style="border-right:5px solid; border-right-color: white; color: greywolf">searching...</div></div>'
-    		} else { // maybe
-    			t += '<div style="border-right:5px solid; border-right-color: orange; padding: 10px">'
-    			var button_value = 'show user input'
-                if (t_o.output == t_o.user_input) {
-                    button_value = 'show search result'
-                }
-    			t += '<div style="color: orange"><p>match: '+t_o.score+'%</p><button id="'+t_o.user_input+'_button" onclick="button_in_table_press(\''+t_o.user_input+'\');">'+button_value+'</button><br><br>'
-                t += '</div></div>'
-    		}
-    		t += '</div></td>'
-    		
-    		// right column
-    		if (t_o.match_status == 'unknown') {
-    		    t += '<td></td>';
-    		} else {
-                t += '<td style="vertical-align: top"><p style="margin-left: 5ex; text-indent:-5ex; line-height: 2; margin-bottom: 0; margin-top: 0">'+t_o.output+'</p></td>'; // note: this formatting works well with the clipboard (to paste into word, etc.). It doesn't work if you use a div for some reason.
-            }
-			t += '</tr>'
-		}
-		
-		document.getElementById("simpleOutputTable").style.display = "flex";
-		document.getElementById('simple_table_div').innerHTML = '<table id="simple_table" style=" display: block; height: 500px; overflow-y: scroll;">'+t+'</table>';
-	}
-
-// 	function show__or_hide_other_row(user_input) {
-// 		// this was a different idea for a user interface that I'm not using
-//         var change_to = "visible"
-//         if (document.getElementById(user_input+'_other_row').style.visibility == "visible") {
-//             change_to = 'collapse';  
-//         }
-//         document.getElementById(user_input+'_other_row').style.visibility = change_to;
-//     }
-	
-	function button_in_table_press(user_input) {
-	    text_obj[user_input].swap_output();
-	}
 
 	function Author_object(input_familyname, input_firstname) {
 		// this creates instances of an author object, which is how I keep track of authors. 
@@ -1697,18 +1641,12 @@ Basic procedure:
     
     function show_previous_user_input() {
         document.getElementById("myText").value = localStorage.getItem('nates_previous_input')
-//         let height = innerHeight - 200 //- document.getElementById("progressAndSummaryBox").style.height - document.getElementById("buttonBox").style.height
-//         console.log( height)
-		document.getElementById("inputTextBox").style.height = innerHeight - 200
-		console.log( innerHeight - 200)
-// 		document.getElementById("buttonBox").onload = function() {resize_stuff()};
+
+// 		document.getElementById("inputTextBox").style.height = innerHeight - 200
+// 		console.log( innerHeight - 200)
     }
 
-    
-
-// 	function resize_stuff() {
-//     }
-    
+        
     function reset_user_input() {
         console.log('reseting;')
         
@@ -1782,7 +1720,7 @@ Basic procedure:
             console.log( err);
         }
         
-        show_simple_output()  // dfdd
+        show_simple_output()  // it calls this (which redraws the simple table) a bunch of times
         
 		if (rows_combined >= rows_total && current_mode == "done combining") {
 		    // it's already attempted to combine all rows
@@ -1820,7 +1758,6 @@ Basic procedure:
         var rows_total = document.getElementById('article_table').rows.length - 1;
         for (i = 1; i <= rows_total; i++) { // start at 1 to skip header row
         	temp_match_status = text_obj[document.getElementById("article_table").rows[i].cells[0].textContent].match_status
-			console.log( temp_match_status)
 			if (temp_match_status == 'correct') {
 			    c++;
 			} else if (temp_match_status == 'wrong') {
@@ -1850,6 +1787,72 @@ Basic procedure:
 		console.log( '')
 	}
 	
+	function show_simple_output() {
+		// this takes the stuff in article_table and makes it user-friendly
+		// dfdd // I don't think it needs article_table... maybe it shouldn't rely on that thing? 
+// 		            adjust scroll position when redrawing
+		            
+		var i = 0;
+		var t = ''; // for the table 
+
+        // figure out the scroll position of the table so it can stay there instead of snapping to top on every re-draw (this only applies until the searching is done btw)
+        let initial_scroll_top = 0;
+		if (typeof(document.getElementById('simple_table')) != 'undefined' && document.getElementById('simple_table') != null) {
+		    initial_scroll_top = document.getElementById('simple_table').scrollTop;
+		}
+
+		t = '<tr>'
+		t +=  "<th style='line-height: 2' onclick='sortTable(0, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort By Status ▾</th>";
+		t +=  "<th style='line-height: 2' onclick='sortTable(1, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort Alphabetical ▾</th>";
+		t += '</tr>'
+
+		for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
+			var t_o = text_obj[document.getElementById("article_table").rows[i].cells[0].textContent]
+			t += '<tr>'
+			
+			// left column
+   			t += '<td style="vertical-align: middle; text-align: center; min-width: 10em; background-color: #f3f3f3; padding-right: 0px;">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
+			if (t_o.match_status == 'correct') { // correct
+    			t += '<div style="border-right:5px solid; border-right-color: lawngreen; font-size: 3em; color: lawngreen; padding: 10px ">'
+    			t += '✔'
+    			t += '</div>'
+    		} else if (t_o.match_status == 'wrong') { // wrong
+    			t += '<div style="border-right:5px solid; border-right-color: red; font-size: 3em; color: red; padding: 10px">'
+    			t += '✘'
+    			t += '</div>'
+    			t += '</div>'
+    		} else if (t_o.match_status == 'unknown') { // unknown
+    			t += '<div style="border-right:5px solid; border-right-color: white; color: greywolf">searching...</div></div>'
+    		} else { // maybe
+    			t += '<div style="border-right:5px solid; border-right-color: orange; padding: 10px">'
+    			var button_value = 'show user input'
+                if (t_o.output == t_o.user_input) {
+                    button_value = 'show search result'
+                }
+    			t += '<div style="color: orange"><p>match: '+t_o.score+'%</p><button id = "'+t_o.user_input+'_button" onclick="button_in_table_press(\''+t_o.user_input+'\');">'+button_value+'</button><br><br>'
+                t += '</div></div>'
+    		}
+    		t += '</div></td>'
+    		
+    		// right column
+    		if (t_o.match_status == 'unknown') {
+    		    t += '<td></td>';
+    		} else {
+                t += '<td style="vertical-align: top"><p id = "'+t_o.user_input+'_simple_text" style="margin-left: 5ex; text-indent:-5ex; line-height: 2; margin-bottom: 0; margin-top: 0">'+t_o.output+'</p></td>'; // note: this formatting works well with the clipboard (to paste into word, etc.). It doesn't work if you use a div for some reason.
+            }
+			t += '</tr>'
+		}
+
+		document.getElementById("simpleOutputTable").style.display = "flex";
+		document.getElementById('simple_table_div').innerHTML = '<table id="simple_table" style=" display: block; height: 500px; overflow-y: scroll;">'+t+'</table>';
+
+        document.getElementById('simple_table').scrollTop = initial_scroll_top;
+	}
+	
+	function button_in_table_press(user_input) { // dfd is this function necessary?
+	    text_obj[user_input].swap_output();
+	}
+
 	function show_or_hide_debugging(input) {
 	    var d = ''
 	    
@@ -1869,31 +1872,29 @@ Basic procedure:
 		var x = document.getElementById("refalyzerAuthorsBox");
 		if (x.style.display === "none") {
 			x.style.display = "block";
-			document.getElementById("authors_button").innerHTML = "hide author analysis"
+			document.getElementById("authors_button").innerHTML = "hide author analysis ▴"
 		} else {
 			x.style.display = "none";
-			document.getElementById("authors_button").innerHTML = "show author analysis"
+			document.getElementById("authors_button").innerHTML = "show author analysis ▾"
 		}
 	}
 	
 	function copy_to_clipboard() { // dfdd
 		// Note: the plain text comes out with blank paragraphs between refs. That's slightly annoying but I tried to fix it and failed. 
 		// to do: 
-		// 		have a checkbox for alphabetize
 		//      make it deal with urls?
 		//		make it show the searching ones at the top when still searching?
-		//		let them sort the simple table
 		//		make it so it doesn't re-draw the whole simple table so often
 		
 	    var copyText = [];
 	    var out = ''
         var i = 0;
         
-        for (i = 0; i <= document.getElementById('simple_table').rows.length - 1; i++) {
+        for (i = 1; i <= document.getElementById('simple_table').rows.length - 1; i++) {
 		    copyText.push(document.getElementById("simple_table").rows[i].cells[1].innerHTML)
         }
         
-        copyText.sort() // dfdd only do this if they want it to be alphabetized
+//         copyText.sort() // default to sorting alphabetically
         
         for (i = 0; i < copyText.length; i++) {
             out += copyText[i]
@@ -1993,10 +1994,12 @@ project.org/package=metaBMA.
 <div class='bigBox' id='buttonBox' style="display: inline-block; padding: 10px;"> 
 	<button onclick="start()" id="fix_button" class="bigButton" style="display: inline-block">fix</button> 
 	<button onclick="copy_to_clipboard()" id="copy_button" class="bigButton" style="display: none">copy</button>
-	<button onclick="show_or_hide_authors()" id="authors_button" class="bigButton" style="display: none">show author analysis</button>
 	<p>
+	<button onclick="show_or_hide_authors()" id="authors_button" style="display: none">show author analysis ▾</button>
+<!-- 	<span style="display: none"> <!~~ dfd get rid of this span to show the debugging buttons ~~> -->
 	<button onclick="show_or_hide_debugging()">show/hide everything</button>
 	<button onclick="localStorage.clear()" id="clear_storage_button">clear local storage</button> 
+<!-- 	</span> -->
 </div>
 
 <div id="pagelogOutputText"></div>
