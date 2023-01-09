@@ -1991,9 +1991,14 @@ project.org/package=metaBMA.
 <body onload='show_previous_user_input()'>
 
 <!-- input -->
-<div class='bigBox' id = 'inputTextBox'>
-	<div class='boxAroundTable' style="box-shadow: 0 0 1px 1px white; margin: 10px; padding: 10px"> <!-- overide the shadow -->
-		<textarea id="myText" name="inputTextArea" style='width: 100%'></textarea>
+			<span onclick="show_or_hide_debugging()" style="cursor: pointer"> &nbsp☰&nbsp 
+				<button onclick="show_or_hide_everything()" id="show_everything_button" style = "display: none">show/hide everything</button>
+				<button onclick="localStorage.clear()" id="clear_storage_button" style = "display: none">clear local storage</button> 
+			</span>
+
+<div class='bigBox' id = 'inputTextBox' '>
+	<div class='boxAroundTable' style="box-shadow: 0 0 1px 1px white; margin: 10px; padding: 10px;"> <!-- overide the shadow -->
+		<textarea id="myText" name="inputTextArea" style='width: 100%; '></textarea>
 	</div>
 </div>
 
@@ -2009,10 +2014,6 @@ project.org/package=metaBMA.
 	<div id='progressAndSummaryBox' style="padding: 10px;">
 		<div class='heading' id='progressHeader'></div>
 		<div id='progressText'>Paste in the list of references you'd like to fix 
-			<span onclick="show_or_hide_debugging()" style="cursor: pointer"> &nbsp︙&nbsp 
-				<button onclick="show_or_hide_everything()" id="show_everything_button" style = "display: none">show/hide everything</button>
-				<button onclick="localStorage.clear()" id="clear_storage_button" style = "display: none">clear local storage</button> 
-			</span>
 		</div>
 		<br>
         <div id="myProgress" style="display: none;">
