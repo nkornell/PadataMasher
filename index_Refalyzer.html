@@ -204,8 +204,6 @@ Basic procedure:
 // 	var doi_pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
 
     
-// dfd I should make it so that the left column that's shown doesn't have to be the same as the text they said. 
-// that way, I could show whatever I want over there (or nothing) and format the way I'd like
 
 	function Text_object(input_userInput, input_doi, input_doi_type, input_ord) { 
 		this.user_input = input_userInput;
@@ -286,7 +284,7 @@ Basic procedure:
                     this.weird_first_letters = true;
                 }
             }
-             // if there are non-letters in the string
+			// if there are non-letters in the string
             // dfd maybe move this to parse user input and have it combine when it finds (some?) of these?
             const pattern_non_letters = new RegExp("^(?=.*[-+_!@ #$%^&*.,?]).+$"); // non-letters (including space character)
             if (pattern_non_letters.test(flim)) {
@@ -381,9 +379,6 @@ Basic procedure:
                 if (this.search_status == 'done') {
 					document.getElementById('leftColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false); 
 					document.getElementById('rightColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true);
-// dfd the next line doesn't work because what it puts in the left column != the user input. 
-// I think the best plan is to make the first column invisible and leave it alone, but add a second column that can be userinput at first and then change to showing differences later. 
-// 					document.getElementById('leftColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, true);
 					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
 					document.getElementById('output_'+this.user_input).innerHTML = this.output; 
 				} else {
@@ -1319,8 +1314,7 @@ Basic procedure:
         if (return_value > 100) {
             return_value = 100
         }
-// 		console.log('match: ' + tempMatch + '/' + maxPossible + ' = '+ return_value);
-		
+        
 		return return_value;
 	}
 
@@ -1668,14 +1662,13 @@ Basic procedure:
 
         document.getElementById("simpleOutputTable").style.display = "flex;"
         document.getElementById("progressAndSummaryBox").style.display = "flex"
-		document.getElementById('myProgress').style.display = "flex"
+		document.getElementById('myBar').style.display = "flex"
 
         
         show_or_hide_everything('hide'); 
         		
-        if (document.getElementById('progressHeader').innerHTML != "Working... ") {
-            document.getElementById('progressHeader').innerHTML = "Working... ";
-            document.getElementById('progressText').innerHTML = '&nbsp;'; // this space is just so it looks good
+        if (document.getElementById('progressText').innerHTML != "Working...&nbsp;") {
+            document.getElementById('progressText').innerHTML = "Working...&nbsp;";
 		}
 
 		parse_user_input();
@@ -1764,9 +1757,8 @@ Basic procedure:
 			}
 		}
         
-		document.getElementById('progressHeader').innerHTML = 'Done ';
-		document.getElementById('progressText').innerHTML = '&nbsp;' + rows_total + " references <span style='font-weight: bold; color: green'>" + c + " ✔</span>, <span style='font-weight: bold; color: red'>" + w + " ✘</span> , <span style='font-weight: bold; color: orange'>" + m + " maybe</span> (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
-		document.getElementById("myProgress").style = "display: none;"
+		document.getElementById('progressText').innerHTML = 'Done. ' + rows_total + " references <span style='font-weight: bold; color: green'>" + c + " ✔</span>, <span style='font-weight: bold; color: red'>" + w + " ✘</span> , <span style='font-weight: bold; color: orange'>" + m + " maybe</span> (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
+		document.getElementById("myBar").style = "display: none;"
 
 		
 		build_author_table();
@@ -1785,8 +1777,7 @@ Basic procedure:
 	}
 	
 	function show_simple_output() {
-		// this takes the stuff in article_table and puts in a new table that makes it user-friendly
-		// dfdd // I don't think it needs article_table... maybe it shouldn't rely on that thing? 
+		// this puts the output in a user-friendly table (this is instead of using article_table)
 
 		var i, showingUnknown = 0;
 		var t = ''; // for the table 
@@ -1798,7 +1789,7 @@ Basic procedure:
 		} else {
 			// this should only happen once, before the simple table has been created. this creates it and formats it. 
 			document.getElementById("simpleOutputTable").style.display = "flex";
-			document.getElementById('simple_table_div').innerHTML = '<table id="simple_table" style="display: flex"></table>';
+			document.getElementById('simple_table_div').innerHTML = '<table id="simple_table"></table>';
 			document.getElementById('simple_table').style = "display: flex; overflow-y: scroll;"
 			document.getElementById('simple_table').style.height = (innerHeight-300)+'px';
 		}
@@ -1810,40 +1801,40 @@ Basic procedure:
 			t += '</tr>'
 		}
 		
+		// loop through all of the items twice, first doing unknown ones and then doing known ones
 		for (showingUnknown = 0; showingUnknown <= 1; showingUnknown++) {
-			for (i = 1; i <= document.getElementById('article_table').rows.length - 1; i++) { // start at 1 to skip header row
-				var t_o = text_obj[document.getElementById("article_table").rows[i].cells[0].textContent]
+			for (let key in text_obj) { // this loops through all of text_obj
+				var t_o = text_obj[key];
 				
 				if ((showingUnknown == 0) == (t_o.match_status != 'unknown')) {
-					// Doing this means it shows all of the unknown stuff at the top of the table when it's being added. 
+					// Doing this means it shows all of the unknown stuff at the top of the table when it's being added to the table. 
 					// How it works: showingUnknown = 0 means we are showing the unknown ones. if it's true and 
-					// match_status doesn't equal "unknown", or vice versa, then continue. Continue means skip the rest and loop
+					// match_status doesn't equal "unknown", or vice versa, then continue. Continue means skip the rest of the loop and advance to i + 1
 					continue;
 				}
 				
 				t += '<tr>'
-				t += '<td style="vertical-align: middle; text-align: center; min-width: 10em; background-color: #f3f3f3; padding-right: 0px;">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
+				t += '<td style="vertical-align: middle; text-align: center; min-width: 20ex">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
 
 				// left column
 				if (t_o.match_status == 'unknown') { // unknown
 					t += '<div style="border-right:5px solid; border-right-color: white; color: greywolf">searching...</div>'
 				}
 				else if (t_o.match_status == 'correct') { // correct
-					t += '<div style="border-right:5px solid; border-right-color: lawngreen; font-size: 3em; color: lawngreen; padding: 10px ">'
+					t += '<div style="border-right:5px solid; border-right-color: lawngreen; font-size: 3em; color: lawngreen;">'
 					t += '✔'
 					t += '</div>'
 				} else if (t_o.match_status == 'wrong') { // wrong
-					t += '<div style="border-right:5px solid; border-right-color: red; font-size: 3em; color: red; padding: 10px">'
+					t += '<div style="border-right:5px solid; border-right-color: red; font-size: 3em; color: red;">'
 					t += '✘'
 					t += '</div>'
-					t += '</div>'
 				} else { // maybe
-					t += '<div style="border-right:5px solid; border-right-color: orange; padding: 10px">'
+					t += '<div style="border-right:5px solid; border-right-color: orange;">'
 					var button_value = 'show user input'
 					if (t_o.output == t_o.user_input) {
 						button_value = 'show search result'
 					}
-					t += '<div style="color: orange"><p>match: '+t_o.score+'%</p><button id = "'+t_o.user_input+'_button" onclick="button_in_table_press(\''+t_o.user_input+'\');">'+button_value+'</button><br><br>'
+					t += '<div style="color: orange"><p>match: '+t_o.score+'%</p><button id = "'+t_o.user_input+'_button" onclick="text_obj[\''+t_o.user_input+'\'].swap_output();">'+button_value+'</button><br><br>'
 					t += '</div></div>'
 				}
 				t += '</div></td>'
@@ -1855,30 +1846,21 @@ Basic procedure:
 					t += '<td style="vertical-align: top"><p id = "'+t_o.user_input+'_simple_text" style="margin-left: 5ex; text-indent:-5ex; line-height: 2; margin-bottom: 0; margin-top: 0">'+t_o.output+'</p></td>'; // note: this formatting works well with the clipboard (to paste into word, etc.). It doesn't work if you use a div for some reason.
 				}
 				t += '</tr>'
-// 				}				
 			}
 		}
 		
 		document.getElementById('simple_table').innerHTML = t;
 
         document.getElementById('simple_table').scrollTop = initial_scroll_top;
-// 		if (current_mode == 'completely done') {
-// 	       document.getElementById('simple_table').style.maxHeight = (innerHeight-300)+'px';
-// 	    }
-
 	}
 	
-	function button_in_table_press(user_input) { // dfd is this function necessary?
-	    text_obj[user_input].swap_output();
-	}
 	
-	function show_or_hide_debugging() {
+	function show_or_hide_burgerBox() {
 	    var s = "none"
-	    if (document.getElementById("show_everything_button").style.display == "none") {
+	    if (document.getElementById("burgerBox").style.display == "none") {
 	    	s = "inline-block"
 	    }
-			document.getElementById("show_everything_button").style.display = s
-			document.getElementById("clear_storage_button").style.display = s	
+		document.getElementById("burgerBox").style.display = s
 	}
 
 	function show_or_hide_everything(input) {
@@ -1909,10 +1891,8 @@ Basic procedure:
 	
 	
 	
-	function copy_to_clipboard() { // dfdd
-		// Note: the plain text comes out with blank paragraphs between refs. That's slightly annoying but I tried to fix it and failed. 
-		// to do: 
-		//      make it deal with urls?
+	function copy_to_clipboard() {
+		// This copies text to the clipboard. It stores two versions in the clipboard, plain text and html. 
 		
 	    var copyText = [];
 	    var out = ''
@@ -1991,74 +1971,68 @@ project.org/package=metaBMA.
 <body onload='show_previous_user_input()'>
 
 <!-- input -->
-			<span onclick="show_or_hide_debugging()" style="cursor: pointer"> &nbsp☰&nbsp 
-				<button onclick="show_or_hide_everything()" id="show_everything_button" style = "display: none">show/hide everything</button>
-				<button onclick="localStorage.clear()" id="clear_storage_button" style = "display: none">clear local storage</button> 
-			</span>
+<div class='widePaddedBox'>
+	Cool thing
+	<span onclick="show_or_hide_burgerBox()" style="cursor: pointer">
+		☰&nbsp 
+	</span>
+</div>
 
-<div class='bigBox' id = 'inputTextBox' '>
-	<div class='boxAroundTable' style="box-shadow: 0 0 1px 1px white; margin: 10px; padding: 10px;"> <!-- overide the shadow -->
-		<textarea id="myText" name="inputTextArea" style='width: 100%; '></textarea>
-	</div>
+<!-- just a place to stick information and buttons etc -->
+<div class='widePaddedBox' id='burgerBox' style = "display: none">
+	<button onclick="show_or_hide_everything()" id="show_everything_button" >show/hide everything</button>
+	<button onclick="localStorage.clear()" id="clear_storage_button">clear local storage</button> 
+</div>
+
+<div class='widePaddedBox' id = 'inputTextBox' '>
+	<textarea id="myText" name="inputTextArea" style='width: 100%; '>
+	</textarea>
 </div>
 
 <!-- simple output -->
-<div class='bigBox' id='simpleOutputTable' style="display: none; height: auto" >
-	<div class='boxAroundTable' style="margin: 10px; padding: 10px; height: auto">
-		<div id="simple_table_div" style="height: auto"></div>
+<div class='boxAroundTable' id='simpleOutputTable' style="display: none;" >
+	<div id="simple_table_div">
 	</div>
 </div>
 
 <!-- progress and summary -->
-<div class='bigBox' id='progBox' style= "height: 3em">
-	<div id='progressAndSummaryBox' style="padding: 10px;">
-		<div class='heading' id='progressHeader'></div>
-		<div id='progressText'>Paste in the list of references you'd like to fix 
-		</div>
-		<br>
-        <div id="myProgress" style="display: none;">
-          <div id="myBar"></div>
-        </div>
-   	</div>
+<div id='progressAndSummaryBox' class='widePaddedBox'>
+	<div id='progressText'>
+		Paste in the list of references you'd like to fix. 
+	</div>
+	<div id="myBar" style="display: none;">
+	</div>
 </div>
 
 
 <!-- buttons -->
-<div class='bigBox' id='buttonBox' style="display: inline-block; padding: 10px;"> 
-	<button onclick="start()" id="fix_button" class="bigButton" style="display: inline-block">fix</button> 
+<div class='widePaddedBox' id='buttonBox' "> 
+	<button onclick="start()" id="fix_button" class="bigButton">fix</button> 
 	<button onclick="copy_to_clipboard()" id="copy_button" class="bigButton" style="display: none">copy</button>
 	<p>
 	<button onclick="show_or_hide_authors()" id="authors_button" style="display: none">show author analysis ▾</button>
 </div>
 
 <!-- 	Author table 	-->
-<div class='bigBox' id='refalyzerAuthorsBox' style="display: none">
-	<div class='bigBox' display="block"> 
-		<div class='boxAroundTable'>
-			<div class='heading'>Authors </div>
-			&nbsp (select an author to highlight their co-authors)
-			<p>
-			<div id='authorTable' class='dataTable'></div>
-		</div>
-	</div>
+<div class='boxAroundTable' id='refalyzerAuthorsBox' style="display: none"> 
+	<br>Select an author to highlight their co-authors.
+	<p>
+	<div id='authorTable' class='dataTable'></div>
 </div>
+
+<!-- empty space at the bottom of the screen -->
+<div class='widePaddedBox' style="height: 5ex;"> 
+</div>
+
 
 <!-- div where output is displayed so that it can be copied (and then it's hidden again) -->
-<div id="buffer_for_copying"></div>
-
-<!-- 	Article table 	-->
-<div class='bigBox' id='refalyzerArticleListBox' style="display: none">
-	<div class='bigBox' display="block"> 
-		<div class='boxAroundTable'>
-			<div class='heading'>Articles</div><br>
-			<p>
-			<div id='articleTable' class='dataTable'></div>
-		</div>
-	</div>
+<div id="buffer_for_copying">
 </div>
 
-
-
+<!-- 	Article table 	-->
+<div class='boxAroundTable' id='refalyzerArticleListBox' style="display: none">
+	<div id='articleTable' class='dataTable'></div>
+</div>
 
 
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~- -->

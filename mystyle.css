@@ -52,6 +52,14 @@ th {
 	margin: 0px;
 }
 
+.widePaddedBox
+ {
+    vertical-align: top;
+	min-width: 300px;
+	padding: 5px;
+	margin: 5px;
+}
+
 .dataTable {
     overflow: auto;
     overflow-x: scroll;
