@@ -52,12 +52,12 @@ th {
 	margin: 0px;
 }
 
-.widePaddedBox
+.wideBoxWithMargin
  {
     vertical-align: top;
 	min-width: 300px;
-	padding: 5px;
-	margin: 5px;
+	padding: 0px;
+	margin: 10px;
 }
 
 .dataTable {
@@ -256,17 +256,17 @@ a:link {
 }
 
 ins {
-	background-color: Aquamarine;
+	color: Green;
     text-decoration: none;
 }
 
 del {
-	background-color: Orange;
+	color: Red;
     text-decoration: none;
 }
 
 chg {
-	background-color: LightGrey;
+	color: DarkGrey;
     text-decoration: none;
 }
 

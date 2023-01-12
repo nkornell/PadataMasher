@@ -215,7 +215,7 @@ Basic procedure:
         this.combine_status = "not done";
 		this.notes = "";
 		this.output = "";
-		this.output_notusing = "";
+		this.differences = '';
 		this.removed = false;
 		this.score = 0;
 		this.letter_match = 0;
@@ -224,29 +224,57 @@ Basic procedure:
 		this.use_Cite = false;
 		this.weird_first_letters = false;
 
-
-        this.swap_output = function() {
+        this.switch_output = function(input_from_selector) {
             // output is the reference that should be output to the clipboard (or whatever)
             // in other words, it's the version of the reference that the user chose. 
-            // this swaps output, meaning that if it was the user input, it's changed to the 
-            // reference from the database, and vice versa
+            // this switches output, meaning that it changes output to be whatever the user
+            // selected, and also updates the table to reflect the change
             
-            if (this.output == reference_obj[this.doi].apa) {
-                this.output = this.user_input;
-                this.output_notusing = reference_obj[this.doi].apa;
-            } else {
-                this.output = reference_obj[this.doi].apa;
-                this.output_notusing = this.user_input;
-            }
-            
-            // adjust what's shown in the simple table
+            // set the value of output
+			switch(input_from_selector) {
+				case "fixed":
+					this.output = reference_obj[this.doi].apa;
+					break;
+				case "input":
+					this.output = this.user_input;
+					break;
+				case "difs":
+					this.output = this.differences;
+					break;
+				default:
+					this.output = reference_obj[this.doi].apa;
+					break;
+			}
+
+            // adjust what's shown in the simple table, right column
             document.getElementById(this.user_input+'_simple_text').innerHTML = this.output;
-            var button_value = 'show user input'
-            if (this.output == this.user_input) {
-                button_value = 'show search result'
-            }
-            document.getElementById(this.user_input+'_button').innerHTML = button_value;
         }
+
+// the old version
+//         this.swap_output = function() {
+//             // output is the reference that should be output to the clipboard (or whatever)
+//             // in other words, it's the version of the reference that the user chose. 
+//             // this swaps output, meaning that if it was the user input, it's changed to the 
+//             // reference from the database, and vice versa
+//             
+//             if (this.output == reference_obj[this.doi].apa) {
+//                 this.output = this.user_input;
+//                 this.output_notusing = reference_obj[this.doi].apa;
+//             } else {
+//                 this.output = reference_obj[this.doi].apa;
+//                 this.output_notusing = this.user_input;
+//             }
+//             
+//             // adjust what's shown in the simple table, right column
+//             document.getElementById(this.user_input+'_simple_text').innerHTML = this.output;
+// 
+// 			// adjust what's shown in the simple table, left column
+//             var button_value = 'show user input'
+//             if (this.output == this.user_input) {
+//                 button_value = 'show search result'
+//             }
+//             document.getElementById(this.user_input+'_button').innerHTML = button_value;
+//         }
 
         this.table_row_number = function() {
             return document.getElementById(this.user_input).rowIndex;
@@ -364,10 +392,8 @@ Basic procedure:
                 
                 if (this.match_status == 'correct' || this.match_status == 'fragment') {
                 	this.output = reference_obj[this.doi].apa;
-                	this.output_notusing = this.user_input
                 } else {
                 	this.output = this.user_input;
-//                 	this.output_notusing = reference_obj[this.doi].apa;
                 }
             } catch (err) {
                 console.log('**error in update input part 1 for '+this.user_input)
@@ -375,8 +401,9 @@ Basic procedure:
             }
             	
             try { 
-                // update html
+                // update html]
                 if (this.search_status == 'done') {
+                	this.differences = dmp.diff_prettyHtml(d, true, true);
 					document.getElementById('leftColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false); 
 					document.getElementById('rightColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true);
 					document.getElementById('notes_'+this.user_input).innerHTML = this.notes; 
@@ -1762,7 +1789,7 @@ Basic procedure:
 
 		
 		build_author_table();
-		document.getElementById("refalyzerAuthorsBox").style = "display: flex;"	
+		document.getElementById("refalyzerAuthorsBox").style = "display: block;"	
 		
 		show_simple_output();
 		show_or_hide_everything('hide');
@@ -1814,7 +1841,7 @@ Basic procedure:
 				}
 				
 				t += '<tr>'
-				t += '<td style="vertical-align: middle; text-align: center; min-width: 20ex">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
+				t += '<td style="vertical-align: top; text-align: center; min-width: 18ex">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
 
 				// left column
 				if (t_o.match_status == 'unknown') { // unknown
@@ -1834,8 +1861,17 @@ Basic procedure:
 					if (t_o.output == t_o.user_input) {
 						button_value = 'show search result'
 					}
-					t += '<div style="color: orange"><p>match: '+t_o.score+'%</p><button id = "'+t_o.user_input+'_button" onclick="text_obj[\''+t_o.user_input+'\'].swap_output();">'+button_value+'</button><br><br>'
-					t += '</div></div>'
+					t += '<div style="color: orange"><p>'+t_o.score+'% match </p>'
+// 					t += '<button id = "'+t_o.user_input+'_button" onclick="text_obj[\''+t_o.user_input+'\'].swap_output();">'+button_value+'</button><br><br>'
+					t += '</div>'
+                	t += '\
+							<select style="border-color: orange" onchange="text_obj[\''+t_o.user_input+'\'].switch_output(this.value);">\
+							  <option value="fixed">show search result</option>\
+							  <option value="input">show user input</option>\
+							  <option value="difs">show differences</option>\
+							</select>'
+					t += '<br><br>'
+					t += '</div>'
 				}
 				t += '</div></td>'
 		
@@ -1873,41 +1909,62 @@ Basic procedure:
 	    }
         document.getElementById("buffer_for_copying").style.display = d
         document.getElementById("refalyzerArticleListBox").style.display = d
-        document.getElementById("refalyzerAuthorsBox").style.display = d
+        document.getElementById("authorTable").style.display = d
         document.getElementById("inputTextBox").style.display = d
         document.getElementById("extra_references").style.display = d
 	}
 	
 	function show_or_hide_authors() {
-		var x = document.getElementById("refalyzerAuthorsBox");
-		if (x.style.display === "none") {
-			x.style.display = "block";
+// 		var x = document.getElementById("authorTable");
+		if (document.getElementById("authorTable").style.display === "none") {
+			document.getElementById("authorTable").style.display = "block";
 			document.getElementById("authors_button").innerHTML = "hide author analysis ▴"
+			document.getElementById("author_table_instructions").style.display = "inline-block";
 		} else {
-			x.style.display = "none";
+			document.getElementById("authorTable").style.display = "none";
 			document.getElementById("authors_button").innerHTML = "show author analysis ▾"
+			document.getElementById("author_table_instructions").style.display = "none";
 		}
 	}
-	
+
+	function get_url_citation() {	
+		// Only using native browser features (no jQuery).
+		// Uses `fetch`, `DOMParser` and `querySelectorAll`.
+
+		const getTitle = (url) => {  
+		  return fetch(`https://crossorigin.me/${url}`)
+			.then((response) => response.text())
+			.then((html) => {
+			  const doc = new DOMParser().parseFromString(html, "text/html");
+			  const title = doc.querySelectorAll('title')[0];
+			  return title.innerText;
+			});
+		};
+
+
+		var urls = [
+		  'https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html',
+		]
+
+		// This one keeps the order the same as the URL list.
+		Promise.all(
+		  urls.map((url) => getTitle(url))
+		).then((titles) => {
+		  console.log(titles);
+		});
+	}
 	
 	
 	function copy_to_clipboard() {
 		// This copies text to the clipboard. It stores two versions in the clipboard, plain text and html. 
 		
-	    var copyText = [];
 	    var out = ''
         var i = 0;
         
         for (i = 1; i <= document.getElementById('simple_table').rows.length - 1; i++) {
-		    copyText.push(document.getElementById("simple_table").rows[i].cells[1].innerHTML)
+		    out += document.getElementById("simple_table").rows[i].cells[1].innerHTML;
         }
         
-//         copyText.sort() // default to sorting alphabetically
-        
-        for (i = 0; i < copyText.length; i++) {
-            out += copyText[i]
-        }
-
         document.getElementById('buffer_for_copying').style = "display:block" // the copy thing doesn't work if this isn't made visible
         document.getElementById('buffer_for_copying').innerHTML = out;
 
@@ -1928,6 +1985,7 @@ Basic procedure:
 		navigator.clipboard.write([clipboardItem]);
 
         document.getElementById('buffer_for_copying').style = "display:none"
+        get_url_citation();
     }
 	
 </script>
@@ -1971,7 +2029,7 @@ project.org/package=metaBMA.
 <body onload='show_previous_user_input()'>
 
 <!-- input -->
-<div class='widePaddedBox'>
+<div class='wideBoxWithMargin'>
 	Cool thing
 	<span onclick="show_or_hide_burgerBox()" style="cursor: pointer">
 		☰&nbsp 
@@ -1979,24 +2037,24 @@ project.org/package=metaBMA.
 </div>
 
 <!-- just a place to stick information and buttons etc -->
-<div class='widePaddedBox' id='burgerBox' style = "display: none">
+<div class='wideBoxWithMargin' id='burgerBox' style = "display: none">
 	<button onclick="show_or_hide_everything()" id="show_everything_button" >show/hide everything</button>
 	<button onclick="localStorage.clear()" id="clear_storage_button">clear local storage</button> 
 </div>
 
-<div class='widePaddedBox' id = 'inputTextBox' '>
+<div class='wideBoxWithMargin' id = 'inputTextBox'>
 	<textarea id="myText" name="inputTextArea" style='width: 100%; '>
 	</textarea>
 </div>
 
 <!-- simple output -->
-<div class='boxAroundTable' id='simpleOutputTable' style="display: none;" >
+<div class='wideBoxWithMargin' id='simpleOutputTable' style="display: none; border: 1px solid grey;" > 
 	<div id="simple_table_div">
 	</div>
 </div>
 
 <!-- progress and summary -->
-<div id='progressAndSummaryBox' class='widePaddedBox'>
+<div id='progressAndSummaryBox' class='wideBoxWithMargin'>
 	<div id='progressText'>
 		Paste in the list of references you'd like to fix. 
 	</div>
@@ -2006,22 +2064,23 @@ project.org/package=metaBMA.
 
 
 <!-- buttons -->
-<div class='widePaddedBox' id='buttonBox' "> 
+<div class='wideBoxWithMargin' id='buttonBox' "> 
 	<button onclick="start()" id="fix_button" class="bigButton">fix</button> 
 	<button onclick="copy_to_clipboard()" id="copy_button" class="bigButton" style="display: none">copy</button>
 	<p>
-	<button onclick="show_or_hide_authors()" id="authors_button" style="display: none">show author analysis ▾</button>
 </div>
 
 <!-- 	Author table 	-->
-<div class='boxAroundTable' id='refalyzerAuthorsBox' style="display: none"> 
-	<br>Select an author to highlight their co-authors.
+<div class='wideBoxWithMargin' id='refalyzerAuthorsBox' style="display: none"> 
+	<p>
+	<button onclick="show_or_hide_authors()" id="authors_button" style="display: none">show author analysis ▾</button>
+	<div id="author_table_instructions" style="display: none">Select an author to highlight their co-authors.</div>
 	<p>
 	<div id='authorTable' class='dataTable'></div>
 </div>
 
 <!-- empty space at the bottom of the screen -->
-<div class='widePaddedBox' style="height: 5ex;"> 
+<div class='wideBoxWithMargin' style="height: 10em;"> 
 </div>
 
 

@@ -1286,10 +1286,10 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 
 		switch (op) {
 			case DIFF_INSERT:
-				if (showDel) { // isn't this backwards????
+				if (showDel) {
 					if (all_tags) {
 						html[x] = text;
-					} else if (case_change) {
+					} else if (case_change && showIns != showDel) { // if it's a changed case and we're not showing both ins and del
 						html[x] = '<chg>' + text + '</chg>';
 					} else {
 						html[x] = '<ins>' + text + '</ins>';
@@ -1300,7 +1300,7 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 				if (showIns) { 
 					if (all_tags) {
 						html[x] = text;
-					} else if (case_change) {
+					} else if (case_change && showIns != showDel) {
 						html[x] = '<chg>' + text + '</chg>';
 					} else {
 						html[x] = '<del>' + text + '</del>';
