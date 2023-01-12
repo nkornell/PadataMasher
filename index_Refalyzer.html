@@ -175,10 +175,12 @@ Basic procedure:
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="shortcut icon" href="favicon.ico">
 	<link rel="stylesheet" type="text/css" href="mystyle.css">
-	
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script> <!-- this is to use citation-js -->
-    <script src="functions_stats.js"></script>
+
+	<script src="https://cdn.jsdelivr.net/npm/open-graph-scraper"></script> <!-- dfdd -->
+
+	<script src="functions_stats.js"></script>
     <script src="functions_tables.js"></script>
     <script src="functions_stringdiff.js"></script> <!-- this is to use a script that I copied into my folder, for highlighting differences between strings -->
 
@@ -1930,6 +1932,8 @@ Basic procedure:
 	function get_url_citation() {	
 		// Only using native browser features (no jQuery).
 		// Uses `fetch`, `DOMParser` and `querySelectorAll`.
+		
+		
 
 		const getTitle = (url) => {  
 		  return fetch(`https://crossorigin.me/${url}`)
@@ -1943,7 +1947,7 @@ Basic procedure:
 
 
 		var urls = [
-		  'https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html',
+		  'https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html'
 		]
 
 		// This one keeps the order the same as the URL list.
