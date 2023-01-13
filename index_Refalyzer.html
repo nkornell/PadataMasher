@@ -178,7 +178,8 @@ Basic procedure:
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script> <!-- this is to use citation-js -->
 
-	<script src="https://cdn.jsdelivr.net/npm/open-graph-scraper"></script> <!-- dfdd -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/ky@0.33.2/distribution/index.min.js"></script> -->
+<!-- 	<script src="https://cdn.jsdelivr.net/npm/open-graph-scraper"></script> <!~~ dfdd ~~> -->
 
 	<script src="functions_stats.js"></script>
     <script src="functions_tables.js"></script>
@@ -1684,6 +1685,8 @@ Basic procedure:
 		current_mode = "searching for dois"
 		startTime = Date.now();
 		
+		        		get_url_citation(); // dfdd
+
 		document.getElementById("fix_button").disabled = true;
 		
 		console.log( '')
@@ -1929,36 +1932,118 @@ Basic procedure:
 		}
 	}
 
-	function get_url_citation() {	
+	async function get_url_citation() { // dfdd
+		coolurl = 'https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html'
+// const ogs = require('open-graph-scraper');
+// 
+// const options = {
+//   url: 'http://ogp.me/',
+//   headers: {
+//     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
+//   }
+// };
+// 
+// ogs(options)
+//   .then((data) => {
+//     const { error, result, response } = data;
+//     console.log('error:', error); // This is returns true or false. True if there was a error. The error it self is inside the results object.
+//     console.log('result:', result); // This contains all of the Open Graph results
+//     console.log('response:', response); // This contains the HTML of page
+//   });
+
+
 		// Only using native browser features (no jQuery).
 		// Uses `fetch`, `DOMParser` and `querySelectorAll`.
 		
 		
 
-		const getTitle = (url) => {  
-		  return fetch(`https://crossorigin.me/${url}`)
-			.then((response) => response.text())
-			.then((html) => {
-			  const doc = new DOMParser().parseFromString(html, "text/html");
-			  const title = doc.querySelectorAll('title')[0];
-			  return title.innerText;
-			});
-		};
+// 		  return fetch(coolurl)
+// 			.then((response) => response.text())
+// 			.then((html) => {
+// 			  const doc = new DOMParser().parseFromString(html, "text/html");
+// 			  const title = doc.querySelectorAll('title')[0];
+// 			  return title.innerText;
+// 			});
+// 
+// 		// This one keeps the order the same as the URL list.
+// 		Promise.all(
+// 		  urls.map((url) => getTitle(url))
+// 		).then((titles) => {
+// 		  console.log(titles);
+// 		});
 
 
-		var urls = [
-		  'https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html'
-		]
 
-		// This one keeps the order the same as the URL list.
-		Promise.all(
-		  urls.map((url) => getTitle(url))
-		).then((titles) => {
-		  console.log(titles);
-		});
+// fetch('http://example.com/movies.json')
+//   .then((response) => response.json())
+//   .then((data) => console.log(data));
+
+let response = await fetch(coolurl, {
+  headers: {
+    'Mode' : "no-cors",
+    'Content-Type': 'application/json',
+    'API-Key': 'secret'
+  }
+});
+
+// 
+// // GET Request.
+// fetch(coolurl)
+//     // Handle success
+//     .then(response => response.json())  // convert to json
+//     .then(json => console.log(json))    //print data to console
+//     .catch(err => console.log('Request Failed', err)); // Catch errors
+// 	}
+// 
+
+
 	}
 	
 	
+// const getHTML = require('html-get')
+// 
+// /**
+//  * `browserless` will be passed to `html-get`
+//  * as driver for getting the rendered HTML.
+//  */
+// const browserless = require('browserless')()
+// 
+// const getContent = async url => {
+//   // create a browser context inside the main Chromium process
+//   const browserContext = browserless.createContext()
+//   const promise = getHTML(url, { getBrowserless: () => browserContext })
+//   // close browser resources before return the result
+//   promise.then(() => browserContext).then(browser => browser.destroyContext())
+//   return promise
+// }
+// 
+// /**
+//  * `metascraper` is a collection of tiny packages,
+//  * so you can just use what you actually need.
+//  */
+// const metascraper = require('metascraper')([
+//   require('metascraper-author')(),
+//   require('metascraper-date')(),
+//   require('metascraper-description')(),
+//   require('metascraper-image')(),
+//   require('metascraper-logo')(),
+//   require('metascraper-clearbit')(),
+//   require('metascraper-publisher')(),
+//   require('metascraper-title')(),
+//   require('metascraper-url')()
+// ])
+// 
+// /**
+//  * The main logic
+//  */
+// getContent('https://microlink.io')
+//   .then(metascraper)
+//   .then(metadata => console.log(metadata))
+//   .then(browserless.close)
+//   .then(process.exit)
+  
+  
+  
 	function copy_to_clipboard() {
 		// This copies text to the clipboard. It stores two versions in the clipboard, plain text and html. 
 		
@@ -1989,7 +2074,6 @@ Basic procedure:
 		navigator.clipboard.write([clipboardItem]);
 
         document.getElementById('buffer_for_copying').style = "display:none"
-        get_url_citation();
     }
 	
 </script>
