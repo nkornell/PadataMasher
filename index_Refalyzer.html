@@ -179,7 +179,7 @@ Basic procedure:
 	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script> <!-- this is to use citation-js -->
 
 <!-- <script src="https://cdn.jsdelivr.net/npm/ky@0.33.2/distribution/index.min.js"></script> -->
-<!-- 	<script src="https://cdn.jsdelivr.net/npm/open-graph-scraper"></script> <!~~ dfdd ~~> -->
+	<script src="https://cdn.jsdelivr.net/npm/open-graph-scraper"></script> <!-- dfdd -->
 
 	<script src="functions_stats.js"></script>
     <script src="functions_tables.js"></script>
@@ -201,6 +201,7 @@ Basic procedure:
     var current_mode = '';
     let dmp = new diff_match_patch();
 	let Cite = require('citation-js');
+	const ogs = require('open-graph-scraper');
 
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
 // 	var doi_pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
@@ -1789,7 +1790,7 @@ Basic procedure:
 			}
 		}
         
-		document.getElementById('progressText').innerHTML = 'Done. ' + rows_total + " references <span style='font-weight: bold; color: green'>" + c + " ✔</span>, <span style='font-weight: bold; color: red'>" + w + " ✘</span> , <span style='font-weight: bold; color: orange'>" + m + " maybe</span> (" +  Math.floor((Date.now() - startTime)/1000) + ' seconds)';
+		document.getElementById('progressText').innerHTML = 'Done. ' + rows_total + " references <span style='font-weight: bold; color: green'>" + c + " ✔</span>, <span style='font-weight: bold; color: red'>" + w + " ✘</span> , <span style='font-weight: bold; color: orange'>" + m + " maybe</span> in " +  Math.floor((Date.now() - startTime)/1000) + ' seconds';
 		document.getElementById("myBar").style = "display: none;"
 
 		
@@ -1932,8 +1933,18 @@ Basic procedure:
 		}
 	}
 
-	async function get_url_citation() { // dfdd
+	function get_url_citation() { // dfdd
 		coolurl = 'https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html'
+
+const options = { url: 'http://ogp.me/' };
+ogs(options)
+  .then((data) => {
+    const { error, result, response } = data;
+    console.log('error:', error);  // This returns true or false. True if there was an error. The error itself is inside the results object.
+    console.log('result:', result); // This contains all of the Open Graph results
+    console.log('response:', response); // This contains the HTML of page
+  })
+
 // const ogs = require('open-graph-scraper');
 // 
 // const options = {
@@ -1978,13 +1989,16 @@ Basic procedure:
 //   .then((response) => response.json())
 //   .then((data) => console.log(data));
 
-let response = await fetch(coolurl, {
-  headers: {
-    'Mode' : "no-cors",
-    'Content-Type': 'application/json',
-    'API-Key': 'secret'
-  }
-});
+
+// fetch('https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html/allow-cors', {mode:'cors'})
+// 
+// let response = await fetch(coolurl, {
+//   headers: {
+//     'Mode' : "no-cors",
+//     'Content-Type': 'application/json',
+//     'API-Key': 'secret'
+//   }
+// });
 
 // 
 // // GET Request.
