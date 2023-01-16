@@ -1870,7 +1870,7 @@ Basic procedure:
 		console.log( '---' + showingUnknown)
 			for (let key in text_obj) { // this loops through all of text_obj
 				var t_o = text_obj[key];
-				if (t_o.removed) {
+				if (t_o.removed || t_o.combine_status != 'done') {
 				    continue;
 				}
 
@@ -1882,9 +1882,9 @@ Basic procedure:
 					continue;
 				}
 				
-                if (current_mode == 'completely done') { // dfdd
-                    console.log(t_o.match_status)
-                }
+//                 if (current_mode == 'completely done') { // dfdd
+//                     console.log(t_o.match_status + ' ' + t_o.combine_status)
+//                 }
 
 				t += '<tr>'
 				t += '<td style="vertical-align: top; text-align: center; min-width: 18ex">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
