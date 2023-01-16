@@ -179,6 +179,11 @@ Basic procedure:
 	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script> <!-- this is to use citation-js -->
 
 <!-- <script src="https://cdn.jsdelivr.net/npm/metascraper@5/src/index.js"></script> -->
+<!-- 
+// note to self: I was trying to find a way to get metadata from URLs, and there's lots of stuff on github to do it. 
+// but I can't get any of it to work. This is one of the "libraries" that should work and seems very simple to use. 
+// This seems important because a lot of times people just have a URL for a source and I'd like to be able to handle it. 
+ -->
 	
 	<script src="functions_stats.js"></script>
     <script src="functions_tables.js"></script>
@@ -200,53 +205,6 @@ Basic procedure:
     var current_mode = '';
     let dmp = new diff_match_patch();
 	let Cite = require('citation-js');
-
-
-
-const getHTML = require('html-get')
-
-/**
- * `browserless` will be passed to `html-get`
- * as driver for getting the rendered HTML.
- */
-const browserless = require('browserless')()
-
-const getContent = async url => {
-  // create a browser context inside the main Chromium process
-  const browserContext = browserless.createContext()
-  const promise = getHTML(url, { getBrowserless: () => browserContext })
-  // close browser resources before return the result
-  promise.then(() => browserContext).then(browser => browser.destroyContext())
-  return promise
-}
-
-/**
- * `metascraper` is a collection of tiny packages,
- * so you can just use what you actually need.
- */
-const metascraper = require('metascraper')([
-  require('metascraper-author')(),
-  require('metascraper-date')(),
-  require('metascraper-description')(),
-  require('metascraper-image')(),
-  require('metascraper-logo')(),
-  require('metascraper-clearbit')(),
-  require('metascraper-publisher')(),
-  require('metascraper-title')(),
-  require('metascraper-url')()
-])
-
-/**
- * The main logic
- */
-getContent('https://microlink.io')
-  .then(metascraper)
-  .then(metadata => console.log(metadata))
-  .then(browserless.close)
-  .then(process.exit)
-
-
-
 
 
 
@@ -300,32 +258,6 @@ getContent('https://microlink.io')
             // adjust what's shown in the simple table, right column
             document.getElementById(this.user_input+'_simple_text').innerHTML = this.output;
         }
-
-// the old version
-//         this.swap_output = function() {
-//             // output is the reference that should be output to the clipboard (or whatever)
-//             // in other words, it's the version of the reference that the user chose. 
-//             // this swaps output, meaning that if it was the user input, it's changed to the 
-//             // reference from the database, and vice versa
-//             
-//             if (this.output == reference_obj[this.doi].apa) {
-//                 this.output = this.user_input;
-//                 this.output_notusing = reference_obj[this.doi].apa;
-//             } else {
-//                 this.output = reference_obj[this.doi].apa;
-//                 this.output_notusing = this.user_input;
-//             }
-//             
-//             // adjust what's shown in the simple table, right column
-//             document.getElementById(this.user_input+'_simple_text').innerHTML = this.output;
-// 
-// 			// adjust what's shown in the simple table, left column
-//             var button_value = 'show user input'
-//             if (this.output == this.user_input) {
-//                 button_value = 'show search result'
-//             }
-//             document.getElementById(this.user_input+'_button').innerHTML = button_value;
-//         }
 
         this.table_row_number = function() {
             return document.getElementById(this.user_input).rowIndex;
@@ -840,23 +772,23 @@ getContent('https://microlink.io')
         }
     }
 
-	async function weirdthing(input_url) {
-        // This gets a reference in apa format from Crossref. (I think it's from Crossref?) 
-        // So it kinda does what Cite does. They seem to be about the same speed. 
-        // But this doesn't return formatted text (e.g., italics), which I confirmed in email
-        // with Crossref, so I'm sticking with Cite. 
-        var xy = await $.ajax({
-            headers: { 
-        //         Accept : "application/vnd.citationstyles.csl+json" // this returns json
-                Accept : "text/bibliography; style=apa"
-            },
-            type: "GET",
-            mailto: 'nkornell@gmail.com',
-            url: input_url, // e.g., https://doi.org/10.1093/oxfordhb/9780199336746.013.8
-        })
-        console.log( input_url)
-        console.log(xy)
-    }
+// 	async function weirdthing(input_url) {
+//         // This gets a reference in apa format from Crossref. (I think it's from Crossref?) 
+//         // So it kinda does what Cite does. They seem to be about the same speed. 
+//         // But this doesn't return formatted text (e.g., italics), which I confirmed in email
+//         // with Crossref, so I'm sticking with Cite. 
+//         var xy = await $.ajax({
+//             headers: { 
+//         //         Accept : "application/vnd.citationstyles.csl+json" // this returns json
+//                 Accept : "text/bibliography; style=apa"
+//             },
+//             type: "GET",
+//             mailto: 'nkornell@gmail.com',
+//             url: input_url, // e.g., https://doi.org/10.1093/oxfordhb/9780199336746.013.8
+//         })
+//         console.log( input_url)
+//         console.log(xy)
+//     }
 
 	async function get_author(input_string) {
     	// dfd this function isn't done. but the idea was to get authors from the database. 
@@ -1886,6 +1818,7 @@ getContent('https://microlink.io')
 			for (let key in text_obj) { // this loops through all of text_obj
 				var t_o = text_obj[key];
 				if (t_o.removed || t_o.combine_status != 'done') {
+					// if this item has been removed, or it's combine status doesn't equal done, then skip it
 				    continue;
 				}
 
@@ -1893,14 +1826,9 @@ getContent('https://microlink.io')
 					// Doing this means it shows all of the unknown stuff at the top of the table when it's being added to the table. 
 					// How it works: showingUnknown = 0 means we are showing the unknown ones. if it's true and 
 					// match_status doesn't equal "unknown", or vice versa, then continue. Continue means skip the rest of the loop and advance to i + 1
-
 					continue;
 				}
 				
-//                 if (current_mode == 'completely done') { // dfdd
-//                     console.log(t_o.match_status + ' ' + t_o.combine_status)
-//                 }
-
 				t += '<tr>'
 				t += '<td style="vertical-align: top; text-align: center; min-width: 18ex">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
 
@@ -1923,7 +1851,6 @@ getContent('https://microlink.io')
 						button_value = 'show search result'
 					}
 					t += '<div style="color: orange"><p>'+t_o.score+'% match </p>'
-// 					t += '<button id = "'+t_o.user_input+'_button" onclick="text_obj[\''+t_o.user_input+'\'].swap_output();">'+button_value+'</button><br><br>'
 					t += '</div>'
                 	t += '\
 							<select style="border-color: orange" onchange="text_obj[\''+t_o.user_input+'\'].switch_output(this.value);">\
@@ -1991,82 +1918,6 @@ getContent('https://microlink.io')
 
 	function get_url_citation() { // dfdd
 		coolurl = 'https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html'
-
-//   .then((data) => {
-//     const { error, result, response } = data;
-//     console.log('error:', error);  // This returns true or false. True if there was an error. The error itself is inside the results object.
-//     console.log('result:', result); // This contains all of the Open Graph results
-//     console.log('response:', response); // This contains the HTML of page
-//   })
-
-
-
-
-// const ogs = require('open-graph-scraper');
-// 
-// const options = {
-//   url: 'http://ogp.me/',
-//   headers: {
-//     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
-//   }
-// };
-// 
-// ogs(options)
-//   .then((data) => {
-//     const { error, result, response } = data;
-//     console.log('error:', error); // This is returns true or false. True if there was a error. The error it self is inside the results object.
-//     console.log('result:', result); // This contains all of the Open Graph results
-//     console.log('response:', response); // This contains the HTML of page
-//   });
-
-
-		// Only using native browser features (no jQuery).
-		// Uses `fetch`, `DOMParser` and `querySelectorAll`.
-		
-		
-
-// 		  return fetch(coolurl)
-// 			.then((response) => response.text())
-// 			.then((html) => {
-// 			  const doc = new DOMParser().parseFromString(html, "text/html");
-// 			  const title = doc.querySelectorAll('title')[0];
-// 			  return title.innerText;
-// 			});
-// 
-// 		// This one keeps the order the same as the URL list.
-// 		Promise.all(
-// 		  urls.map((url) => getTitle(url))
-// 		).then((titles) => {
-// 		  console.log(titles);
-// 		});
-
-
-
-// fetch('http://example.com/movies.json')
-//   .then((response) => response.json())
-//   .then((data) => console.log(data));
-
-
-// fetch('https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html/allow-cors', {mode:'cors'})
-// 
-// let response = await fetch(coolurl, {
-//   headers: {
-//     'Mode' : "no-cors",
-//     'Content-Type': 'application/json',
-//     'API-Key': 'secret'
-//   }
-// });
-
-// 
-// // GET Request.
-// fetch(coolurl)
-//     // Handle success
-//     .then(response => response.json())  // convert to json
-//     .then(json => console.log(json))    //print data to console
-//     .catch(err => console.log('Request Failed', err)); // Catch errors
-// 	}
-// 
-
 
 	}
 	  
