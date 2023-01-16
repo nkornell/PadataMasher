@@ -1885,14 +1885,22 @@ getContent('https://microlink.io')
 		for (showingUnknown = 0; showingUnknown <= 1; showingUnknown++) {
 			for (let key in text_obj) { // this loops through all of text_obj
 				var t_o = text_obj[key];
-				
+				if (t_o.removed || t_o.combine_status != 'done') {
+				    continue;
+				}
+
 				if ((showingUnknown == 0) == (t_o.match_status != 'unknown')) {
 					// Doing this means it shows all of the unknown stuff at the top of the table when it's being added to the table. 
 					// How it works: showingUnknown = 0 means we are showing the unknown ones. if it's true and 
 					// match_status doesn't equal "unknown", or vice versa, then continue. Continue means skip the rest of the loop and advance to i + 1
+
 					continue;
 				}
 				
+//                 if (current_mode == 'completely done') { // dfdd
+//                     console.log(t_o.match_status + ' ' + t_o.combine_status)
+//                 }
+
 				t += '<tr>'
 				t += '<td style="vertical-align: top; text-align: center; min-width: 18ex">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
 
@@ -1984,9 +1992,6 @@ getContent('https://microlink.io')
 	function get_url_citation() { // dfdd
 		coolurl = 'https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html'
 
-
-// const options = { url: 'http://ogp.me/' };
-// ogs(options)
 //   .then((data) => {
 //     const { error, result, response } = data;
 //     console.log('error:', error);  // This returns true or false. True if there was an error. The error itself is inside the results object.
@@ -2064,9 +2069,7 @@ getContent('https://microlink.io')
 
 
 	}
-	
-  
-  
+	  
 	function copy_to_clipboard() {
 		// This copies text to the clipboard. It stores two versions in the clipboard, plain text and html. 
 		
