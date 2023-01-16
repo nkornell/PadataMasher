@@ -179,7 +179,10 @@ Basic procedure:
 	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script> <!-- this is to use citation-js -->
 
 <!-- <script src="https://cdn.jsdelivr.net/npm/ky@0.33.2/distribution/index.min.js"></script> -->
-	<script src="https://cdn.jsdelivr.net/npm/open-graph-scraper"></script> <!-- dfdd -->
+<!-- 	<script src="https://cdn.jsdelivr.net/npm/open-graph-scraper"></script> <!~~ dfdd ~~> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/metascraper"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/gh/metascraper/metascraper@0.6.2/dist/metascraper-0.6.2/metascraper-0.6.2.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/metadata-scraper@0.2.61/lib/index.min.js"></script> -->
 
 	<script src="functions_stats.js"></script>
     <script src="functions_tables.js"></script>
@@ -201,13 +204,44 @@ Basic procedure:
     var current_mode = '';
     let dmp = new diff_match_patch();
 	let Cite = require('citation-js');
-	const ogs = require('open-graph-scraper');
+// 	const ogs = require('open-graph-scraper');
 
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
 // 	var doi_pattern = /\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/i; // works
 // 	var doi_pattern = /^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i; // from crossref
 
+ 
+// var metadataScraper = require("metadata-scraper")
+// const getMetaData = require('metadata-scraper')
+//  
+// async function run() {
+//     const url = 'https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html'
+//     const data = await getMetaData(url)
+//     console.log(data)
+// }
+//  
+// run()
+ 
     
+// const getHTML = require('html-get')
+// 
+// /**
+//  * `browserless` will be passed to `html-get`
+//  * as driver for getting the rendered HTML.
+//  */
+// const browserless = require('browserless')()
+// 
+// const getContent = async url => {
+//   // create a browser context inside the main Chromium process
+//   const browserContext = browserless.createContext()
+//   const promise = getHTML(url, { getBrowserless: () => browserContext })
+//   // close browser resources before return the result
+//   promise.then(() => browserContext).then(browser => browser.destroyContext())
+//   return promise
+// }
+
+
+
 
 	function Text_object(input_userInput, input_doi, input_doi_type, input_ord) { 
 		this.user_input = input_userInput;
@@ -1552,10 +1586,7 @@ Basic procedure:
 		var s = '';
 		
 		articleTableText = "<table id='article_table'>";
-		// this would make columns 3, 4, and 5 invisible
-		// <colgroup><col span="2"><col span="3" style="visibility: collapse"></colgroup>
 		
-//     	articleTableText += '<colgroup><col span="2" style="visibility: collapse"><col span="2"></colgroup>'; // hide the first two columns
     	articleTableText += "<tr>";
 		articleTableText += "<th onclick='sortTable(0, "+'"articleTable","letters"'+")' title='Click to Sort'>Input text</th>";
     	articleTableText += "<th onclick='sortTable(1, "+'"articleTable","letters"'+")' title='Click to Sort'>Article found</th>";
@@ -1836,16 +1867,25 @@ Basic procedure:
 		
 		// loop through all of the items twice, first doing unknown ones and then doing known ones
 		for (showingUnknown = 0; showingUnknown <= 1; showingUnknown++) {
+		console.log( '---' + showingUnknown)
 			for (let key in text_obj) { // this loops through all of text_obj
 				var t_o = text_obj[key];
-				
+				if (t_o.removed) {
+				    continue;
+				}
+
 				if ((showingUnknown == 0) == (t_o.match_status != 'unknown')) {
 					// Doing this means it shows all of the unknown stuff at the top of the table when it's being added to the table. 
 					// How it works: showingUnknown = 0 means we are showing the unknown ones. if it's true and 
 					// match_status doesn't equal "unknown", or vice versa, then continue. Continue means skip the rest of the loop and advance to i + 1
+
 					continue;
 				}
 				
+                if (current_mode == 'completely done') { // dfdd
+                    console.log(t_o.match_status)
+                }
+
 				t += '<tr>'
 				t += '<td style="vertical-align: top; text-align: center; min-width: 18ex">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
 
@@ -1936,127 +1976,8 @@ Basic procedure:
 	function get_url_citation() { // dfdd
 		coolurl = 'https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html'
 
-const options = { url: 'http://ogp.me/' };
-ogs(options)
-  .then((data) => {
-    const { error, result, response } = data;
-    console.log('error:', error);  // This returns true or false. True if there was an error. The error itself is inside the results object.
-    console.log('result:', result); // This contains all of the Open Graph results
-    console.log('response:', response); // This contains the HTML of page
-  })
-
-// const ogs = require('open-graph-scraper');
-// 
-// const options = {
-//   url: 'http://ogp.me/',
-//   headers: {
-//     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
-//   }
-// };
-// 
-// ogs(options)
-//   .then((data) => {
-//     const { error, result, response } = data;
-//     console.log('error:', error); // This is returns true or false. True if there was a error. The error it self is inside the results object.
-//     console.log('result:', result); // This contains all of the Open Graph results
-//     console.log('response:', response); // This contains the HTML of page
-//   });
-
-
-		// Only using native browser features (no jQuery).
-		// Uses `fetch`, `DOMParser` and `querySelectorAll`.
-		
-		
-
-// 		  return fetch(coolurl)
-// 			.then((response) => response.text())
-// 			.then((html) => {
-// 			  const doc = new DOMParser().parseFromString(html, "text/html");
-// 			  const title = doc.querySelectorAll('title')[0];
-// 			  return title.innerText;
-// 			});
-// 
-// 		// This one keeps the order the same as the URL list.
-// 		Promise.all(
-// 		  urls.map((url) => getTitle(url))
-// 		).then((titles) => {
-// 		  console.log(titles);
-// 		});
-
-
-
-// fetch('http://example.com/movies.json')
-//   .then((response) => response.json())
-//   .then((data) => console.log(data));
-
-
-// fetch('https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html/allow-cors', {mode:'cors'})
-// 
-// let response = await fetch(coolurl, {
-//   headers: {
-//     'Mode' : "no-cors",
-//     'Content-Type': 'application/json',
-//     'API-Key': 'secret'
-//   }
-// });
-
-// 
-// // GET Request.
-// fetch(coolurl)
-//     // Handle success
-//     .then(response => response.json())  // convert to json
-//     .then(json => console.log(json))    //print data to console
-//     .catch(err => console.log('Request Failed', err)); // Catch errors
-// 	}
-// 
-
-
 	}
 	
-	
-// const getHTML = require('html-get')
-// 
-// /**
-//  * `browserless` will be passed to `html-get`
-//  * as driver for getting the rendered HTML.
-//  */
-// const browserless = require('browserless')()
-// 
-// const getContent = async url => {
-//   // create a browser context inside the main Chromium process
-//   const browserContext = browserless.createContext()
-//   const promise = getHTML(url, { getBrowserless: () => browserContext })
-//   // close browser resources before return the result
-//   promise.then(() => browserContext).then(browser => browser.destroyContext())
-//   return promise
-// }
-// 
-// /**
-//  * `metascraper` is a collection of tiny packages,
-//  * so you can just use what you actually need.
-//  */
-// const metascraper = require('metascraper')([
-//   require('metascraper-author')(),
-//   require('metascraper-date')(),
-//   require('metascraper-description')(),
-//   require('metascraper-image')(),
-//   require('metascraper-logo')(),
-//   require('metascraper-clearbit')(),
-//   require('metascraper-publisher')(),
-//   require('metascraper-title')(),
-//   require('metascraper-url')()
-// ])
-// 
-// /**
-//  * The main logic
-//  */
-// getContent('https://microlink.io')
-//   .then(metascraper)
-//   .then(metadata => console.log(metadata))
-//   .then(browserless.close)
-//   .then(process.exit)
-  
-  
   
 	function copy_to_clipboard() {
 		// This copies text to the clipboard. It stores two versions in the clipboard, plain text and html. 
