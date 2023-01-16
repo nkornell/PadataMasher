@@ -178,7 +178,12 @@ Basic procedure:
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script> <!-- this is to use citation-js -->
 
+    <script src="https://cdn.jsdelivr.net/npm/metadata-scraper"></script>
+<!-- <script type="module" src="./metadata-scraper"></script> -->
+<!--     <script src="https://cdn.jsdelivr.net/npm/got"></script> -->
+<!--     <script src="https://cdn.jsdelivr.net/npm/got/package.json"></script> -->
 <!-- <script src="https://cdn.jsdelivr.net/npm/metascraper@5/src/index.js"></script> -->
+
 <!-- 
 // note to self: I was trying to find a way to get metadata from URLs, and there's lots of stuff on github to do it. 
 // but I can't get any of it to work. This is one of the "libraries" that should work and seems very simple to use. 
@@ -206,6 +211,14 @@ Basic procedure:
     let dmp = new diff_match_patch();
 	let Cite = require('citation-js');
 
+
+const getMetaData = require('metadata-scraper')
+ 
+const url = 'https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html'
+ 
+getMetaData(url).then((data) => {
+    console.log(data)
+})
 
 
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
