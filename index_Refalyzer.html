@@ -211,16 +211,42 @@ Basic procedure:
     var current_mode = '';
     let dmp = new diff_match_patch();
 	let Cite = require('citation-js');
-const coolurl = 'https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html'
 	
+	var coolurl = 'https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html'
+// 	coolurl = 'https://blog.kevinchisholm.com/web-scraping/introduction-to-scraper-api'
 	
 	blub()
 	
-	async function blub() {
-                var stringToSend = 'https://jsonlink.io/api/extract?url='+coolurl;
-                var myJSON = await $.getJSON(encodeURI(stringToSend)); // if there's no doi in the user input, encode in local storage using the search string as the key
-                console.log(myJSON)
+	async function blub() { // dfdd
+		var stringToSend = ''
+		stringToSend = 'https://jsonlink.io/api/extract?url='+coolurl;
+// 		stringToSend = 'https://api.apify.com/v2/acts/jancurn~extract-metadata/run-sync?token=apify_api_ui04ARoxh4o0YdIbaL4fX74kjC1VZA1gVjZL&url='+coolurl;
+
+		var myJSON = await $.getJSON(stringToSend);
+		console.log(myJSON)
+		console.log(myJSON.title)
+		console.log(myJSON.url)
+		console.log(myJSON.author)
+		console.log( '----')
+		
 	}
+
+// const options = {
+// 	method: 'GET',
+// 	headers: {
+// 		'X-RapidAPI-Key': 'abab9de91bmsha140605fc36d850p10e498jsn3155d830b79b',
+// 		'X-RapidAPI-Host': 'og-link-preview.p.rapidapi.com'
+// 	}
+// };
+// 
+// fetch('https://og-link-preview.p.rapidapi.com/?url=https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html', options)
+// 	.then(response => response.json())
+// 	.then(response => console.log(response))
+// 	.catch(err => console.error(err));
+	
+
+
+
 
 // https://blog.kevinchisholm.com/web-scraping/introduction-to-scraper-api/
 
