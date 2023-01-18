@@ -1,10 +1,9 @@
+<!DOCTYPE html>
 <html>
-<head>
-<title>thing</title>
-<meta http-equiv="Content-Type" content="text/html">
-</head>
-
 <body>
+
+<h1>My PHP page</h1>
+
 
 <?php 
  
