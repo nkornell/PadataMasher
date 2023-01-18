@@ -178,7 +178,7 @@ Basic procedure:
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script> <!-- this is to use citation-js -->
 
-    <script src="https://cdn.jsdelivr.net/npm/metadata-scraper"></script>
+<!--     <script src="https://cdn.jsdelivr.net/npm/metadata-scraper"></script> -->
 <!-- <script type="module" src="./metadata-scraper"></script> -->
 <!--     <script src="https://cdn.jsdelivr.net/npm/got"></script> -->
 <!--     <script src="https://cdn.jsdelivr.net/npm/got/package.json"></script> -->
@@ -193,6 +193,7 @@ Basic procedure:
 	<script src="functions_stats.js"></script>
     <script src="functions_tables.js"></script>
     <script src="functions_stringdiff.js"></script> <!-- this is to use a script that I copied into my folder, for highlighting differences between strings -->
+
 
 <script>
 	var author_obj = [];
@@ -210,15 +211,20 @@ Basic procedure:
     var current_mode = '';
     let dmp = new diff_match_patch();
 	let Cite = require('citation-js');
-
-
-const getMetaData = require('metadata-scraper')
- 
 const url = 'https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html'
- 
-getMetaData(url).then((data) => {
-    console.log(data)
-})
+
+
+$('#elfako').load(url);
+
+// $.ajax({ url: 'https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html', success: function(data) { alert(data); } });
+
+
+// const getMetaData = require('metadata-scraper')
+//  
+//  
+// getMetaData(url).then((data) => {
+//     console.log(data)
+// })
 
 
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
@@ -2005,6 +2011,19 @@ project.org/package=metaBMA.
  -->
 
 <body onload='show_previous_user_input()'>
+
+<?php
+// Assuming the above tags are at www.example.com
+$tags = get_meta_tags('https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html');
+
+// Notice how the keys are all lowercase now, and
+// how . was replaced by _ in the key.
+echo $tags['author'];       // name
+echo $tags['keywords'];     // php documentation
+echo $tags['description'];  // a php manual
+echo $tags['geo_position']; // 49.33;-86.59
+echo 'hi';
+?>
 
 <!-- input -->
 <div class='wideBoxWithMargin'>
