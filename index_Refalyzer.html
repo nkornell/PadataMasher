@@ -211,14 +211,18 @@ Basic procedure:
     var current_mode = '';
     let dmp = new diff_match_patch();
 	let Cite = require('citation-js');
-const url = 'https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html'
+const coolurl = 'https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html'
+	
+	
+	blub()
+	
+	async function blub() {
+                var stringToSend = 'https://jsonlink.io/api/extract?url='+coolurl;
+                var myJSON = await $.getJSON(encodeURI(stringToSend)); // if there's no doi in the user input, encode in local storage using the search string as the key
+                console.log(myJSON)
+	}
 
-
-https://blog.kevinchisholm.com/web-scraping/introduction-to-scraper-api/
-
-$('#elfako').load(url);
-
-// $.ajax({ url: 'https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html', success: function(data) { alert(data); } });
+// https://blog.kevinchisholm.com/web-scraping/introduction-to-scraper-api/
 
 
 // const getMetaData = require('metadata-scraper')
