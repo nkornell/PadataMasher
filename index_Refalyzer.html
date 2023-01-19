@@ -212,54 +212,61 @@ Basic procedure:
     let dmp = new diff_match_patch();
 	let Cite = require('citation-js');
 	
-// 	https://medium.com/@nathanlee_46385/scraping-web-articles-using-newsapi-in-python-a0e97fbab8ed
-// 	https://newsapi.org/
-	
-	var coolurl = 'https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html'
-// 	coolurl = 'https://blog.kevinchisholm.com/web-scraping/introduction-to-scraper-api'
-	
-	blub()
-	
-	async function blub() { // dfdd
-		var stringToSend = ''
-		stringToSend = 'https://jsonlink.io/api/extract?url='+coolurl;
-// 		stringToSend = 'https://api.apify.com/v2/acts/jancurn~extract-metadata/run-sync?token=apify_api_ui04ARoxh4o0YdIbaL4fX74kjC1VZA1gVjZL&url='+coolurl;
+	blub('https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html')
+	blub('https://medium.com/@nathanlee_46385/scraping-web-articles-using-newsapi-in-python-a0e97fbab8ed')
+	blub('https://www.nytimes.com/2023/01/18/us/politics/ukraine-crimea-military.html')
+	async function blub(coolurl) { // dfdd
 
-		var myJSON = await $.getJSON(stringToSend);
+// 		stringToSend = 'https://jsonlink.io/api/extract?url='+coolurl; // this works but it doesn't return author info. this was promising and led me to microlink https://alternativeto.net/software/jsonlink-io/
+// 		https://microlink.io/docs/api/getting-started/overview // more info on microlink
+
+
+// https://microlink.io/blog/introducing-custom-rules- this might allow me to find authors better
+		var stringToSend = 'https://api.microlink.io/?url='+coolurl;
+
+		var myJSONall = await $.getJSON(stringToSend);
+		var myJSON = myJSONall.data
 		console.log(myJSON)
-		console.log(myJSON.title)
-		console.log(myJSON.url)
-		console.log(myJSON.author)
+		get_apa_from_json_URL(myJSON);
+// 		console.log(myJSON.author)
+// 		console.log(myJSON.date)
+// 		console.log(myJSON.title)
 		console.log( '----')
-		
+
 	}
 
-// const options = {
-// 	method: 'GET',
-// 	headers: {
-// 		'X-RapidAPI-Key': 'abab9de91bmsha140605fc36d850p10e498jsn3155d830b79b',
-// 		'X-RapidAPI-Host': 'og-link-preview.p.rapidapi.com'
-// 	}
-// };
-// 
-// fetch('https://og-link-preview.p.rapidapi.com/?url=https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html', options)
-// 	.then(response => response.json())
-// 	.then(response => console.log(response))
-// 	.catch(err => console.error(err));
-	
+	function get_apa_from_json_URL(input_json) {
+		var out = '';
+		const month_array = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+		
+		if (input_json.author !== undefined && input_json.author !== null) {
+			var names = input_json.author.split(" ")
+			var lastname = names.pop();
+// 			console.log( 'last: '+lastname)
+// 			console.log( names)
+			var firstname = input_json.author.substring(0, input_json.author.lastIndexOf(" "));
+			firstname = firstname.replaceAll('. ',' ').replaceAll('.',' ').trim();
+			var firstName_array = firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
+			var name_apa = lastname + ", " + first_letters(firstName_array);
+// 			console.log( name_apa)
+			out += name_apa;
+		} else {
+			console.log( 'no author found')
+		}
 
+		var d = new Date(input_json.date);
+		var month = month_array[d.getMonth()];
+		var year = d.getFullYear();
+		var apa_date = year + ", " + month + " " // dfdd+ d.getDay();
+// 		console.log( apa_date)
+		out += " (" + apa_date + ") ";
 
-
-
-// https://blog.kevinchisholm.com/web-scraping/introduction-to-scraper-api/
-
-
-// const getMetaData = require('metadata-scraper')
-//  
-//  
-// getMetaData(url).then((data) => {
-//     console.log(data)
-// })
+		out += '<i>' + input_json.title + '.</i>'
+		out += input_json.publisher + ". "
+		out += input_json.url
+		document.getElementById("empty").innerHTML = out;
+		console.log( out)
+	}
 
 
 // 	var doi_pattern = \b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b; // original from somewhere, I had to change it to make it work, see: https://www.regexpal.com/
@@ -2100,7 +2107,7 @@ project.org/package=metaBMA.
 </div>
 
 <!-- empty space at the bottom of the screen -->
-<div class='wideBoxWithMargin' style="height: 10em;"> 
+<div id='empty' class='wideBoxWithMargin' style="height: 10em;"> 
 </div>
 
 
