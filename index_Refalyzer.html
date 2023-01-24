@@ -212,112 +212,63 @@ Basic procedure:
     let dmp = new diff_match_patch();
 	let Cite = require('citation-js');
 	
-	blub('https://slate.com/culture/2023/01/kirk-cousins-vikings-giants-playoffs-quarterback-purgatory.html')
-	blub('https://medium.com/@nathanlee_46385/scraping-web-articles-using-newsapi-in-python-a0e97fbab8ed')
-	blub('https://www.nytimes.com/2023/01/18/us/politics/ukraine-crimea-military.html')
-	blub('https://www.vox.com/ad/23449189/can-running-actually-help-you-think-creatively')
-	
-// from the nyt header info	
-// <meta data-rh="true" name="robots" content="noarchive, max-image-preview:large"/>
-// <meta data-rh="true" name="description" content="The Biden administration is considering the argument that Kyiv needs the power to strike at the Ukrainian peninsula annexed by Russia in 2014."/>
-// <meta data-rh="true" property="og:url" content="https://www.nytimes.com/2023/01/18/us/politics/ukraine-crimea-military.html"/>
-// <meta data-rh="true" property="og:type" content="article"/>
-// <meta data-rh="true" property="og:title" content="U.S. Warms to Helping Ukraine Target Crimea"/>
-// <meta data-rh="true" property="og:image" content="https://static01.nyt.com/images/2023/01/18/multimedia/18dc-military-crimea-02-lqzt/18dc-military-crimea-02-lqzt-facebookJumbo.jpg"/>
-// <meta data-rh="true" property="og:image:alt" content="Crimea is home to tens of thousands of Russian troops and numerous Russian military bases."/>
-// <meta data-rh="true" property="og:description" content="The Biden administration is considering the argument that Kyiv needs the power to strike at the Ukrainian peninsula annexed by Russia in 2014."/>
-// <meta data-rh="true" property="twitter:url" content="https://www.nytimes.com/2023/01/18/us/politics/ukraine-crimea-military.html"/>
-// <meta data-rh="true" property="twitter:title" content="U.S. Warms to Helping Ukraine Target Crimea"/>
-// <meta data-rh="true" property="twitter:description" content="The Biden administration is considering the argument that Kyiv needs the power to strike at the Ukrainian peninsula annexed by Russia in 2014."/>
-// <meta data-rh="true" property="twitter:image" content="https://static01.nyt.com/images/2023/01/18/multimedia/18dc-military-crimea-02-lqzt/18dc-military-crimea-02-lqzt-videoSixteenByNine3000.jpg"/>
-// <meta data-rh="true" property="twitter:image:alt" content="Crimea is home to tens of thousands of Russian troops and numerous Russian military bases."/>
-// <meta data-rh="true" property="twitter:card" content="summary_large_image"/> <link data-rh="true" rel="canonical" href="https://www.nytimes.com/2023/01/18/us/politics/ukraine-crimea-military.html"/><link data-rh="true" rel="alternate" href="nyt://article/54914321-093f-5779-ad45-58721294b57d"/><link data-rh="true" rel="amphtml" href="https://www.nytimes.com/2023/01/18/us/politics/ukraine-crimea-military.amp.html"/><link data-rh="true" rel="alternate" type="application/json+oembed" href="https://www.nytimes.com/svc/oembed/json/?url=https%3A%2F%2Fwww.nytimes.com%2F2023%2F01%2F18%2Fus%2Fpolitics%2Fukraine-crimea-military.html" title="U.S. Warms to Helping Ukraine Target Crimea"/> 
-// <script data-rh="true" type="application/ld+json">{"@context":"http://schema.org","@type":"NewsArticle","description":"The Biden administration is considering the argument that Kyiv needs the power to strike at the Ukrainian peninsula annexed by Russia in 2014.","image":[{"@context":"http://schema.org","@type":"ImageObject","url":"https://static01.nyt.com/images/2023/01/18/multimedia/18dc-military-crimea-02-lqzt/18dc-military-crimea-02-lqzt-videoSixteenByNineJumbo1600.jpg","height":900,"width":1600,"caption":"Crimea is home to tens of thousands of Russian troops and numerous Russian military bases."},{"@context":"http://schema.org","@type":"ImageObject","url":"https://static01.nyt.com/images/2023/01/18/multimedia/18dc-military-crimea-02-lqzt/18dc-military-crimea-02-lqzt-superJumbo.jpg","height":1365,"width":2048,"caption":"Crimea is home to tens of thousands of Russian troops and numerous Russian military bases."},{"@context":"http://schema.org","@type":"ImageObject","url":"https://static01.nyt.com/images/2023/01/18/multimedia/18dc-military-crimea-02-lqzt/18dc-military-crimea-02-lqzt-mediumSquareAt3X.jpg","height":1800,"width":1800,"caption":"Crimea is home to tens of thousands of Russian troops and numerous Russian military bases."}],"mainEntityOfPage":"https://www.nytimes.com/2023/01/18/us/politics/ukraine-crimea-military.html","url":"https://www.nytimes.com/2023/01/18/us/politics/ukraine-crimea-military.html","inLanguage":"en","author":[{"@context":"http://schema.org","@type":"Person","url":"https://www.nytimes.com/by/helene-cooper","name":"Helene Cooper"},{"@context":"http://schema.org","@type":"Person","url":"https://www.nytimes.com/by/eric-schmitt","name":"Eric Schmitt"},{"@context":"http://schema.org","@type":"Person","url":"https://www.nytimes.com/by/julian-e-barnes","name":"Julian E. Barnes"}],"dateModified":"2023-01-19T01:08:13.000Z","datePublished":"2023-01-18T19:15:26.000Z","headline":"U.S. Warms to Helping Ukraine Target Crimea","publisher":{"@id":"https://www.nytimes.com/#publisher"},"copyrightHolder":{"@id":"https://www.nytimes.com/#publisher"},"sourceOrganization":{"@id":"https://www.nytimes.com/#publisher"},"copyrightYear":2023,"isAccessibleForFree":false,"hasPart":{"@type":"WebPageElement","isAccessibleForFree":false,"cssSelector":".meteredContent"},"isPartOf":{"@type":["CreativeWork","Product"],"name":"The New York Times","productID":"nytimes.com:basic"}}
-// <script data-rh="true" type="application/ld+json">{"@context":"http://schema.org","@type":"NewsMediaOrganization","name":"The New York Times","logo":{"@context":"http://schema.org","@type":"ImageObject","url":"https://static01.nyt.com/images/misc/NYT_logo_rss_250x40.png","height":40,"width":250},"url":"https://www.nytimes.com/","@id":"https://www.nytimes.com/#publisher","diversityPolicy":"https://www.nytco.com/diversity-and-inclusion-at-the-new-york-times/","ethicsPolicy":"https://www.nytco.com/who-we-are/culture/standards-and-ethics/","masthead":"https://www.nytimes.com/interactive/2020/09/08/admin/the-new-york-times-masthead.html","foundingDate":"1851-09-18","sameAs":"https://en.wikipedia.org/wiki/The_New_York_Times"}
-// <script data-rh="true" type="application/ld+json">{"@context":"http://schema.org","@type":"BreadcrumbList","itemListElement":[{"@context":"http://schema.org","@type":"ListItem","name":"U.S.","position":1,"item":"https://www.nytimes.com/section/us"},{"@context":"http://schema.org","@type":"ListItem","name":"Politics","position":2,"item":"https://www.nytimes.com/section/politics
-// <meta data-rh="true" property="article:published_time" content="2023-01-18T19:15:26.000Z"/>
-// <meta data-rh="true" property="article:modified_time" content="2023-01-19T01:08:13.000Z"/>
-// <meta data-rh="true" http-equiv="Content-Language" content="en"/>
-// <meta data-rh="true" name="articleid" content="100000008725188"/>
-// <meta data-rh="true" name="nyt_uri" content="nyt://article/54914321-093f-5779-ad45-58721294b57d"/>
-// <meta data-rh="true" name="pubp_event_id" content="pubp://event/7365eb3524e142ada9ab31e1d7b18edc"/>
-// <meta data-rh="true" name="image" content="https://static01.nyt.com/images/2023/01/18/multimedia/18dc-military-crimea-02-lqzt/18dc-military-crimea-02-lqzt-facebookJumbo.jpg"/>
-// <meta data-rh="true" name="byl" content="By Helene Cooper, Eric Schmitt and Julian E. Barnes"/>
-// <meta data-rh="true" name="news_keywords" content="Russian Invasion of Ukraine (2022),Crimea,Ukraine,Russia,US Foreign Policy,Military,Arms Trade,Foreign Aid,NATO"/>
-// <meta data-rh="true" name="pdate" content="20230118"/>
-// <meta data-rh="true" property="article:section" content="U.S."/>
-// <meta data-rh="true" property="article:tag" content="Russian Invasion of Ukraine (2022)"/>
-// <meta data-rh="true" property="article:tag" content="Crimea (Ukraine)"/>
-// <meta data-rh="true" property="article:tag" content="Ukraine"/>
-// <meta data-rh="true" property="article:tag" content="Russia"/>
-// <meta data-rh="true" property="article:tag" content="United States International Relations"/>
-// <meta data-rh="true" property="article:tag" content="Defense and Military Forces"/>
-// <meta data-rh="true" property="article:tag" content="Arms Trade"/>
-// <meta data-rh="true" property="article:tag" content="Foreign Aid"/>
-// <meta data-rh="true" property="article:tag" content="North Atlantic Treaty Organization"/>
-// <meta data-rh="true" property="article:opinion" content="false"/>
-// <meta data-rh="true" property="article:content_tier" content="metered"/>
-// <meta data-rh="true" name="CG" content="us"/>
-// <meta data-rh="true" name="SCG" content="politics"/>
-// <meta data-rh="true" name="CN" content="ukraine-russia"/>
-// <meta data-rh="true" name="CT" content="news-event"/>
-// <meta data-rh="true" name="PT" content="article"/>
-// <meta data-rh="true" name="PST" content="News"/>
-// <meta data-rh="true" name="url" content="https://www.nytimes.com/2023/01/18/us/politics/ukraine-crimea-military.html"/>
-// <meta data-rh="true" name="msapplication-starturl" content="https://www.nytimes.com"/>
-// <meta data-rh="true" property="al:android:url" content="nyt://article/54914321-093f-5779-ad45-58721294b57d"/>
-// <meta data-rh="true" property="al:android:package" content="com.nytimes.android"/>
-// <meta data-rh="true" property="al:android:app_name" content="NYTimes"/>
-// <meta data-rh="true" name="twitter:app:name:googleplay" content="NYTimes"/>
-// <meta data-rh="true" name="twitter:app:id:googleplay" content="com.nytimes.android"/>
-// <meta data-rh="true" name="twitter:app:url:googleplay" content="nyt://article/54914321-093f-5779-ad45-58721294b57d"/>
-// <meta data-rh="true" property="al:iphone:url" content="nytimes://www.nytimes.com/2023/01/18/us/politics/ukraine-crimea-military.html"/>
-// <meta data-rh="true" property="al:iphone:app_store_id" content="284862083"/>
-// <meta data-rh="true" property="al:iphone:app_name" content="NYTimes"/>
-// <meta data-rh="true" property="al:ipad:url" content="nytimes://www.nytimes.com/2023/01/18/us/politics/ukraine-crimea-military.html"/>
-// <meta data-rh="true" property="al:ipad:app_store_id" content="357066198"/>
-// <meta data-rh="true" property="al:ipad:app_name" content="NYTimes"/>
+    function extract_url(input) {
+        // return an array consisting of each valid url in the string. 
+        // if none are found it returns null
+        
+        try {
+            var urlRegex = /(https?:\/\/[^\s]+)/g; // finds urls
+            var urlArray = input.match(urlRegex)
+            if (urlArray == null) {
+                return '';
+            } else {
+                var url_to_use = urlArray[0] // just use the first url and ignore the others (if there's more than one)
+                if (isValidHttpUrl(url_to_use) == false) {
+                    return '';
+                } else {
+                    return url_to_use;
+                }
+            }
+        } catch(err) {
+            console.log( 'error in extract url ' + err)
+            return ''
+        }
+    }
 
-	
-	async function blub(coolurl) { // dfdd
+    function isValidHttpUrl(string) {
+        // this tells you whether the url is well formed
+        // it doesn't check whether it actually points to something 
+        let url;
+        try {
+            url = new URL(string);
+        } catch (_) {
+            return false;
+        }
+        return url.protocol === "http:" || url.protocol === "https:";
+    }
+    
+    function author_in_apa_format(input) {
+        console.log("author input: " + typeof input)
+        var names = input.split(" ")
+        var lastname = names.pop();
+        var firstname = input.substring(0, input.lastIndexOf(" "));
+        firstname = firstname.replaceAll('. ',' ').replaceAll('.',' ').trim();
+        var firstName_array = firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
+        
+let temp = "Welcome to W3Docs";
+let count = (temp.match(/to/g) || []).length;
+console.log(count);
 
-// 		stringToSend = 'https://jsonlink.io/api/extract?url='+coolurl; // this works but it doesn't return author info. this was promising and led me to microlink https://alternativeto.net/software/jsonlink-io/
-// 		https://microlink.io/docs/api/getting-started/overview // more info on microlink
-
-
-//this might allow me to find authors better
-// https://microlink.io/blog/introducing-custom-rules- 
-//https://microlink.io/docs/api/parameters/data
-
-		var stringToSend = 'https://api.microlink.io/?url='+coolurl//+"&data.name.selector=#name";
-
-		var myJSONall = await $.getJSON(stringToSend);
-		var myJSON = myJSONall.data
-		console.log(myJSONall)
-		get_apa_from_json_URL(myJSON);
-// 		console.log(myJSON.author)
-// 		console.log(myJSON.date)
-// 		console.log(myJSON.title)
-		console.log( '----')
-
-
-	}
+        return lastname + ", " + first_letters(firstName_array);
+    
+    }
 
 	function get_apa_from_json_URL(input_json) {
 		var out = '';
 		const month_array = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 		
 		if (input_json.author !== undefined && input_json.author !== null) {
-			var names = input_json.author.split(" ")
-			var lastname = names.pop();
-// 			console.log( 'last: '+lastname)
-// 			console.log( names)
-			var firstname = input_json.author.substring(0, input_json.author.lastIndexOf(" "));
-			firstname = firstname.replaceAll('. ',' ').replaceAll('.',' ').trim();
-			var firstName_array = firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
-			var name_apa = lastname + ", " + first_letters(firstName_array);
-// 			console.log( name_apa)
-			out += name_apa;
+			out += author_in_apa_format(input_json.author);
 		} else {
 			console.log( 'no author found')
 		}
@@ -326,14 +277,20 @@ Basic procedure:
 		var month = month_array[d.getMonth()];
 		var year = d.getFullYear();
 		var apa_date = year + ", " + month + " " + d.getDate();
-// 		console.log( apa_date)
 		out += " (" + apa_date + "). ";
 
-		out += input_json.title + '. '
+		var title = input_json.title
+        // if it doesn't end with a period or question mark, end it
+        if (title.charAt(title.length-1) != '.' && title.charAt(title.length-1) != '?') {
+            title = title + '.';
+        }
+		out += title + " "
+
 		out += '<i>' + input_json.publisher + ". </i>"
 		out += input_json.url
-		document.getElementById("empty").innerHTML = document.getElementById("empty").innerHTML + '<p>' + out;
-		console.log( out)
+// 		document.getElementById("empty").innerHTML = document.getElementById("empty").innerHTML + '<p>' + out;
+		return out;
+// 		console.log( out)
 	}
 
 
@@ -360,6 +317,7 @@ Basic procedure:
 		this.letter_match_percentage = 0;
 		this.percent_unchanged = 0;
 		this.use_Cite = false;
+
 		this.weird_first_letters = false;
 
         this.switch_output = function(input_from_selector) {
@@ -395,7 +353,7 @@ Basic procedure:
 		this.update_input = function(input_search_status) {
 			var temp_ref_to_show = '';
 		    // possible search status values:
-            //    not started, searching, incorrect doi entered; searching again, done 
+            //    not started, searching, incorrect doi or url entered; searching again, done 
 		    // possible match status values
 		    //    unknown, wrong, fragment, correct
 		    
@@ -409,7 +367,7 @@ Basic procedure:
     		}
 		    
 		    // if the user-entered doi was incorrect, change doi type
-            if (input_search_status == 'incorrect doi entered; searching again') {
+            if (input_search_status == 'incorrect doi or url entered; searching again') {
                 this.doi_type = 'not_found_yet';
             }
             
@@ -514,7 +472,10 @@ Basic procedure:
             	
             try { 
                 // update html]
-                if (this.search_status == 'done') {
+                if (this.search_status == 'done' && typeof d != "undefined") { // dfdd
+//                         console.log(' here comes the undefined for')
+//                         console.log( this.user_input)
+//                     }
                 	this.differences = dmp.diff_prettyHtml(d, true, true);
 					document.getElementById('leftColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false); 
 					document.getElementById('rightColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true);
@@ -540,24 +501,25 @@ Basic procedure:
 	}
 	
 	function Reference_object(input_userInput, input_json, input_apa) {	    
-		this.user_input = input_userInput;
-		this.json = input_json;
-		this.doi = this.json.DOI;
-		
-		// maybe check here if it's a chapter, and if it is see if it can find the book by cutting off the last 1-2 numbers of the doi and checking crossref?
-		// then it would have to check whether the title seems right, and if it does, it could find the editors and amend the reference object? 
-		// this sounds risky because what if something (the title, the editors) seems right but it's wrong?
-
         try {
+            this.user_input = input_userInput;
+            this.json = input_json;
+            this.doi = this.json.DOI;
+        
+            // maybe check here if it's a chapter, and if it is see if it can find the book by cutting off the last 1-2 numbers of the doi and checking crossref?
+            // then it would have to check whether the title seems right, and if it does, it could find the editors and amend the reference object? 
+            // this sounds risky because what if something (the title, the editors) seems right but it's wrong?
+
             if (input_apa == '') {
                 // figure out the reference by myself
-                this.apa = get_apa_from_json(input_json);
+                if (input_json.type == 'web-page') {
+                    this.apa = get_apa_from_json_URL(input_json);
+                } else {
+                    this.apa = get_apa_from_json(input_json);
+                }
             } else {
                 // using cite
                 this.apa = input_apa.toString().replace(/(<div([^>]+)>)/gi,'').replace(/(<\/div>)/gi, '').trim(); // remove all div tags
-// 				the old way
-//              this.apa = input_apa;
-//         		this.apa_no_html = jQuery(this.apa).text().trim(); // apa without the html tags        		
             }
 			this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, ""); // dfd this should be moved into get apa from json, once it's returning an object
 
@@ -733,7 +695,7 @@ Basic procedure:
 		for (let key in text_obj) { // this loops through all of text_obj
 		    // if it's the right kind of doi, and has the right search status, add it to the row queue. 
             if (text_obj[key].doi_type === doi_type_to_handle) {
-                if (text_obj[key].search_status === 'not started' || text_obj[key].search_status === 'incorrect doi entered; searching again') {
+                if (text_obj[key].search_status === 'not started' || text_obj[key].search_status === 'incorrect doi or url entered; searching again') {
                     row_queue.push(text_obj[key].user_input);
                     if (text_obj[key].removed) {
                         console.log('**error: getting url for removed row: ' + text_obj[key].user_input)
@@ -769,11 +731,15 @@ Basic procedure:
     // execute for item 12 before it gets to item 8, etc. This is why the program does all the  
     // rows that have dois before starting on the ones that don't. 
 
+
+//         console.log( '-- called get one url for: ' + input_string)
+        
         var temp_ignore_doi = false;
         var bibliography = '', stringToSend = '', temp_search_string = '';
 		let myJSON, myJSONobj;
 		const inputDOI = text_obj[input_string].doi;
-        
+        const coolurl = extract_url(input_string)
+
         // get the JSON that I've stored locally on the browser (bc the user has searched it before)
         if (inputDOI === "" || temp_ignore_doi == true) {
             local_JSON = localStorage.getItem(input_string); // if there isn't a good doi, look for the whole search string
@@ -783,10 +749,17 @@ Basic procedure:
 
         if (text_obj[input_string].search_status == "not started") {
        		text_obj[input_string].update_input('searching');
-        } else if (text_obj[input_string].search_status == 'incorrect doi entered; searching again') {
+        } else if (text_obj[input_string].search_status == 'incorrect doi or url entered; searching again') {
        		text_obj[input_string].update_input('searching');
             temp_ignore_doi = true;
         }
+console.groupCollapsed('get one url start')
+console.log('input string: ' + input_string)
+console.log('input doi: ' +inputDOI)
+console.log('text_obj[input_string].search_status: '+text_obj[input_string].search_status)
+console.log('temp ignore doi: ' + temp_ignore_doi)
+console.groupEnd()
+
 
 		try {
             if (local_JSON != null && local_JSON != '' && text_obj[input_string].use_Cite == false) {
@@ -796,7 +769,6 @@ Basic procedure:
                 if (bibliography == null) { // if there wasn't one, change the value to a blank string
                     bibliography = '';
                 }
-                // console.log( myJSONobj)
             } else if (window.navigator.onLine == false) {
                 console.log('offline')
                 text_obj[input_string].update_input('done');
@@ -811,6 +783,29 @@ Basic procedure:
                 myJSONobj = myJSON.data[0];
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // if using cite, encode in local storage using the search string as the key
                 localStorage.setItem(input_string+'\t'+'cite_bib', bibliography); // and also store the bibliography
+            } else if (coolurl != '' && temp_ignore_doi == false && inputDOI === '') {
+                // if the string contains a url but no doi
+                stringToSend = 'https://api.microlink.io/?url='+coolurl 
+                myJSON = await $.getJSON(stringToSend);
+                if (myJSON.headers.date == null) { // meaning that the url didn't resolve to an actual web page
+                    console.log( "could not find this (incorrect) URL " + coolurl) // this is fine. it's supposed to happen when a url is incorrect.
+//                     text_obj[input_string].update_input('dfdd');
+console.log('search status: ' + text_obj[input_string].search_status)
+                    if (text_obj[input_string].search_status == 'searching') {
+                        text_obj[input_string].update_input('incorrect doi or url entered; searching again');
+                        console.log( 'SEARCHING again')
+                    } 
+//                     return;
+                } else {
+                    console.log( '--found url--')
+                    console.log( inputDOI + ' = inputDOI')
+                    console.log( stringToSend)
+                    console.log( myJSON)
+                    console.log( '-- found url end--')                    
+                }
+                myJSONobj = myJSON.data
+                localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // add it to local storage
+ 
             } else if (inputDOI === "" || temp_ignore_doi == true) {
                 // search Crossref without a doi (either there isn't one or it's bad)
                 if (temp_ignore_doi) {
@@ -819,7 +814,8 @@ Basic procedure:
                 } else {
                     temp_search_string = input_string;
                 }
-				temp_search_string = temp_search_string.replace(/&/g, '%26'); // encode ampersand for the url 
+                temp_search_string = temp_search_string.replace(/&/g, '%26'); // encode ampersand for the url 
+
 
                 stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
                 myJSON = await $.getJSON(encodeURI(stringToSend));
@@ -844,11 +840,11 @@ Basic procedure:
                     text_obj[input_string].update_input('done');
                     console.log( "found a bad doi, trying again");
                 } else {
-                    console.log( "** error 823 i didn't' think this was POSSIBLE");
+                    console.log( "** error 823 i didn't think this was POSSIBLE");
                 }
                 return;
             }
-
+            
             create_reference(input_string, myJSONobj, bibliography)
             
 		}
@@ -857,13 +853,13 @@ Basic procedure:
 			    //if it tried a doi that is incorrect, search again without the doi
 				console.log( "could not find DOI " + inputDOI + " [searching again with doi removed]") // this is fine. it's supposed to happen when a doi is incorrect.
 				if (text_obj[input_string].search_status == 'searching') {
-            		text_obj[input_string].update_input('incorrect doi entered; searching again');
+            		text_obj[input_string].update_input('incorrect doi or url entered; searching again');
 	    		} 
 			} else if (err == 'Error: This format is not supported or recognized') { 
 			    // if it found a doi that is correct, but the citation can't be found by Cite, give up.
                 text_obj[input_string].update_input('done');
             } else if (err == 'Network request failed') {
-			    console.log( 'Network request failed: '+input_string);
+			    console.log('Network request failed: '+input_string);
                 text_obj[input_string].update_input('done');            
 			} else {
 			    console.log('*error in get one url: '+input_string);
@@ -877,27 +873,39 @@ Basic procedure:
     function create_reference(input_string, input_JSON, input_bibliography) {
         // If it's already got a bibliography entry, or if it's a type I've planned for and my code parses it, create a reference obj.
         // If it's an unfamiliar type, this (recursively-ish) calls get one URL, and has it querry Cite. 
-
+        
+        // dfdd
+        
+        if (input_JSON.DOI == null) {
+            input_JSON.DOI = input_string;
+            input_JSON.type = 'web-page'
+        }
+        
         text_obj[input_string].doi = input_JSON.DOI;
 
-        if (input_bibliography != '' || input_JSON.type == "journal-article" || input_JSON.type == "chapter" || input_JSON.type == "book-chapter") {
-            // if it has a bibliography (because it just got one from cite or one was stored locally) or is a type that my code will deal with
-            if (typeof reference_obj[input_JSON.DOI] === 'undefined') { 
-                reference_obj[input_JSON.DOI] = new Reference_object(input_string, input_JSON, input_bibliography); 
+        try {
+            if (input_bibliography != '' || input_JSON.type == "journal-article" || input_JSON.type == "chapter" || input_JSON.type == "book-chapter" || input_JSON.type == "web-page") {
+                // if it has a bibliography (because it just got one from cite or one was stored locally) or is a type that my code will deal with (including web-page, which is for when it found a url)
+                if (typeof reference_obj[text_obj[input_string].doi] === 'undefined') { 
+                    reference_obj[text_obj[input_string].doi] = new Reference_object(input_string, input_JSON, input_bibliography); 
+                } else {
+                    // this isn't an error. It happens when
+                    //    1) It tried to combine two rows and decided not to because best combo was better without one of them
+                    //    2) Crossref returned the same doi for both. In other words, crossref say the best match for b is x, but this thinks a matches x better without b. 
+                    console.log( 'u37')
+                }
+                text_obj[input_string].doi = reference_obj[input_JSON.DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
+                text_obj[input_string].update_input('done');
             } else {
-                // this isn't an error. It happens when
-                //    1) It tried to combine two rows and decided not to because best combo was better without one of them
-                //    2) Crossref returned the same doi for both. In other words, crossref say the best match for b is x, but this thinks a matches x better without b. 
-                console.log( 'u37')
+                // since I can't handle it, get the URL again (using Cite this time) 
+                text_obj[input_string].use_Cite = true;
+                getOneURL(input_string);
+    //       		weirdthing(input_string);
+                return;
             }
-            text_obj[input_string].doi = reference_obj[input_JSON.DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
-            text_obj[input_string].update_input('done');
-        } else {
-            // since I can't handle it, get the URL again (using Cite this time) 
-            text_obj[input_string].use_Cite = true;
-            getOneURL(input_string);
-//       		weirdthing(input_string);
-            return;
+        } catch (err) {
+            console.log('Error in create reference: ' + input_string)
+            console.log( err)
         }
     }
 
@@ -1018,7 +1026,7 @@ Basic procedure:
 			} catch(err) {
 			    console.log( "error 99833")
 			}
-           if (text_obj[temp_row_text].search_status === 'not started' || text_obj[temp_row_text].search_status === 'incorrect doi entered; searching again') {
+           if (text_obj[temp_row_text].search_status === 'not started' || text_obj[temp_row_text].search_status === 'incorrect doi or url entered; searching again') {
                 local_list.push(text_obj[temp_row_text].user_input);
                 if (text_obj[temp_row_text].removed) {
                     console.log('**error: in remove duplicate rows, found removed row: ' + text_obj[temp_row_text].user_input)
@@ -1553,12 +1561,11 @@ Basic procedure:
         
         inputText = inputText.replace(/\t+/g, ' '); // turn tabs into single spaces
         inputText = inputText.replace(/  +/g, ' '); // turn multiple space strings into single spaces
-
-		var urlSuffix = inputText.split(/\r\n|\r|\n/g);
         
+        // split the input into an array and clean it up
+		var urlSuffix = inputText.split(/\r\n|\r|\n/g);
 		for (i = urlSuffix.length - 1; i >= 0; i--) {
 			urlSuffix[i] = urlSuffix[i].trim();
-        
 			if (urlSuffix[i].length < 1) {
 			    // if it's a blank row, get rid of it
                 urlSuffix.splice(i, 1);
@@ -1588,12 +1595,10 @@ Basic procedure:
 		// - end with '-', combine with below
 
 // 		const min_length = Math.min(40, string_length_median/2); // dfd could use this, but it just doesn't seem necessary because references can't really be shorter than 40 
+
+        // combine rows if they're short or have a -
 		const min_length = 40; // This seems good. If you go to 50, it makes a mistake on Dweck's book.  
-// 		console.log('Min length='+min_length);
 		for (i = urlSuffix.length - 1; i >= 0; i--) {
-// 		    if (urlSuffix[i].length < min_length*2 && urlSuffix[i].length > min_length) {
-// 			        pagelog(urlSuffix[i]+' ('+urlSuffix[i].length+')'); // show the ones that are close to being combined 
-//             }
 			if (urlSuffix[i].length < min_length && urlSuffix[i].match(doi_pattern) == null) {
         		// if a row has too few characters, combine it with the previous row
 			    if (i > 0) { // if it's not the first row (bc there's no previous row)
@@ -1793,8 +1798,6 @@ Basic procedure:
 		started_notFoundYet = false;
 		current_mode = "searching for dois"
 		startTime = Date.now();
-		
-		        		get_url_citation(); // dfdd
 
 		document.getElementById("fix_button").disabled = true;
 		
@@ -2044,11 +2047,6 @@ Basic procedure:
 		}
 	}
 
-
-	function get_url_citation() { // dfdd
-		coolurl = 'https://slate.com/news-and-politics/2023/01/biden-classified-documents-approval-rating-gas-stoves.html'
-
-	}
 	  
 	function copy_to_clipboard() {
 		// This copies text to the clipboard. It stores two versions in the clipboard, plain text and html. 

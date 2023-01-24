@@ -1261,6 +1261,10 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs, showIns, showDel) {
 //   var pattern_gt = />/g;
 //   var pattern_para = /\n/g;	
 	
+	if (typeof diffs == "undefined") {
+		console.log( 'diffs == "undefined" in diff_prettyHtml')
+	}
+	
 	for (var x = 0; x < diffs.length; x++) {
 		var op = diffs[x][0];    // Operation (insert, delete, equal)
 		var data = diffs[x][1];  // Text of change.
