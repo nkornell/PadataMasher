@@ -262,20 +262,38 @@ Basic procedure:
 	}
 
     function author_in_apa_format(input) {
-    	// first it fixes funky characters (namely ( and ,) and then it rearranges them and turns stuff into initials
-    	if (str_count(',', input) > 0 || str_count('(', input) > 0) {
-//     		console.group('Unexpected character(s) found, changing:')
-//     		console.log(input)
-			input = input.replace(/ *\([^)]*\) */g, ""); // remove anything inside parentheses
+    	// fixes funky characters (namely ( and ,) 
+    	// finds funky strings
+    	// rearranges them so it's first, last
+    	// turns stuff into initials
 
-    		if (str_count(',', input) == 1) {
-    			var temp = input.split(',')
-    			input = temp[1].trim() + ' ' + temp[0].trim()
-    		}
-// 			console.log( input)
-//     		console.groupEnd()
+    	if (input == "debuggy") {
+    	    input = "Nate Kornell 404 (not found)"
+    	}
+    	
+        console.groupCollapsed('called author_in_apa_format:')
+        console.log(input)
+    	// find unexpected characters
+    	if (str_count('(', input) > 0 && str_count(')', input) > 0) {
+			input = input.replace(/ *\([^)]*\) */g, ""); // remove anything inside parentheses
     	}
 
+        if (str_count(',', input) == 1) {
+            var temp = input.split(',')
+            input = temp[1].trim() + ' ' + temp[0].trim()
+        }
+        
+        if (str_count('404', input) > 0 || str_count('not found', input.toLowerCase()) > 0) {
+            input = ''
+        }
+        console.log(input)
+        console.groupEnd()
+        
+        if (input.length == 0 || str_count(" ", input) == 0) {
+            // if there are no spaces, or it's blank, return it
+            return input;
+        }
+        
         var names = input.split(" ")
         var lastname = names.pop();
         var firstname = input.substring(0, input.lastIndexOf(" "));
@@ -327,6 +345,8 @@ Basic procedure:
         	publisher = publisher + " ";
 		}
 
+
+        // put it all together
 		if (has_author && has_publisher) {
 			out += author;
 			out += apa_date;
@@ -355,10 +375,11 @@ Basic procedure:
 
     
 
-	function Text_object(input_userInput, input_doi, input_doi_type, input_ord) { 
+	function Text_object(input_userInput, input_doi, input_doi_type, input_url, input_ord) { 
 		this.user_input = input_userInput;
         this.doi = input_doi.toLowerCase();
         this.doi_type = input_doi_type;
+        this.url = input_url;
         this.input_order = input_ord;
         this.search_status = "not started";
         this.match_status = "unknown";
@@ -405,10 +426,6 @@ Basic procedure:
             return document.getElementById(this.user_input).rowIndex;
         }
         
-        this.showJSON = function() {
-        	console.log(reference_obj[this.doi].json) 
-        }
-
 		this.update_input = function(input_search_status) {
 			var temp_ref_to_show = '';
 		    // possible search status values:
@@ -417,7 +434,7 @@ Basic procedure:
 		    //    unknown, wrong, fragment, correct
 		    
             if (this.removed) {
-                console.log( 'updateinput called for .removed object (returned instead): '+this.user_input);
+                console.warning( 'updateinput called for .removed object (returned instead): '+this.user_input);
                 return;
             }
 
@@ -634,6 +651,11 @@ Basic procedure:
                         } else {
                             all_author += ', ' + name_apa;
                         }
+
+                        var woof = author_in_apa_format(input_json.author[a].given + ' ' + input_json.author[a].family)
+                        if (name_apa != woof) {
+                            console.warning(arf + ' ≠ ' + woof)
+                        }
                     }
                 }
             } else {
@@ -763,7 +785,9 @@ Basic procedure:
             }
 		}
 
-		console.log('-A- getting [' + row_queue.length + '] rows ('+doi_type_to_handle+')--')
+		console.groupCollapsed('-A- getting [' + row_queue.length + '] rows ('+doi_type_to_handle+')')
+		console.log( row_queue)
+		console.groupEnd()
         if (row_queue.length > 0) {
 		    current_mode = "searching for dois"
             for (i = 0; i < row_queue.length; i++) {
@@ -846,19 +870,12 @@ Basic procedure:
                 // if the string contains a url but no doi
                 stringToSend = 'https://api.microlink.io/?url='+coolurl 
                 myJSON = await $.getJSON(stringToSend);
-                if (myJSON.headers.date == null) { // meaning that the url didn't resolve to an actual web page
-                    console.log( "could not find this (incorrect) URL " + coolurl) // this is fine. it's supposed to happen when a url is incorrect.
-//                     text_obj[input_string].update_input('dfdd');
+                if (myJSON.headers.date == null) { 
+                    // the url didn't resolve to an actual web page
+                    console.log( "could not find URL " + coolurl + " [searching again with URL removed]") // this is fine. it's supposed to happen when a doi is incorrect.
                     if (text_obj[input_string].search_status == 'searching') {
                         text_obj[input_string].update_input('incorrect doi or url entered; searching again');
-                        console.log( 'SEARCHING again')
                     } 
-                } else {
-                    console.log( '--found url--')
-                    console.log( inputDOI + ' = inputDOI')
-                    console.log( stringToSend)
-                    console.log( myJSON)
-                    console.log( '-- found url end--')                    
                 }
                 myJSONobj = myJSON.data
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // add it to local storage
@@ -1027,7 +1044,7 @@ Basic procedure:
 			try {
 				temp_row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
 			} catch(err) {
-			    console.log( "error 1244")
+			    console.error( "error 1244")
 			    continue;
 			}
 			try {
@@ -1037,7 +1054,7 @@ Basic procedure:
                 	continue;
                 }
 			} catch(err) {
-			    console.log( "error 1947")
+			    console.error( "error 1947")
 			    continue;
 			}
 			
@@ -1218,7 +1235,7 @@ Basic procedure:
 //                     console.log( 'set cs to done: '+text_obj[temp_row_text].doi)
                 }
 			} catch(err) {
- 				console.log( '*error could not run decide whether...: ')
+ 				console.error( '*error could not run decide whether...: ')
  				console.log( ' *'+temp_row_text)
  				console.log( ' *'+err)
 			}
@@ -1259,7 +1276,7 @@ Basic procedure:
         try {
 	        var otherRow_input_string = document.getElementById("article_table").rows[other_row_index].cells[0].textContent;
 	    } catch(err) {
-	    	console.log( "**error: in decide whether... can't find this row: " + other_row_index)
+	    	console.error( "**error: in decide whether... can't find this row: " + other_row_index)
 	    	return false;
 	    }
 	    
@@ -1274,7 +1291,7 @@ Basic procedure:
 	    var otherRow_doi = text_obj[otherRow_input_string].doi;
 
 	    // decide what to do
-	    	    
+	    
         var shouldCombine = false;
         var shouldChangeUserInput = false;
 
@@ -1337,8 +1354,6 @@ Basic procedure:
 
             // if appropriate, remove the row
             if (shouldCombine == true) {
-//             console.log( 'combining '+this_row_doi)
-//             console.log( 'should change user input ='+shouldChangeUserInput)
                 remove_row(otherRow_input_string);
                 if (shouldChangeUserInput == true) {
                     if (current_mode == "completely done") {
@@ -1356,13 +1371,14 @@ Basic procedure:
                         console.log( "[didn't change user input] "+input_string + " != "+bestcombo)
                     }
                 }
+                console.log('bestcombo='+bestcombo)
                 return true;
             } else {
                 return false;
             }
         }
         catch(err) {
-            console.log('*error in combine rows, otherRow_input_string:')
+            console.error('*error in combine rows, otherRow_input_string:')
             console.log( otherRow_input_string);
             console.log( err)
         }
@@ -1384,7 +1400,7 @@ Basic procedure:
             change_elementIDs(from_string, to_string);
         
             // create a new version of the input obj (with a new array index), but then copy the old one into it. I think I did this because get url is going to be expecting to return info to this thingy
-            text_obj[to_string] = new Text_object(to_string, "","",-1); // not giving it a doi means it won't add 1 to numRows withDOIsTotal
+            text_obj[to_string] = new Text_object(to_string, "","","",-1); // not giving it a doi means it won't add 1 to numRows withDOIsTotal
             text_obj[to_string] = Object.assign({}, text_obj[from_string]);
             text_obj[to_string].user_input = to_string;
             // update reference obj (i.e., from obj)
@@ -1402,7 +1418,7 @@ Basic procedure:
 	
 	function best_combination(user_input_addition, user_input_target, goal) {
 	    // tries the first two input parameters alone and in combination, to see which one matches the 3rd parameter best.
-	    // the order of the first two parameters only matters because checks its percentage at the start
+	    // the order of the first two parameters only matters because it checks its percentage at the start
 		var out = "";
     	var verbose = false;
 
@@ -1615,6 +1631,7 @@ Basic procedure:
 		var tempDOItype = "";
         var tempDOI = '';
         var tempDOIsFoundSoFar = [];
+        var tempURL = '';
         
         inputText = inputText.replace(/\t+/g, ' '); // turn tabs into single spaces
         inputText = inputText.replace(/  +/g, ' '); // turn multiple space strings into single spaces
@@ -1656,17 +1673,19 @@ Basic procedure:
         // combine rows if they're short or have a -
 		const min_length = 40; // This seems good. If you go to 50, it makes a mistake on Dweck's book.  
 		for (i = urlSuffix.length - 1; i >= 0; i--) {
-			if (urlSuffix[i].length < min_length && urlSuffix[i].match(doi_pattern) == null) {
-        		// if a row has too few characters, combine it with the previous row
+			if (urlSuffix[i].length < min_length && urlSuffix[i].match(doi_pattern) == null && extract_url(urlSuffix[i]) == '') {
+        		// if a row has too few characters, combine it with the previous row. (But not if it has a URL or a doi in it.)
 			    if (i > 0) { // if it's not the first row (bc there's no previous row)
                     urlSuffix[i-1] = urlSuffix[i-1] + urlSuffix[i];
                     urlSuffix.splice(i, 1);
+                    console.log('combined short thing: ' + urlSuffix[i-1])
                 }
 			} else if (urlSuffix[i].charAt(urlSuffix[i].length-1) == '-') {
         		// if it ends with - combine it with the following row (if there is one).
         		if (typeof urlSuffix[i+1] != undefined && urlSuffix[i+1] != null) {
 					urlSuffix[i+1] = urlSuffix[i] + urlSuffix[i+1];
 					urlSuffix.splice(i, 1);
+                    console.log('combined thing that ended in -: ' + urlSuffix[i+1])
 				}
 			}
 		}
@@ -1674,6 +1693,7 @@ Basic procedure:
 		for (i = 0; i < urlSuffix.length; i++) {
             tempDOIArray = [];
             tempDOIArray = urlSuffix[i].match(doi_pattern); // match returns an array, so this is just to get that array and help convert it to a string. 
+            tempURL = extract_url(urlSuffix[i]);
             if (typeof tempDOIArray !== 'undefined' && tempDOIArray !== null && tempDOIArray.length > 0) { // if it found a doi
                 var tempArraySplit = urlSuffix[i].split(tempDOIArray[0]);
                 var a = tempArraySplit[0]+tempDOIArray[0];
@@ -1690,6 +1710,9 @@ Basic procedure:
 //                     console.log( 'found double hockey sticks')
                     tempDOI = tempDOI.slice(0,7) + tempDOI.slice(8).replace('//','/');
                 }
+            } else if (tempURL != '') {
+                // if it has a url
+                tempDOItype = "from_user"
             } else {
                 tempDOItype = "not_found_yet";
                 tempDOI = '';
@@ -1708,7 +1731,7 @@ Basic procedure:
                     // And you won't see a problem in the output, necessarily, because the disappeared line doesn't get processed. 
                     // And btw, here's why I don't want to just disappear: it's possible that the same line appearing twice is correct. (by contrast, disappearing a duplicate doi is fine.) 
                 }
-                text_obj[urlSuffix[i]] = new Text_object(urlSuffix[i], tempDOI, tempDOItype, i); // if there's no doi, or the doi is new, use it. 
+                text_obj[urlSuffix[i]] = new Text_object(urlSuffix[i], tempDOI, tempDOItype, tempURL, i); // if there's no doi, or the doi is new, use it. 
                 if (tempDOI.length > 0) {
                     tempDOIsFoundSoFar.push(tempDOI);
                 }
@@ -2182,6 +2205,8 @@ project.org/package=metaBMA.
 </div>
 
 <!-- just a place to stick information and buttons etc -->
+<button onclick="console.log( author_in_apa_format('debuggy'))" >author debuggy</button>
+
 <div class='wideBoxWithMargin' id='burgerBox' style = "display: none">
 	<button onclick="show_or_hide_everything()" id="show_everything_button" >show/hide everything</button>
 	<button onclick="localStorage.clear()" id="clear_storage_button">clear local storage</button> 
