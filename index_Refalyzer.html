@@ -271,8 +271,8 @@ Basic procedure:
     	    input = "Nate Kornell 404 (not found)"
     	}
     	
-        console.groupCollapsed('called author_in_apa_format:')
-        console.log(input)
+//         console.groupCollapsed('called author_in_apa_format:')
+//         console.log(input)
     	// find unexpected characters
     	if (str_count('(', input) > 0 && str_count(')', input) > 0) {
 			input = input.replace(/ *\([^)]*\) */g, ""); // remove anything inside parentheses
@@ -286,8 +286,8 @@ Basic procedure:
         if (str_count('404', input) > 0 || str_count('not found', input.toLowerCase()) > 0) {
             input = ''
         }
-        console.log(input)
-        console.groupEnd()
+//         console.log(input)
+//         console.groupEnd()
         
         if (input.length == 0 || str_count(" ", input) == 0) {
             // if there are no spaces, or it's blank, return it
@@ -303,57 +303,62 @@ Basic procedure:
     }
 
 	function get_apa_from_json_URL(input_json) {
-// rules    from https://www.scribbr.com/apa-examples/website/#:~:text=APA%20website%20citations%20usually%20include,time%2C%20add%20a%20retrieval%20date.
-// if there is an author
-// Last name, Initials. (Year, Month Day). Article title. Publication Name. URL
-// if there is no author but there is an organization
-// Organization Name. (Year, Month Day). Page title. Site Name. URL
-// if there is no author or organization
-// Page title. (Year, Month Day). Site Name. URL
+		// apa rules    from https://www.scribbr.com/apa-examples/website/#:~:text=APA%20website%20citations%20usually%20include,time%2C%20add%20a%20retrieval%20date.
+		// if there is an author
+		// Last name, Initials. (Year, Month Day). Article title. Publication Name. URL
+		// if there is no author but there is an organization
+		// Organization Name. (Year, Month Day). Page title. Site Name. URL
+		// if there is no author or organization
+		// Page title. (Year, Month Day). Site Name. URL
+		var author = ''
+		var apa_date = ''
+		var title = ''
+		var publisher = ''
 		var out = '';
-		var has_author = false;
-		var has_publisher = false;
 		const month_array = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 				
 		if (input_json.author !== undefined && input_json.author !== null) {
-			has_author = true;
-			var author = author_in_apa_format(input_json.author);
+			author = author_in_apa_format(input_json.author);
 		}
+		author = check_for_404_etc(author)
 
 		if (input_json.date !== undefined && input_json.date !== null) {
 			var d = new Date(input_json.date);
 			var month = month_array[d.getMonth()];
 			var year = d.getFullYear();
-			var apa_date = " (" + year + ", " + month + " " + d.getDate() + "). ";
+			apa_date = " (" + year + ", " + month + " " + d.getDate() + "). ";
 		} else {
-			var apa_date = " (n.d.). "
+			apa_date = " (n.d.). "
 		}
+		apa_date = check_for_404_etc(apa_date)
 		
-		var title = input_json.title.trim()
+		title = input_json.title.trim()
         // if it doesn't end with a period or question mark, end it
         if (title.charAt(title.length-1) != '.' && title.charAt(title.length-1) != '?') {
             title = title + '.';
         }
         title = title + " ";
+        title = check_for_404_etc(title)
 		
 		if (input_json.publisher !== undefined && input_json.publisher !== null) {
-			has_publisher = true;
-			var publisher = input_json.publisher
+			publisher = input_json.publisher
 			if (publisher.charAt(publisher.length-1) != '.' && publisher.charAt(publisher.length-1) != '?') {
 				publisher = publisher + '.';
 			}
         	publisher = publisher + " ";
+        	publisher = check_for_404_etc(publisher)
 		}
 
+// dfdd
 
         // put it all together
-		if (has_author && has_publisher) {
+		if (author != '' && publisher != '') {
 			out += author;
 			out += apa_date;
 			out += title
 			out += '<i>' + publisher + '</i>'
 			out += input_json.url
-		} else if (has_author) {
+		} else if (author != '') {
 			out += publisher
 			out += apa_date;
 			out += '<i>' + title + '</i>'
@@ -364,8 +369,32 @@ Basic procedure:
 			out += publisher
 			out += input_json.url		
 		}
-		
 		return out;
+	}
+	
+	function check_for_404_etc(input) {
+		const arr = ['not found', '404'];
+		var i = 0
+		
+		for (i = 0; i < arr.length; i++) {
+			if (input.toLowerCase().includes(arr[i])) {
+				console.log( 'Bad string found in check for 404: ' + input)
+				return ''
+			}
+		}
+
+		return input
+
+// 		function check_for(s) {
+//   			return 
+// 		}
+// 		
+// 		if (arr.some(check_for) == true) {
+// 			console.warn("stinker: " + input)
+// 			return ""
+// 		} else {
+// 		}
+// 	
 	}
 
 
@@ -434,7 +463,7 @@ Basic procedure:
 		    //    unknown, wrong, fragment, correct
 		    
             if (this.removed) {
-                console.warning( 'updateinput called for .removed object (returned instead): '+this.user_input);
+                console.warn( 'updateinput called for .removed object (returned instead): '+this.user_input);
                 return;
             }
 
@@ -548,10 +577,7 @@ Basic procedure:
             	
             try { 
                 // update html]
-                if (this.search_status == 'done' && typeof d != "undefined") { // dfdd
-//                         console.log(' here comes the undefined for')
-//                         console.log( this.user_input)
-//                     }
+                if (this.search_status == 'done' && typeof d != "undefined") {
                 	this.differences = dmp.diff_prettyHtml(d, true, true);
 					document.getElementById('leftColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, true, false); 
 					document.getElementById('rightColumn_'+this.user_input).innerHTML = dmp.diff_prettyHtml(d, false, true);
@@ -729,6 +755,7 @@ Basic procedure:
         
         }
  	}
+ 
 
 
 // 	Author plan
@@ -933,12 +960,12 @@ Basic procedure:
 			    // if it found a doi that is correct, but the citation can't be found by Cite, give up.
                 text_obj[input_string].update_input('done');
             } else if (err == 'Network request failed') {
-			    console.log('Network request failed: '+input_string);
+			    console.error('Network request failed: '+input_string);
                 text_obj[input_string].update_input('done');            
 			} else {
-			    console.log('*error in get one url: '+input_string);
+			    console.error('in get one url, '+input_string+' returned: ');
+				console.error(err);
                 text_obj[input_string].update_input('done');            
-				console.log(err);
 			}
 		}
 	}
@@ -1722,7 +1749,7 @@ Basic procedure:
                 console.log( 'duplicate doi found in user input. not added: ' + tempDOI);
             } else {
                 if (typeof text_obj[urlSuffix[i]] != 'undefined' ) {
-                    console.log( "**error: textobj already exists [skipping it]: "+urlSuffix[i])
+                    console.error( "**error: textobj already exists [skipping it]: "+urlSuffix[i])
 					duplicate_input_text.push(urlSuffix[i]);
                     continue;
                     // dfd here's a known issue: If two rows are identical (and don't have a doi), there's a problem. 
@@ -2070,11 +2097,9 @@ Basic procedure:
 				if (t_o.match_status == 'unknown') {
 					t += '<td></td>';
 				} else {
+// 					temp_json = reference_obj[t_o.doi].json
+// 					console.log( temp_json)
 					t += '<td style="vertical-align: top"><p id = "'+t_o.user_input+'_simple_text" style="margin-left: 5ex; text-indent:-5ex; line-height: 2; margin-bottom: 0; margin-top: 0">'+t_o.output+'</p></td>'; // note: this formatting works well with the clipboard (to paste into word, etc.). It doesn't work if you use a div for some reason.
-// 					document.getElementById(t_o.user_input+'_simple_text').onclick = function() {
-// 						t_o.showJSON()
-// 					};
-// console.log( t_o.user_input+'_simple_text')
 				}
 				t += '</tr>'
 			}
