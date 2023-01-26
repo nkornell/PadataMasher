@@ -263,16 +263,9 @@ Basic procedure:
 
     function author_in_apa_format(input) {
     	// fixes funky characters (namely ( and ,) 
-    	// finds funky strings
     	// rearranges them so it's first, last
     	// turns stuff into initials
 
-    	if (input == "debuggy") {
-    	    input = "Nate Kornell 404 (not found)"
-    	}
-    	
-//         console.groupCollapsed('called author_in_apa_format:')
-//         console.log(input)
     	// find unexpected characters
     	if (str_count('(', input) > 0 && str_count(')', input) > 0) {
 			input = input.replace(/ *\([^)]*\) */g, ""); // remove anything inside parentheses
@@ -282,12 +275,6 @@ Basic procedure:
             var temp = input.split(',')
             input = temp[1].trim() + ' ' + temp[0].trim()
         }
-        
-        if (str_count('404', input) > 0 || str_count('not found', input.toLowerCase()) > 0) {
-            input = ''
-        }
-//         console.log(input)
-//         console.groupEnd()
         
         if (input.length == 0 || str_count(" ", input) == 0) {
             // if there are no spaces, or it's blank, return it
@@ -316,11 +303,12 @@ Basic procedure:
 		var publisher = ''
 		var out = '';
 		const month_array = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-				
+
+//         console.log(input_json)
+
 		if (input_json.author !== undefined && input_json.author !== null) {
 			author = author_in_apa_format(input_json.author);
 		}
-		author = check_for_404_etc(author)
 
 		if (input_json.date !== undefined && input_json.date !== null) {
 			var d = new Date(input_json.date);
@@ -330,7 +318,6 @@ Basic procedure:
 		} else {
 			apa_date = " (n.d.). "
 		}
-		apa_date = check_for_404_etc(apa_date)
 		
 		title = input_json.title.trim()
         // if it doesn't end with a period or question mark, end it
@@ -338,7 +325,6 @@ Basic procedure:
             title = title + '.';
         }
         title = title + " ";
-        title = check_for_404_etc(title)
 		
 		if (input_json.publisher !== undefined && input_json.publisher !== null) {
 			publisher = input_json.publisher
@@ -346,7 +332,6 @@ Basic procedure:
 				publisher = publisher + '.';
 			}
         	publisher = publisher + " ";
-        	publisher = check_for_404_etc(publisher)
 		}
 
 // dfdd
@@ -372,29 +357,25 @@ Basic procedure:
 		return out;
 	}
 	
-	function check_for_404_etc(input) {
-		const arr = ['not found', '404'];
+	function has_404_etc(input) {
+	// dfdd
+		const arr = ["page that doesn’t exist", '404 not found', "url was not found"];
 		var i = 0
 		
+// 		if (input.data.url)
+		if (input.headers.date == null) {
+		    return true;
+		}
+		
+		var jstring = JSON.stringify(input.data).toLowerCase()
 		for (i = 0; i < arr.length; i++) {
-			if (input.toLowerCase().includes(arr[i])) {
-				console.log( 'Bad string found in check for 404: ' + input)
-				return ''
+			if (jstring.includes(arr[i])) {
+				return true;
 			}
 		}
+		
+		return false;
 
-		return input
-
-// 		function check_for(s) {
-//   			return 
-// 		}
-// 		
-// 		if (arr.some(check_for) == true) {
-// 			console.warn("stinker: " + input)
-// 			return ""
-// 		} else {
-// 		}
-// 	
 	}
 
 
@@ -626,7 +607,7 @@ Basic procedure:
 			this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, ""); // dfd this should be moved into get apa from json, once it's returning an object
 
     	} catch(err) {
-    	    console.log ('**error in new reference obj')
+    	    console.error ('error in new reference obj')
     	    console.log(err);
     	}
  	} 
@@ -897,13 +878,19 @@ Basic procedure:
                 // if the string contains a url but no doi
                 stringToSend = 'https://api.microlink.io/?url='+coolurl 
                 myJSON = await $.getJSON(stringToSend);
-                if (myJSON.headers.date == null) { 
+                
+                if (has_404_etc(myJSON)) { // dfdd 
                     // the url didn't resolve to an actual web page
-                    console.log( "could not find URL " + coolurl + " [searching again with URL removed]") // this is fine. it's supposed to happen when a doi is incorrect.
+                    console.groupCollapsed( "could not find URL " + coolurl + " [searching again with URL removed]") // this is fine. it's supposed to happen when a doi is incorrect.
                     if (text_obj[input_string].search_status == 'searching') {
                         text_obj[input_string].update_input('incorrect doi or url entered; searching again');
                     } 
+                } else {
+                    console.groupCollapsed('found url ' + coolURL)
                 }
+                console.log( myJSON)
+                console.groupEnd()
+
                 myJSONobj = myJSON.data
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // add it to local storage
  
@@ -1516,6 +1503,7 @@ Basic procedure:
 		var userDOI = userString.match(doi_pattern); 
 		var databaseDOI = databaseString.match(doi_pattern); 
 		
+		// dfdd make scoring work for urls
         try {		
             // return a score
             if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	// with typeof, put undefined in quotes
@@ -1528,6 +1516,8 @@ Basic procedure:
                     // this happens when there's a bad doi, it searches without the doi, and finds a good doi to replace the bad one
                     return compute_letter_match(databaseString,userString);
                 }
+            } else if (text_obj[userString].url !='') {
+                return 100; // dfd this is totally wrong but good for testing            
             } else {
                 // if there is not a valid doi in the user input, remove the doi from the database string for the sake of comparison. 
                 // this does not use percentage because without a doi, I can't assume either side is good 
@@ -1535,7 +1525,7 @@ Basic procedure:
                 return compute_letter_match(databaseString,userString);
             }
 		} catch(err) {
-		    console.log("error in compute_score. (Note; this error can happen if the database string doesn't contain a doi.)")
+		    console.warn("Warning in compute score. (Note; this error can happen if the database string doesn't contain a doi.)")
 		    console.log(err)
 		}
 	}
@@ -2230,7 +2220,6 @@ project.org/package=metaBMA.
 </div>
 
 <!-- just a place to stick information and buttons etc -->
-<button onclick="console.log( author_in_apa_format('debuggy'))" >author debuggy</button>
 
 <div class='wideBoxWithMargin' id='burgerBox' style = "display: none">
 	<button onclick="show_or_hide_everything()" id="show_everything_button" >show/hide everything</button>
