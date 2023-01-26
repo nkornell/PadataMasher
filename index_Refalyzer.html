@@ -212,6 +212,38 @@ Basic procedure:
     let dmp = new diff_match_patch();
 	let Cite = require('citation-js');
 	
+// 	fix_author_string('Created by Nateby Konrlell by') dfdd does this work for rachel ray?
+
+
+
+// ----------- node js told me:
+// This package has installed:
+// 	•	Node.js v18.13.0 to /usr/local/bin/node
+// 	•	npm v8.19.3 to /usr/local/bin/npm
+// Make sure that /usr/local/bin is in your $PATH.
+
+// const mql = require('./node_modules/@microlink/mql') // from microlink
+// /Users/natekornell/node_modules/@microlink
+
+// ----------- this is from microlink
+
+// const mql = require('@microlink/mql') // from microlink
+// 
+// module.exports = async () => {
+//   const { status, data, response } = await mql(
+//     'https://github.com/microlinkhq/',
+//     {
+//       apiKey: 'MyApiToken'
+//     }
+//   )
+// 
+//   console.log(data)
+// }
+
+
+// -------
+	
+	
     function extract_url(input) {
         // return an array consisting of each valid url in the string. 
         // if none are found it returns null
@@ -261,10 +293,40 @@ Basic procedure:
 		return text.split(search).length - 1
 	}
 
+	function fix_author_string(input) {
+		const pattern_non_letters = new RegExp("^(?=.*[-+_!@ #$%^&*.,?]).+$"); // non-letters (including space character)
+		var i = 0;
+		
+		// A list of strings to get rid of. \b = break between words (so the bs make it only replace whole words).
+		var pattern = []
+		pattern.push ( new RegExp(/\bcreated by\b/i) )
+		pattern.push ( new RegExp(/\bwritten by\b/i) )
+		pattern.push ( new RegExp(/\bwords by\b/i) )
+		pattern.push ( new RegExp(/\bby\b/i) )
+		pattern.push ( new RegExp(/\byour name\b/i) )
+		
+		// Remove the strings
+		var output = input;
+// 		console.log( output)
+		for (i = 0; i < pattern.length; i++) {
+			output = output.replace(pattern[i],'')
+		}
+		
+		
+		output = output.trim()
+		if (output != input) {
+			console.log('fix author string, output changed to: ' + output)		
+		}
+		
+		return output;
+	}
+
     function author_in_apa_format(input) {
     	// fixes funky characters (namely ( and ,) 
     	// rearranges them so it's first, last
     	// turns stuff into initials
+    	
+    	// dfdd: make it look for weird strings in the name, like "By" or "Written by" or "created by" etc
 
     	// find unexpected characters
     	if (str_count('(', input) > 0 && str_count(')', input) > 0) {
@@ -289,6 +351,8 @@ Basic procedure:
         return lastname + ", " + first_letters(firstName_array);
     }
 
+// dfdd make it investigate changed urls
+	
 	function get_apa_from_json_URL(input_json) {
 		// apa rules    from https://www.scribbr.com/apa-examples/website/#:~:text=APA%20website%20citations%20usually%20include,time%2C%20add%20a%20retrieval%20date.
 		// if there is an author
@@ -301,20 +365,31 @@ Basic procedure:
 		var apa_date = ''
 		var title = ''
 		var publisher = ''
+		var fishy_publisher = ''
+		var fishy_title = ''
 		var out = '';
 		const month_array = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-//         console.log(input_json)
+		console.groupCollapsed(input_json.title)
+        console.log(input_json)
 
 		if (input_json.author !== undefined && input_json.author !== null) {
+			input_json.author = fix_author_string(input_json.author)
 			author = author_in_apa_format(input_json.author);
 		}
 
 		if (input_json.date !== undefined && input_json.date !== null) {
-			var d = new Date(input_json.date);
-			var month = month_array[d.getMonth()];
-			var year = d.getFullYear();
-			apa_date = " (" + year + ", " + month + " " + d.getDate() + "). ";
+			var pub_date = new Date(input_json.date);
+			const how_long_ago = Math.floor((Date.now() - pub_date)/1000); // seconds since the publication date
+			if (how_long_ago < 600000) { // dfd should be 60
+				// if the publication date is less than 60 seconds ago, then it's probably not a real publication date. 
+				apa_date = " (n.d.). "
+				console.log('date difference = ' + how_long_ago + ' seconds. Using n.d.')
+			} else {
+				var month = month_array[pub_date.getMonth()];
+				var year = pub_date.getFullYear();
+				apa_date = " (" + year + ", " + month + " " + pub_date.getDate() + "). ";
+			}
 		} else {
 			apa_date = " (n.d.). "
 		}
@@ -335,6 +410,17 @@ Basic procedure:
 		}
 
 // dfdd
+		// fishy publisher 
+		// this is the publisher that microlink would supply if the publisher actually isn't specified.
+		var hostname = new URL(input_json.url).hostname;
+		var url_parts = hostname.split(".");
+		if (url_parts.length > 2) {
+			fishy_publisher = url_parts[url_parts.length - 2] + '.' + url_parts[url_parts.length-1] + '. ' // the publisher it supplies is just the last two parts of the domain (e.g., google.com)()
+		}
+		
+		// fishy title
+		// this is the title that microlink would supply if the publisher actually isn't specified.
+		fishy_title = input_json.url.split("/").pop()+'. '
 
         // put it all together
 		if (author != '' && publisher != '') {
@@ -349,16 +435,23 @@ Basic procedure:
 			out += '<i>' + title + '</i>'
 			out += input_json.url
 		} else {
-			out += '<i>' + title + '</i>'
-			out += apa_date;
-			out += publisher
-			out += input_json.url		
+			if (apa_date == " (n.d.). " && title == fishy_title && publisher == fishy_publisher) {
+				// if the date, title, and publisher don't seem real, just return the url
+				out = input_json.url
+				console.log( 'FISHY')
+			} else {
+				out += '<i>' + title + '</i>'
+				out += apa_date;
+				out += publisher
+				out += input_json.url
+			}
 		}
+		console.groupEnd();
 		return out;
 	}
 	
 	function has_404_etc(input) {
-	// dfdd
+		// dfdd
 		const arr = ["page that doesn’t exist", '404 not found', "url was not found"];
 		var i = 0
 		
@@ -375,7 +468,6 @@ Basic procedure:
 		}
 		
 		return false;
-
 	}
 
 
@@ -889,6 +981,11 @@ Basic procedure:
                     console.groupCollapsed('found url ' + coolURL)
                 }
                 console.log( myJSON)
+                if (myJSON.url != coolURL) {
+                	console.warn('mismatching URLs below')
+                	console.log( 'myJSON.url='+myJSON.url)
+                	console.log( 'coolURL='+coolURL)
+                }
                 console.groupEnd()
 
                 myJSONobj = myJSON.data
