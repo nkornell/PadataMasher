@@ -211,8 +211,6 @@ Basic procedure:
     var current_mode = '';
     let dmp = new diff_match_patch();
 	let Cite = require('citation-js');
-	
-// 	fix_author_string('Created by Nateby Konrlell by') dfdd does this work for rachel ray?
 
 
 
@@ -242,7 +240,6 @@ Basic procedure:
 
 
 // -------
-	
 	
     function extract_url(input) {
         // return an array consisting of each valid url in the string. 
@@ -294,7 +291,7 @@ Basic procedure:
 	}
 
 	function fix_author_string(input) {
-		const pattern_non_letters = new RegExp("^(?=.*[-+_!@ #$%^&*.,?]).+$"); // non-letters (including space character)
+	
 		var i = 0;
 		
 		// A list of strings to get rid of. \b = break between words (so the bs make it only replace whole words).
@@ -312,6 +309,12 @@ Basic procedure:
 			output = output.replace(pattern[i],'')
 		}
 		
+		const pattern_non_letters = new RegExp(/[+_=!@#$%^&*()\{}\[\]\/|:;'"><~`.,?0-9]/g); // most of the non-letters
+// 		console.log( output)
+// 		console.log( output.match(pattern_non_letters))
+		if (output.match(pattern_non_letters) != null) {
+		    console.warn("Author name contains weird characters: " + output)
+		}
 		
 		output = output.trim()
 		if (output != input) {
@@ -325,8 +328,6 @@ Basic procedure:
     	// fixes funky characters (namely ( and ,) 
     	// rearranges them so it's first, last
     	// turns stuff into initials
-    	
-    	// dfdd: make it look for weird strings in the name, like "By" or "Written by" or "created by" etc
 
     	// find unexpected characters
     	if (str_count('(', input) > 0 && str_count(')', input) > 0) {
@@ -438,7 +439,6 @@ Basic procedure:
 			if (apa_date == " (n.d.). " && title == fishy_title && publisher == fishy_publisher) {
 				// if the date, title, and publisher don't seem real, just return the url
 				out = input_json.url
-				console.log( 'FISHY')
 			} else {
 				out += '<i>' + title + '</i>'
 				out += apa_date;
@@ -449,25 +449,34 @@ Basic procedure:
 		console.groupEnd();
 		return out;
 	}
-	
+
 	function has_404_etc(input) {
-		// dfdd
-		const arr = ["page that doesn’t exist", '404 not found', "url was not found"];
 		var i = 0
 		
-// 		if (input.data.url)
-		if (input.headers.date == null) {
-		    return true;
-		}
+		if (input.data == null) {
+    		var jstring = JSON.stringify(input).toLowerCase()
+		} else {
+            var jstring = JSON.stringify(input.data).toLowerCase()
+        }
+
+        // if the string "404" is found, surrounded by characters that are spaces, non-letters, and/or non-numbers, return true
+		const pattern_404_surrounded_by_nonletters = new RegExp(/[+_=!@#$%^&*()\{}\[\]\/|:;'"><~`.,? ]+404+[+_=!@#$%^&*()\{}\[\]\/|:;'"><~`.,? ]/g); // 404 surrounded by characters that aren't letters or numbers
+		if (jstring.match(pattern_404_surrounded_by_nonletters) != null) {
+            return true;
+        }
+        // dfdd: make it look for other 400-style errors? 
 		
-		var jstring = JSON.stringify(input.data).toLowerCase()
+// 		if (input.headers != null && input.headers.date == null) { // dfdd maybe I should do more (or less) with this?
+// 		    return true;
+// 		}
+		
+		const arr = ["page that doesn’t exist", '404 not found', "url was not found"];
 		for (i = 0; i < arr.length; i++) {
 			if (jstring.includes(arr[i])) {
 				return true;
 			}
 		}
-		
-		return false;
+				return false;
 	}
 
 
@@ -921,7 +930,7 @@ Basic procedure:
         var bibliography = '', stringToSend = '', temp_search_string = '';
 		let myJSON, myJSONobj;
 		const inputDOI = text_obj[input_string].doi;
-        const coolurl = extract_url(input_string)
+        const inputURL = extract_url(input_string)
 
         // get the JSON that I've stored locally on the browser (bc the user has searched it before)
         if (inputDOI === "" || temp_ignore_doi == true) {
@@ -948,6 +957,12 @@ Basic procedure:
             if (local_JSON != null && local_JSON != '' && text_obj[input_string].use_Cite == false) {
                 // if the JSON is in local storage, retrieve it (and the stored bibliography if possible) without having to talk to the server
                 myJSONobj = JSON.parse(local_JSON);
+                if (has_404_etc(myJSONobj)) {
+                    console.warn('404 stuff found in: ')
+                    console.log( myJSONobj)
+                    myJSONobj.has404 = true
+                    // dfdd also have it do something here...
+                }
                 bibliography = localStorage.getItem(input_string+'\t'+'cite_bib') // get the bibliography created by cite (if there is one)
                 if (bibliography == null) { // if there wasn't one, change the value to a blank string
                     bibliography = '';
@@ -966,35 +981,36 @@ Basic procedure:
                 myJSONobj = myJSON.data[0];
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // if using cite, encode in local storage using the search string as the key
                 localStorage.setItem(input_string+'\t'+'cite_bib', bibliography); // and also store the bibliography
-            } else if (coolurl != '' && temp_ignore_doi == false && inputDOI === '') {
+            } else if (inputURL != '' && temp_ignore_doi == false && inputDOI === '') {
                 // if the string contains a url but no doi
-                stringToSend = 'https://api.microlink.io/?url='+coolurl 
+                stringToSend = 'https://api.microlink.io/?url='+inputURL 
                 myJSON = await $.getJSON(stringToSend);
                 
-                if (has_404_etc(myJSON)) { // dfdd 
+                if (has_404_etc(myJSON)) { 
                     // the url didn't resolve to an actual web page
-                    console.groupCollapsed( "could not find URL " + coolurl + " [searching again with URL removed]") // this is fine. it's supposed to happen when a doi is incorrect.
+                    console.groupCollapsed( "could not find URL " + inputURL + " [searching again with URL removed]") // this is fine. it's supposed to happen when a doi is incorrect.
                     if (text_obj[input_string].search_status == 'searching') {
                         text_obj[input_string].update_input('incorrect doi or url entered; searching again');
                     } 
                 } else {
-                    console.groupCollapsed('found url ' + coolURL)
+                    console.groupCollapsed('found url ' + inputURL)
                 }
                 console.log( myJSON)
-                if (myJSON.url != coolURL) {
+                console.groupEnd()
+                if (myJSON.url != inputURL) {
                 	console.warn('mismatching URLs below')
                 	console.log( 'myJSON.url='+myJSON.url)
-                	console.log( 'coolURL='+coolURL)
+                	console.log( 'inputURL='+inputURL)
                 }
-                console.groupEnd()
 
                 myJSONobj = myJSON.data
-                localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // add it to local storage
+                localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // if there's a url, add it to local storage
  
             } else if (inputDOI === "" || temp_ignore_doi == true) {
                 // search Crossref without a doi (either there isn't one or it's bad)
                 if (temp_ignore_doi) {
                     temp_search_string = remove_doi_from_string(input_string, inputDOI);
+                    // dfdd it needs to remove inputURL as well -- and this whole "else if" needs to be activated
                     // maybe check if it's an empty string and if so, abandon ship?
                 } else {
                     temp_search_string = input_string;
@@ -1007,6 +1023,7 @@ Basic procedure:
                 myJSONobj = myJSON.message.items[0];
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj));
                 if (inputDOI != '') {
+                    // Is this possible??
                     localStorage.setItem(inputDOI, JSON.stringify(myJSONobj)); // store the incorrect doi with the correct information. this way if they enter it again it'll get found                            
                 }
             } else {
@@ -1059,7 +1076,6 @@ Basic procedure:
         // If it's already got a bibliography entry, or if it's a type I've planned for and my code parses it, create a reference obj.
         // If it's an unfamiliar type, this (recursively-ish) calls get one URL, and has it querry Cite. 
         
-        // dfdd
         
         if (input_JSON.DOI == null) {
             input_JSON.DOI = input_string;
