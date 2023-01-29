@@ -175,16 +175,22 @@ Basic procedure:
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="shortcut icon" href="favicon.ico">
 	<link rel="stylesheet" type="text/css" href="mystyle.css">
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!--     <script src="https://cdn.jsdelivr.net/npm/metascraper@5/src/index.min.js"></script> -->
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script> <!-- this is to use citation-js -->
+
+<!--     <script src="https://cdn.jsdelivr.net/npm/metascraper@5/src/index.min.js"></script> -->
 
 <!--     <script src="https://cdn.jsdelivr.net/npm/metadata-scraper"></script> -->
 <!-- <script type="module" src="./metadata-scraper"></script> -->
 <!--     <script src="https://cdn.jsdelivr.net/npm/got"></script> -->
 <!--     <script src="https://cdn.jsdelivr.net/npm/got/package.json"></script> -->
 <!-- <script src="https://cdn.jsdelivr.net/npm/metascraper@5/src/index.js"></script> -->
-<script src="https://cdn.jsdelivr.net/npm/@microlink/mql@latest/dist/mql.min.js"></script>
-
+<!-- <script src="https://cdn.jsdelivr.net/npm/@microlink/mql@latest/dist/mql.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/open-graph-scraper@5.0.3/index.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/metascraper@5.33.6/src/index.min.js"></script> -->
 <!-- 
 // note to self: I was trying to find a way to get metadata from URLs, and there's lots of stuff on github to do it. 
 // but I can't get any of it to work. This is one of the "libraries" that should work and seems very simple to use. 
@@ -195,21 +201,7 @@ Basic procedure:
     <script src="functions_tables.js"></script>
     <script src="functions_stringdiff.js"></script> <!-- this is to use a script that I copied into my folder, for highlighting differences between strings -->
 
-<!-- 
-<script>
-  mql('https://kikobeats.com', {
-    data: {
-      avatar: {
-        selector: '#avatar',
-        type: 'image',
-        attr: 'src',
-      }
-    }
-  }).then(({data}) => {
-    console.log(`The avatar URL is '${data.avatar.url}' (${data.avatar.size_pretty})`)
-  })
-</script>
- -->
+
 
 <script>
 	var author_obj = [];
@@ -227,9 +219,10 @@ Basic procedure:
     var current_mode = '';
     let dmp = new diff_match_patch();
 	let Cite = require('citation-js');
+//     let Megacool = require('@metascraper')
+    var ogg = require("ogs.js")
 
-// const getMetaData = require('metadata-scraper')
-// const getHTML = require('html-get')
+
 // 
 // /**
 //  * `browserless` will be passed to `html-get`
