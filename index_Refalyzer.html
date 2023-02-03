@@ -387,8 +387,6 @@ Basic procedure:
         var firstName_array = firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
         return lastname + ", " + first_letters(firstName_array);
     }
-
-// dfdd make it investigate changed urls
 	
 	function get_apa_from_json_URL(input_json) {
 		// apa rules    from https://www.scribbr.com/apa-examples/website/#:~:text=APA%20website%20citations%20usually%20include,time%2C%20add%20a%20retrieval%20date.
@@ -405,14 +403,18 @@ Basic procedure:
 		var fishy_publisher = ''
 		var fishy_title = ''
 		var out = '';
+		var total_metadata_found = 0;
 		const month_array = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-		console.groupCollapsed(input_json.title)
-        console.log(input_json)
+// 		console.groupCollapsed(input_json.title)
+//         console.log(input_json)
 
 		if (input_json.author !== undefined && input_json.author !== null) {
 			input_json.author = fix_author_string(input_json.author)
 			author = author_in_apa_format(input_json.author);
+		}
+		if (author != '') {
+			total_metadata_found++
 		}
 
 		if (input_json.date !== undefined && input_json.date !== null) {
@@ -430,6 +432,9 @@ Basic procedure:
 		} else {
 			apa_date = " (n.d.). "
 		}
+		if (apa_date != " (n.d.). ") {
+			total_metadata_found++		
+		}
 		
 		title = input_json.title.trim()
         // if it doesn't end with a period or question mark, end it
@@ -437,6 +442,12 @@ Basic procedure:
             title = title + '.';
         }
         title = title + " ";
+		// fishy title
+		// this is the title that microlink would supply if the publisher actually isn't specified.
+		fishy_title = input_json.url.split("/").pop()+'. '
+		if (title != fishy_title) {
+			total_metadata_found++		
+		}		
 		
 		if (input_json.publisher !== undefined && input_json.publisher !== null) {
 			publisher = input_json.publisher
@@ -445,19 +456,18 @@ Basic procedure:
 			}
         	publisher = publisher + " ";
 		}
-
-// dfdd
-		// fishy publisher 
-		// this is the publisher that microlink would supply if the publisher actually isn't specified.
+		// fishy publisher this is the publisher that microlink would supply if the publisher actually isn't specified.
 		var hostname = new URL(input_json.url).hostname;
 		var url_parts = hostname.split(".");
 		if (url_parts.length > 2) {
 			fishy_publisher = url_parts[url_parts.length - 2] + '.' + url_parts[url_parts.length-1] + '. ' // the publisher it supplies is just the last two parts of the domain (e.g., google.com)()
 		}
-		
-		// fishy title
-		// this is the title that microlink would supply if the publisher actually isn't specified.
-		fishy_title = input_json.url.split("/").pop()+'. '
+		if (publisher != fishy_publisher) {
+			total_metadata_found++		
+		}		
+
+// dfdd
+// 		console.log('total_metadata_found='+total_metadata_found+" for "+input_json.title)
 
         // put it all together
 		if (author != '' && publisher != '') {
@@ -488,12 +498,14 @@ Basic procedure:
 
 	function has_404_etc(input) {
 		var i = 0
-		
+
 		if (input.data == null) {
     		var jstring = JSON.stringify(input).toLowerCase()
 		} else {
             var jstring = JSON.stringify(input.data).toLowerCase()
         }
+// console.log( 'checking for 404')
+// console.log( input)
 
         // if the string "404" is found, surrounded by characters that are spaces, non-letters, and/or non-numbers, return true
 		const pattern_404_surrounded_by_nonletters = new RegExp(/[+_=!@#$%^&*()\{}\[\]\/|:;'"><~`.,? ]+404+[+_=!@#$%^&*()\{}\[\]\/|:;'"><~`.,? ]/g); // 404 surrounded by characters that aren't letters or numbers
@@ -522,11 +534,13 @@ Basic procedure:
 
     
 
-	function Text_object(input_userInput, input_doi, input_doi_type, input_url, input_ord) { 
+	function Text_object(input_userInput, input_doi, input_doi_or_url_type, input_url, input_ord) { 
 		this.user_input = input_userInput;
         this.doi = input_doi.toLowerCase();
-        this.doi_type = input_doi_type;
+        this.doi__or_url_type = input_doi_or_url_type;
         this.url = input_url;
+        this.url_found = ''; // the url that was returned by a web search
+        this.url_status = ""
         this.input_order = input_ord;
         this.search_status = "not started";
         this.match_status = "unknown";
@@ -540,8 +554,13 @@ Basic procedure:
 		this.letter_match_percentage = 0;
 		this.percent_unchanged = 0;
 		this.use_Cite = false;
-
 		this.weird_first_letters = false;
+		
+		if (this.url != '') {
+			url_status = "good";
+		} else {
+			url_status = "none"
+		}
 
         this.switch_output = function(input_from_selector) {
             // output is the reference that should be output to the clipboard (or whatever)
@@ -733,7 +752,11 @@ Basic procedure:
             if (input_apa == '') {
                 // figure out the reference by myself
                 if (input_json.type == 'web-page') {
-                    this.apa = get_apa_from_json_URL(input_json);
+                	if (text_obj[input_userInput].url_status == "bad") {
+                		this.apa = input_userInput;
+                	} else {
+	                    this.apa = get_apa_from_json_URL(input_json);
+	                }
                 } else {
                     this.apa = get_apa_from_json(input_json);
                 }
@@ -962,14 +985,14 @@ Basic procedure:
 
 //         console.log( '-- called get one url for: ' + input_string)
         
-        var temp_ignore_doi = false;
+        var temp_ignore_doi_and_url = false;
         var bibliography = '', stringToSend = '', temp_search_string = '';
 		let myJSON, myJSONobj;
 		const inputDOI = text_obj[input_string].doi;
         const inputURL = extract_url(input_string)
 
         // get the JSON that I've stored locally on the browser (bc the user has searched it before)
-        if (inputDOI === "" || temp_ignore_doi == true) {
+        if (inputDOI === "" || temp_ignore_doi_and_url == true) {
             local_JSON = localStorage.getItem(input_string); // if there isn't a good doi, look for the whole search string
         } else {
             local_JSON = localStorage.getItem(inputDOI); // if there is a good doi, look for the doi
@@ -979,25 +1002,16 @@ Basic procedure:
        		text_obj[input_string].update_input('searching');
         } else if (text_obj[input_string].search_status == 'incorrect doi or url entered; searching again') {
        		text_obj[input_string].update_input('searching');
-            temp_ignore_doi = true;
+            temp_ignore_doi_and_url = true;
+            console.log( 'crxy status;)')
         }
-// console.groupCollapsed('get one url: ' + input_string.substring(0,9))
-// console.log('input string: ' + input_string)
-// console.log('input doi: ' +inputDOI)
-// console.log('text_obj[input_string].search_status: '+text_obj[input_string].search_status)
-// console.log('temp ignore doi: ' + temp_ignore_doi)
-// console.groupEnd()
-
 
 		try {
             if (local_JSON != null && local_JSON != '' && text_obj[input_string].use_Cite == false) {
                 // if the JSON is in local storage, retrieve it (and the stored bibliography if possible) without having to talk to the server
                 myJSONobj = JSON.parse(local_JSON);
-                if (has_404_etc(myJSONobj)) {
-                    console.warn('404 stuff found in: ')
-                    console.log( myJSONobj)
-                    myJSONobj.has404 = true
-                    // dfdd also have it do something here...
+                if (myJSONobj.url_status != null && myJSONobj.url_status == "bad") {
+                    text_obj[input_string].url_status = "bad"
                 }
                 bibliography = localStorage.getItem(input_string+'\t'+'cite_bib') // get the bibliography created by cite (if there is one)
                 if (bibliography == null) { // if there wasn't one, change the value to a blank string
@@ -1017,37 +1031,29 @@ Basic procedure:
                 myJSONobj = myJSON.data[0];
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // if using cite, encode in local storage using the search string as the key
                 localStorage.setItem(input_string+'\t'+'cite_bib', bibliography); // and also store the bibliography
-            } else if (inputURL != '' && temp_ignore_doi == false && inputDOI === '') {
+            } else if (inputURL != '' && temp_ignore_doi_and_url == false && inputDOI === '') {
                 // if the string contains a url but no doi
                 stringToSend = 'https://api.microlink.io/?url='+inputURL 
                 myJSON = await $.getJSON(stringToSend);
+                text_obj[input_string].url_status = url_status_checker(myJSON, inputURL)
                 
-                if (has_404_etc(myJSON)) { 
-                    // the url didn't resolve to an actual web page
-                    console.groupCollapsed( "could not find URL " + inputURL + " [searching again with URL removed]") // this is fine. it's supposed to happen when a doi is incorrect.
-                    if (text_obj[input_string].search_status == 'searching') {
-                        text_obj[input_string].update_input('incorrect doi or url entered; searching again');
-                    } 
-                } else {
-                    console.groupCollapsed('found url ' + inputURL)
-                }
-                console.log( myJSON)
-                console.groupEnd()
-                if (myJSON.url != inputURL) {
-                	console.warn('mismatching URLs below')
-                	console.log( 'myJSON.url='+myJSON.url)
-                	console.log( 'inputURL='+inputURL)
-                }
+				if (text_obj[input_string].url_status == "bad") {
+					if (text_obj[input_string].search_status == 'searching') {
+						text_obj[input_string].update_input('incorrect doi or url entered; searching again');
+					} 
+					// dfdd plus other stuff?
+				}
 
                 myJSONobj = myJSON.data
+                myJSONobj.url_status = text_obj[input_string].url_status
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // if there's a url, add it to local storage
  
-            } else if (inputDOI === "" || temp_ignore_doi == true) {
+            } else if (inputDOI === "" || temp_ignore_doi_and_url == true) {
                 // search Crossref without a doi (either there isn't one or it's bad)
-                if (temp_ignore_doi) {
-                    temp_search_string = remove_doi_from_string(input_string, inputDOI);
-                    // dfdd it needs to remove inputURL as well -- and this whole "else if" needs to be activated
-                    // maybe check if it's an empty string and if so, abandon ship?
+                console.warn("temp ignore doi = true")
+                if (temp_ignore_doi_and_url) {
+                    temp_search_string = remove_doi_or_url_from_string(input_string, inputDOI);
+                    temp_search_string = remove_doi_or_url_from_string(input_string, inputURL);
                 } else {
                     temp_search_string = input_string;
                 }
@@ -1082,7 +1088,7 @@ Basic procedure:
                 }
                 return;
             }
-            
+
             create_reference(input_string, myJSONobj, bibliography)
             
 		}
@@ -1114,11 +1120,13 @@ Basic procedure:
         
         
         if (input_JSON.DOI == null) {
-            input_JSON.DOI = input_string;
+            input_JSON.DOI = input_string; // dfdd is this right? when there's more to the text than the url will it be bad?
             input_JSON.type = 'web-page'
+//             console.log( 'url found(?) = ' + )
         }
         
         text_obj[input_string].doi = input_JSON.DOI;
+        text_obj[input_string].url_found = input_JSON.url;
 
         try {
             if (input_bibliography != '' || input_JSON.type == "journal-article" || input_JSON.type == "chapter" || input_JSON.type == "book-chapter" || input_JSON.type == "web-page") {
@@ -1136,7 +1144,7 @@ Basic procedure:
             } else {
                 // since I can't handle it, get the URL again (using Cite this time) 
                 text_obj[input_string].use_Cite = true;
-                getOneURL(input_string);
+                getOneURL(input_string); // dfdd this probably needs to change for urls?
     //       		weirdthing(input_string);
                 return;
             }
@@ -1163,6 +1171,24 @@ Basic procedure:
 //         console.log( input_url)
 //         console.log(xy)
 //     }
+
+	function url_status_checker(myJSON, inputURL) {
+		if (has_404_etc(myJSON)) { 
+			return "bad"
+		}
+
+		if (myJSON.data.url != inputURL) {
+			// mismatched urls
+			return "bad" // dfd maybe add this to the json instead?
+		}
+
+		if (get_apa_from_json_URL(myJSON.data) == myJSON.data.url) { // dfdd
+			// if it doesn't find metadata it returns the url, so this means no metadata were found
+			return "bad"
+		}
+
+		return "good"
+	}
 
 	async function get_author(input_string) {
     	// dfd this function isn't done. but the idea was to get authors from the database. 
@@ -1651,6 +1677,8 @@ Basic procedure:
 		// figure out whether a DOI was found in the user input
 		var userDOI = userString.match(doi_pattern); 
 		var databaseDOI = databaseString.match(doi_pattern); 
+		var userURL = text_obj[userString].url;
+		var databaseURL = text_obj[userString].url_found;
 		
 		// dfdd make scoring work for urls
         try {		
@@ -1665,12 +1693,24 @@ Basic procedure:
                     // this happens when there's a bad doi, it searches without the doi, and finds a good doi to replace the bad one
                     return compute_letter_match(databaseString,userString);
                 }
-            } else if (text_obj[userString].url !='') {
+            } else if (userURL !='') {
+            	// if it found a url
+            	if (text_obj[userString].url_status == "bad") {
+					console.groupCollapsed("can't use " + userURL)
+// 					console.log(reference_obj[userDOI].json)
+					if (userURL != databaseURL) {
+						console.log("mismatched urls " + userURL)
+					}
+					console.log(userURL)
+					console.log(databaseURL)
+					console.groupEnd()
+            		return 0;
+            	}
                 return 100; // dfd this is totally wrong but good for testing            
             } else {
                 // if there is not a valid doi in the user input, remove the doi from the database string for the sake of comparison. 
                 // this does not use percentage because without a doi, I can't assume either side is good 
-                databaseString = remove_doi_from_string(databaseString, databaseDOI);
+                databaseString = remove_doi_or_url_from_string(databaseString, databaseDOI);
                 return compute_letter_match(databaseString,userString);
             }
 		} catch(err) {
@@ -1719,12 +1759,12 @@ Basic procedure:
         }
 	}
 	
-	function remove_doi_from_string(input_string, input_doi) {
+	function remove_doi_or_url_from_string(input_string, input) {
 	    var foof = '';
 	    
         foof = input_string.replace("https://doi.org/"+input_doi,""); // assuming what seems like the standard format from the database
         foof = input_string.replace("https://dx.doi.org/"+input_doi,""); // I'm not even sure this can happen or is necessary, but it doesn't seem to hurt. 
-        foof = foof.replace(input_doi,""); // in case that wasn't found, remove just the doi
+        foof = foof.replace(input_doi,""); // in case that wasn't found, remove just the doi. and this will also remove a url when appropriate. 
         
         return foof;
 	}
