@@ -537,10 +537,10 @@ Basic procedure:
 	function Text_object(input_userInput, input_doi, input_doi_or_url_type, input_url, input_ord) { 
 		this.user_input = input_userInput;
         this.doi = input_doi.toLowerCase();
-        this.doi__or_url_type = input_doi_or_url_type;
+        this.doi_or_url_type = input_doi_or_url_type;
         this.url = input_url;
         this.url_found = ''; // the url that was returned by a web search
-        this.url_status = ""
+        this.url_status = "none"
         this.input_order = input_ord;
         this.search_status = "not started";
         this.match_status = "unknown";
@@ -556,11 +556,9 @@ Basic procedure:
 		this.use_Cite = false;
 		this.weird_first_letters = false;
 		
-		if (this.url != '') {
-			url_status = "good";
-		} else {
-			url_status = "none"
-		}
+// 		if (this.url != '') {
+// 			this.url_status = "good";
+// 		}
 
         this.switch_output = function(input_from_selector) {
             // output is the reference that should be output to the clipboard (or whatever)
@@ -610,8 +608,12 @@ Basic procedure:
 		    
 		    // if the user-entered doi was incorrect, change doi type
             if (input_search_status == 'incorrect doi or url entered; searching again') {
-                this.doi_type = 'not_found_yet';
+                this.doi_or_url_type = 'not_found_yet';
             }
+            
+//             if (input_search_status == "done") {
+//                 console.log( 'update input to "done" for '+this.user_input)
+//             }
             
             // if the start of a row doesn't have uppercase letters, or has weird characters, mark it as weird
             // const regex pattern("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[-+_!@#$%^&*.,?]).+$");
@@ -620,7 +622,7 @@ Basic procedure:
             // if there are no uppercase letters in the string and it's not http
             const pattern_uppercase = new RegExp("^(?=.*[A-Z]).+$"); // uppercase letters
             if (pattern_uppercase.test(flim) == false) {
-                if (flim.toLowerCase() != 'http') {
+                if (flim.toLowerCase() != 'htt') {
                     this.weird_first_letters = true;
                 }
             }
@@ -661,18 +663,20 @@ Basic procedure:
                     // set stuff up to show (this.notes)
                     const c  = ['tomato','black'];                
                     var temp_stringToShow = "";
-                    if (this.match_status != 'correct') {
-                        temp_stringToShow += '<div style="color:' + cc[this.match_status]  + ';">' + this.match_status+'</div>';
-                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
-                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
-                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
-                        temp_stringToShow += '<div style="color:' + c[Math.floor(this.percent_unchanged/60)] + ';">' + this.percent_unchanged+"=percent_unchanged</div>"; 
-                    } else {
-                        if (this.weird_first_letters) {
-                            temp_stringToShow += '<div>weird first letters</div>'
-                        }
+//                     if (this.match_status != 'correct') {
+                    temp_stringToShow += '<div style="color:' + cc[this.match_status]  + ';">' + this.match_status+'</div>';
+                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.score/60)] + ';">' + this.score+'=score </div>';
+                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match/60)] + ';">' + this.letter_match+'=letter_match </div>';
+                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.letter_match_percentage/60)] + ';">' + this.letter_match_percentage+"=letter_match_percentage</div>"; 
+                    temp_stringToShow += '<div style="color:' + c[Math.floor(this.percent_unchanged/60)] + ';">' + this.percent_unchanged+"=percent_unchanged</div>"; 
+                    if (this.weird_first_letters) {
+                        temp_stringToShow += '<div>weird first letters</div>'
                     }
+//                     }
                     this.notes = temp_stringToShow;
+//                     console.group( 'temp_stringToShow for '+this.user_input)
+//                     console.log( temp_stringToShow)
+//                     console.groupEnd()
                 } else {
                     // it wasn't found
                     this.match_status = 'unknown';
@@ -686,6 +690,7 @@ Basic procedure:
                         }
                     }
                 }
+                
             
                 if (this.match_status == 'unknown' || this.match_status == 'correct') {
                     var temp_match_status_to_show = '';
@@ -931,7 +936,7 @@ Basic procedure:
 	}
 
 
-	async function getAllUrls(doi_type_to_handle) {
+	async function getAllUrls(doi_or_url_type_to_handle) {
 		// this gets called twice. First, for rows that have a doi. Then, when they're done, for rows that don't. 
         
 		if (current_mode == 'completely done') {
@@ -943,7 +948,7 @@ Basic procedure:
 
 		for (let key in text_obj) { // this loops through all of text_obj
 		    // if it's the right kind of doi, and has the right search status, add it to the row queue. 
-            if (text_obj[key].doi_type === doi_type_to_handle) {
+            if (text_obj[key].doi_or_url_type === doi_or_url_type_to_handle) {
                 if (text_obj[key].search_status === 'not started' || text_obj[key].search_status === 'incorrect doi or url entered; searching again') {
                     row_queue.push(text_obj[key].user_input);
                     if (text_obj[key].removed) {
@@ -953,8 +958,8 @@ Basic procedure:
             }
 		}
 
-		console.groupCollapsed('-A- getting [' + row_queue.length + '] rows ('+doi_type_to_handle+')')
-		console.log( row_queue)
+		console.groupCollapsed('-A- getting [' + row_queue.length + '] rows ('+doi_or_url_type_to_handle+')')
+		console.log(row_queue)
 		console.groupEnd()
         if (row_queue.length > 0) {
 		    current_mode = "searching for dois"
@@ -1003,15 +1008,14 @@ Basic procedure:
         } else if (text_obj[input_string].search_status == 'incorrect doi or url entered; searching again') {
        		text_obj[input_string].update_input('searching');
             temp_ignore_doi_and_url = true;
-            console.log( 'crxy status;)')
         }
 
 		try {
             if (local_JSON != null && local_JSON != '' && text_obj[input_string].use_Cite == false) {
                 // if the JSON is in local storage, retrieve it (and the stored bibliography if possible) without having to talk to the server
                 myJSONobj = JSON.parse(local_JSON);
-                if (myJSONobj.url_status != null && myJSONobj.url_status == "bad") {
-                    text_obj[input_string].url_status = "bad"
+                if (myJSONobj.url_status != null) {
+                    text_obj[input_string].url_status = myJSONobj.url_status
                 }
                 bibliography = localStorage.getItem(input_string+'\t'+'cite_bib') // get the bibliography created by cite (if there is one)
                 if (bibliography == null) { // if there wasn't one, change the value to a blank string
@@ -1036,33 +1040,36 @@ Basic procedure:
                 stringToSend = 'https://api.microlink.io/?url='+inputURL 
                 myJSON = await $.getJSON(stringToSend);
                 text_obj[input_string].url_status = url_status_checker(myJSON, inputURL)
-                
+
 				if (text_obj[input_string].url_status == "bad") {
 					if (text_obj[input_string].search_status == 'searching') {
 						text_obj[input_string].update_input('incorrect doi or url entered; searching again');
-					} 
-					// dfdd plus other stuff?
+						return;
+					} else {
+					    console.warn("i don't think this should huv happened")
+					}
 				}
 
                 myJSONobj = myJSON.data
                 myJSONobj.url_status = text_obj[input_string].url_status
+                console.log( 'myJSONobj.url_status='+myJSONobj.url_status)
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // if there's a url, add it to local storage
  
             } else if (inputDOI === "" || temp_ignore_doi_and_url == true) {
                 // search Crossref without a doi (either there isn't one or it's bad)
-                console.warn("temp ignore doi = true")
                 if (temp_ignore_doi_and_url) {
                     temp_search_string = remove_doi_or_url_from_string(input_string, inputDOI);
                     temp_search_string = remove_doi_or_url_from_string(input_string, inputURL);
                 } else {
                     temp_search_string = input_string;
                 }
+                console.log('temp_search_string=' + temp_search_string)
                 temp_search_string = temp_search_string.replace(/&/g, '%26'); // encode ampersand for the url 
-
 
                 stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
                 myJSON = await $.getJSON(encodeURI(stringToSend));
                 myJSONobj = myJSON.message.items[0];
+                myJSONobj.url_status = text_obj[input_string].url_status;
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj));
                 if (inputDOI != '') {
                     // Is this possible??
@@ -1183,7 +1190,7 @@ Basic procedure:
 		}
 
 		if (get_apa_from_json_URL(myJSON.data) == myJSON.data.url) { // dfdd
-			// if it doesn't find metadata it returns the url, so this means no metadata were found
+			// if get_apa_from_json_URL doesn't find metadata it returns the url, so this means no metadata were found
 			return "bad"
 		}
 
@@ -1334,7 +1341,7 @@ Basic procedure:
         // remove duplicate rows
         for (i = local_list.length - 1; i >= 0; i--) {
             if (duplicate_input_text.includes(local_list[i])) {
-                if (text_obj[local_list[i]].doi_type != 'from_user') { // don't remove if it has a doi
+                if (text_obj[local_list[i]].doi_or_url_type != 'from_user') { // don't remove if it has a doi
                     remove_row(local_list[i]);                
                     foof++;
                 }
@@ -1681,6 +1688,12 @@ Basic procedure:
 		var databaseURL = text_obj[userString].url_found;
 		
 		// dfdd make scoring work for urls
+		console.groupCollapsed( 'computing score')
+		console.log( userString) //dfdd
+        console.log('database string 1')
+		console.log( databaseString)
+		console.log( 'text_obj[userString].url_status='+text_obj[userString].url_status)
+		
         try {		
             // return a score
             if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	// with typeof, put undefined in quotes
@@ -1693,24 +1706,17 @@ Basic procedure:
                     // this happens when there's a bad doi, it searches without the doi, and finds a good doi to replace the bad one
                     return compute_letter_match(databaseString,userString);
                 }
-            } else if (userURL !='') {
-            	// if it found a url
-            	if (text_obj[userString].url_status == "bad") {
-					console.groupCollapsed("can't use " + userURL)
-// 					console.log(reference_obj[userDOI].json)
-					if (userURL != databaseURL) {
-						console.log("mismatched urls " + userURL)
-					}
-					console.log(userURL)
-					console.log(databaseURL)
-					console.groupEnd()
-            		return 0;
-            	}
-                return 100; // dfd this is totally wrong but good for testing            
+            } else if (userURL !='' && text_obj[userString].url_status == "good") {
+                // if there's a good url
+                return 83; // dfd this is totally wrong but good for testing            
             } else {
-                // if there is not a valid doi in the user input, remove the doi from the database string for the sake of comparison. 
+                // if there is not a valid doi or url in the user input, remove the doi or url from the database string for the sake of comparison. 
                 // this does not use percentage because without a doi, I can't assume either side is good 
                 databaseString = remove_doi_or_url_from_string(databaseString, databaseDOI);
+                databaseString = remove_doi_or_url_from_string(databaseString, databaseURL);
+                console.log('database string 2')
+                console.log( databaseString)
+                console.groupEnd();
                 return compute_letter_match(databaseString,userString);
             }
 		} catch(err) {
@@ -1759,12 +1765,12 @@ Basic procedure:
         }
 	}
 	
-	function remove_doi_or_url_from_string(input_string, input) {
+	function remove_doi_or_url_from_string(input_string, input_doi_or_url) {
 	    var foof = '';
 	    
-        foof = input_string.replace("https://doi.org/"+input_doi,""); // assuming what seems like the standard format from the database
-        foof = input_string.replace("https://dx.doi.org/"+input_doi,""); // I'm not even sure this can happen or is necessary, but it doesn't seem to hurt. 
-        foof = foof.replace(input_doi,""); // in case that wasn't found, remove just the doi. and this will also remove a url when appropriate. 
+        foof = input_string.replace("https://doi.org/"+input_doi_or_url,""); // assuming what seems like the standard format from the database
+        foof = foof.replace("https://dx.doi.org/"+input_doi_or_url,""); // I'm not even sure this can happen or is necessary, but it doesn't seem to hurt. 
+        foof = foof.replace(input_doi_or_url,""); // in case that wasn't found, remove just the doi. and this will also remove a url when appropriate. 
         
         return foof;
 	}
@@ -2118,7 +2124,7 @@ Basic procedure:
                 if (text_obj[row_text].search_status == "done") {
                     rows_searched++;
                 }
-                if (text_obj[row_text].doi_type == "from_user") {
+                if (text_obj[row_text].doi_or_url_type == "from_user") {
                     rows_with_user_dois_total++;
                 }
                 if (text_obj[row_text].combine_status == "done" || text_obj[row_text].combine_status == 'cannot be combined') {
@@ -2311,6 +2317,8 @@ Basic procedure:
         document.getElementById("authorTable").style.display = d
         document.getElementById("inputTextBox").style.display = d
         document.getElementById("extra_references").style.display = d
+        
+                document.getElementById("refalyzerArticleListBox").style.display = "block" // dfdd
 	}
 	
 	function show_or_hide_authors() {
