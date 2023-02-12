@@ -466,9 +466,6 @@ Basic procedure:
 			total_metadata_found++		
 		}		
 
-// dfdd
-// 		console.log('total_metadata_found='+total_metadata_found+" for "+input_json.title)
-
         // put it all together
 		if (author != '' && publisher != '') {
 			out += author;
@@ -504,8 +501,6 @@ Basic procedure:
 		} else {
             var jstring = JSON.stringify(input.data).toLowerCase()
         }
-// console.log( 'checking for 404')
-// console.log( input)
 
         // if the string "404" is found, surrounded by characters that are spaces, non-letters, and/or non-numbers, return true
 		const pattern_404_surrounded_by_nonletters = new RegExp(/[+_=!@#$%^&*()\{}\[\]\/|:;'"><~`.,? ]+404+[+_=!@#$%^&*()\{}\[\]\/|:;'"><~`.,? ]/g); // 404 surrounded by characters that aren't letters or numbers
@@ -524,7 +519,8 @@ Basic procedure:
 				return true;
 			}
 		}
-				return false;
+
+		return false;
 	}
 
 
@@ -1151,7 +1147,7 @@ Basic procedure:
             } else {
                 // since I can't handle it, get the URL again (using Cite this time) 
                 text_obj[input_string].use_Cite = true;
-                getOneURL(input_string); // dfdd this probably needs to change for urls?
+                getOneURL(input_string);
     //       		weirdthing(input_string);
                 return;
             }
@@ -1189,8 +1185,8 @@ Basic procedure:
 			return "bad" // dfd maybe add this to the json instead?
 		}
 
-		if (get_apa_from_json_URL(myJSON.data) == myJSON.data.url) { // dfdd
-			// if get_apa_from_json_URL doesn't find metadata it returns the url, so this means no metadata were found
+		if (get_apa_from_json_URL(myJSON.data) == myJSON.data.url) {
+			// if get_apa_from_json_URL doesn't find metadata it returns the url, so if this returns true, it means no metadata were found
 			return "bad"
 		}
 
@@ -1689,7 +1685,7 @@ Basic procedure:
 		
 		// dfdd make scoring work for urls
 		console.groupCollapsed( 'computing score')
-		console.log( userString) //dfdd
+		console.log( userString)
         console.log('database string 1')
 		console.log( databaseString)
 		console.log( 'text_obj[userString].url_status='+text_obj[userString].url_status)
@@ -2318,7 +2314,7 @@ Basic procedure:
         document.getElementById("inputTextBox").style.display = d
         document.getElementById("extra_references").style.display = d
         
-                document.getElementById("refalyzerArticleListBox").style.display = "block" // dfdd
+                document.getElementById("refalyzerArticleListBox").style.display = "block" // dfdd this is temporary, for debugging purposes
 	}
 	
 	function show_or_hide_authors() {
