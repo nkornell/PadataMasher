@@ -176,26 +176,8 @@ Basic procedure:
 	<link rel="shortcut icon" href="favicon.ico">
 	<link rel="stylesheet" type="text/css" href="mystyle.css">
 
-<!--     <script src="https://cdn.jsdelivr.net/npm/metascraper@5/src/index.min.js"></script> -->
-
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script> <!-- this is to use citation-js -->
-
-<!--     <script src="https://cdn.jsdelivr.net/npm/metascraper@5/src/index.min.js"></script> -->
-
-<!--     <script src="https://cdn.jsdelivr.net/npm/metadata-scraper"></script> -->
-<!-- <script type="module" src="./metadata-scraper"></script> -->
-<!--     <script src="https://cdn.jsdelivr.net/npm/got"></script> -->
-<!--     <script src="https://cdn.jsdelivr.net/npm/got/package.json"></script> -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/metascraper@5/src/index.js"></script> -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/@microlink/mql@latest/dist/mql.min.js"></script> -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/open-graph-scraper@5.0.3/index.min.js"></script> -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/metascraper@5.33.6/src/index.min.js"></script> -->
-<!-- 
-// note to self: I was trying to find a way to get metadata from URLs, and there's lots of stuff on github to do it. 
-// but I can't get any of it to work. This is one of the "libraries" that should work and seems very simple to use. 
-// This seems important because a lot of times people just have a URL for a source and I'd like to be able to handle it. 
- -->
+	<script src="https://cdn.jsdelivr.net/npm/citation-js"></script>
 	
 	<script src="functions_stats.js"></script>
     <script src="functions_tables.js"></script>
@@ -219,63 +201,8 @@ Basic procedure:
     var current_mode = '';
     let dmp = new diff_match_patch();
 	let Cite = require('citation-js');
-//     let Megacool = require('@metascraper')
-//     var ogg = require("ogs.js")
 
 
-// 
-// /**
-//  * `browserless` will be passed to `html-get`
-//  * as driver for getting the rendered HTML.
-//  */
-// const browserless = require('browserless')()
-// 
-// 
-// 
-// const mql = require('@microlink/mql')
-// 
-// module.exports = async () => {
-//   const { status, data, response } = await mql(
-//     'https://github.com/microlinkhq/',
-//     {
-//       apiKey: '1E3D6sdCsSa7RHCCJlLPA17Yr9XyvU079oKZFmhG'
-//     }
-//   )
-// 
-//   console.log(data)
-// }
-
-
-
-// const { status, data } = await mql('https://github.com/microlinkhq')
-// 
-// mql.render(data)
-// ----------- node js told me:
-// This package has installed:
-// 	•	Node.js v18.13.0 to /usr/local/bin/node
-// 	•	npm v8.19.3 to /usr/local/bin/npm
-// Make sure that /usr/local/bin is in your $PATH.
-
-// const mql = require('@microlink/mql')
-// /Users/natekornell/node_modules/@microlink
-
-// ----------- this is from microlink
-
-// const mql = require('@microlink/mql') // from microlink
-// 
-// module.exports = async () => {
-//   const { status, data, response } = await mql(
-//     'https://github.com/microlinkhq/',
-//     {
-//       apiKey: 'MyApiToken'
-//     }
-//   )
-// 
-//   console.log(data)
-// }
-
-
-// -------
 	
     function extract_url(input) {
         // return an array consisting of each valid url in the string. 
@@ -1033,6 +960,8 @@ Basic procedure:
                 localStorage.setItem(input_string+'\t'+'cite_bib', bibliography); // and also store the bibliography
             } else if (inputURL != '' && temp_ignore_doi_and_url == false && inputDOI === '') {
                 // if the string contains a url but no doi
+                // use an api get the json of the webpage it links to. this is for news articles and stuff. 
+                // unfortunately it only allows you to do 50(?) calls a day. 
                 stringToSend = 'https://api.microlink.io/?url='+inputURL 
                 myJSON = await $.getJSON(stringToSend);
                 text_obj[input_string].url_status = url_status_checker(myJSON, inputURL)
@@ -1115,7 +1044,7 @@ Basic procedure:
 			}
 		}
 	}
-	
+
 
     function create_reference(input_string, input_JSON, input_bibliography) {
         // If it's already got a bibliography entry, or if it's a type I've planned for and my code parses it, create a reference obj.
