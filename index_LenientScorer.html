@@ -48,109 +48,17 @@
 
 
 <div class='bigBox' id='lsBigBox' style="display: none">
-
 <!-- 	Variable selector -->
-<!-- 
-	<div class='bigBox' style='flex: 0 0 auto; '>  <!~~ the flex thing makes it get the space it needs. 'margin-left: auto;' would make it float right ~~>
- -->
 	<div class='bigBox'> 
-		<div class='boxAroundTable'>
-<!-- 			<div class="clearfix"> <!~~ This makes it so that the floating buttons don't overflow downwards ~~> -->
-			<div class='heading'>Variables</div><br>
-			<p>
+		Select checkboxes for the values that should receive a score of 1.
+		<div class='boxAroundTable' style="overflow-x: scroll;">
+			<!-- <div class='heading'>Variables</div><br> -->
+<!-- 			<p>blaj -->
 			<div id="tableVariableSelector"></div>
-<!-- 		</div> -->
 		</div>
+		<p><a id="exportButton" href="#" class='coolButton'>Export Results to File</a>
 	</div>
 </div>
-		<p>
-		<a id="exportButton" href="#" class='coolButton'>Export Results to File</a>
-
-<!-- 	<div class='bigBox' > <!~~ this is for the right half of the screen ~~> -->
-
-
-		<!-- 	Analysis choices -->
-<!-- 
-		<div class='boxAroundTable'>
-			<table style="width: 100%;">
-				<tr>
-					<th style="width: 50%;">
-						<div class='heading'>Analyses</div>
-					</th>
-					<th style="width: 50%;">
-					</th>
-				</tr>
- -->
-<!-- 
-				<tr>
-					<td style="vertical-align:top;">
-						<ul>
-							<li><label><input type="checkbox" id="checkboxCount" onclick="computeResults()"> Count</label>
-							<li><label><input type="checkbox" id="checkboxSum" onclick="computeResults()"> Sum</label>
-							<li><label><input type="checkbox" id="checkboxMean" onclick="computeResults()"> Mean</label>
-							<li><label><input type="checkbox" id="checkboxMedian" onclick="computeResults()"> Median</label>	
-							<li><label><input type="checkbox" id="checkboxStdDev" onclick="computeResults()"> Standard Deviation</label>
-						</ul>
-					</td>
-					<td style="vertical-align:top; width:250">
-						<ul>
-							<li><label><input type="checkbox" id="checkboxPearson" onclick="computeResults()"> Pearson Correlation</label></li>
-							<li><label><input type="checkbox" id="checkboxGamma" onclick="computeResults()"> Gamma Correlation</label></li>
-							<li><label><input type="checkbox" id="checkboxPairwiseCount" onclick="computeResults()"> Pairwise Count</label></li>
-						</ul>
-					</td>
-				</tr>
- -->
-<!-- 			</table> -->
-<!-- 		</div> -->
-
-		<!-- Results label and export button -->
-
-<!-- 
-		<div class='boxAroundTable'>
-			<div class="clearfix"> <!~~ This makes it so that the floating buttons don't overflow downwards ~~>
-				<div class='heading' id='mcHeading'>
-					<!~~ Results ~~>
-					<div class="alert" id="resultAlerts"></div>
-				</div>
-				<div style='float: right;'>
-					<!~~ <input class="coolButton" type="button" id="settingsButton" value="Settings" onclick="showHide('settings')"> ~~>
-					<a id="exportButton" href="#" class='coolButton'>Export Results to File</a>
-				</div>
-				<div id="settings" style='display: none;' class="boxAroundTable">
-					<p><label><input type="checkbox" style='float:left' id="checkboxVerboseColumnNames" onclick="computeResults()" checked> Verbose column names </label>
-					<p>Other settings
-					<p>More stuff.
-				</div>
-			</div>
-		</div>
- -->
-	
-
-	</div>
-</div>
-
-<!-- 	Results preview table 	-->
-<div class='bigBox' id='mcBigBox2' style="display: none">
-	<div class='bigBox' display="block"> 
-		<div class='boxAroundTable'>
-			<div class='heading'>Results preview</div><br>
-			<p>
-			<div id='outputTable' class='dataTable'></div>
-		</div>
-	</div>
-</div>
-
-
-<!-- 	Input data -->
-<div class='boxAroundTable' id='resultsTable' style='display: none'>
-	The data being analyzed <div class="alert" id="inputAlerts"></div> <input type="button" id="inputShowHide" value="Hide" onclick="inputShowHide()">
-	<p>
-	<div class='dataTable' id='inputTable'></div>
-</div>
-
-	
-
 
 
 </body>
@@ -164,6 +72,4 @@
 <script src="file_select.js"></script>
 <script src="file_importExportContent.js"></script>
 <script src="functions_lenientScorer.js"></script>
-<script src="functions_stats.js"></script>
 <script src="functions_indexpage.js"></script>
-<script src="functions_tables.js"></script>

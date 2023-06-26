@@ -60,7 +60,6 @@ function afterAllFilesAreProcessed() {
 		computeResults();
 		buildVariableSelectorTable();
 	} else if (analysisType == "lenientscorer" ) {
-		buildTableLenientScorer("input");
 		buildVariableSelectorTable_lenientScorer();
 	} else if (analysisType == "combine" ) {
 		// if it's combine files
@@ -87,7 +86,9 @@ document.getElementById('exportButton').onclick = function(event){
 	} else if (analysisType == 'compute') {
 		writeToFile(buildOutputStringPTP(), 'StatBuddy_Output.txt');
 	} else if (analysisType == 'lenientscorer') {
-		console.log("dfd do something");	
+		writeToFile(buildOutputStringLenientScorer(), 'Lenient_Output.txt'); //dfd
+		console.log(buildOutputStringLenientScorer());
+
 	} else {
 		writeToFile(buildOutputStringFO(), "Citation Overlap "+uniqueId_of_oldest+".txt");
 		location.reload(); // reload the page after they press export
