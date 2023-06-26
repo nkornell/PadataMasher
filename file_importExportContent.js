@@ -56,10 +56,12 @@ function createInputCell() {
 
 function afterAllFilesAreProcessed() {
 	if (analysisType == "compute") {
-		// if we're just importing one file
 		buildTablePTP("input");
 		computeResults();
 		buildVariableSelectorTable();
+	} else if (analysisType == "lenientscorer" ) {
+		buildTableLenientScorer("input");
+		buildVariableSelectorTable_lenientScorer();
 	} else if (analysisType == "combine" ) {
 		// if it's combine files
 		analyzeCFexpectedvalues();
@@ -84,6 +86,8 @@ document.getElementById('exportButton').onclick = function(event){
 		writeToFile(buildOutputStringCAC(), 'CombineDatafiles_Output.txt');
 	} else if (analysisType == 'compute') {
 		writeToFile(buildOutputStringPTP(), 'StatBuddy_Output.txt');
+	} else if (analysisType == 'lenientscorer') {
+		console.log("dfd do something");	
 	} else {
 		writeToFile(buildOutputStringFO(), "Citation Overlap "+uniqueId_of_oldest+".txt");
 		location.reload(); // reload the page after they press export

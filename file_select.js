@@ -24,6 +24,8 @@ function handleFileSelect(evt) {
 function filesSelectedStepOne (listOfFiles) {
 	if (document.URL.includes("Combine")) {
 		analysisType = "combine";
+	} else if (document.URL.includes("Lenient")) {
+		analysisType = "lenientscorer";
 	} else if (document.URL.includes("StatBuddy")) {
 		analysisType = "compute";
 	} else {
@@ -75,7 +77,7 @@ function importDataFromOneFile(f) {
 		rawFileInputString = fileReader.result;		
 		createInputCell();
 
-		if (analysisType == "compute") {
+		if (analysisType == "compute" || analysisType == "lenientscorer") {
 			afterAllFilesAreProcessed();
 		} else if (analysisType == "combine") {
 			compute_cfDataForAFile(f.name);
