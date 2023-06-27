@@ -41,7 +41,7 @@ function createInputCell() {
 	// Figure out inputCell[]
 	var temp = []; 
 	for (i = 0; i < inputRow.length; i++) { 
-		inputRow[i] = inputRow[i].trim(); // Trim columns and blanks. I added this 5/6/18. It's fine, I think. 
+		inputRow[i] = inputRow[i].trimRight(); // Trim columns and blanks. I added this 5/6/18 as trim. I changed it to trimRight in june 2023. It's fine, I think. 
 		if (inputRow[i].trim().length > 0) { // if it's not a blank line
 			temp = inputRow[i].split(delimiter); // Set temp[] = the row of data, split by delimiter
 			for (k = 0; k < temp.length; k++) {
