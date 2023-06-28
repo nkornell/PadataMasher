@@ -56,6 +56,8 @@
 		</div>
 
 		<p>Instructions: Select checkboxes that should be given a score of 1. 
+		<p><button onclick="autoScore()">Select Correct Responses Automatically</button>
+
 		<div style="font-weight: bold; padding-top: 1em">Options</div>
 		<p>Mark blank responses as 
 		<select id='UseNA'>
@@ -63,7 +65,6 @@
 			<option value='na'>na</option>
 		</select>
 
-		<p><button onclick="autoScore()">Select Correct Responses Automatically</button>
 	
 		<div style="font-weight: bold; padding-top: 1em">Export</div>
 		<p><a id="exportButton" href="#" class='coolButton'>Export Results to File</a> 	
@@ -82,13 +83,14 @@
 <script src="file_select.js"></script>
 <script src="file_importExportContent.js"></script>
 <script src="functions_indexpage.js"></script>
+<script src="functions_stats.js"></script>
 
 <script>
 var column_data = []
 var maximum_num_checkboxes = 9;
+var good_match_threshold = .80 // score when comparing two strings
 
 // dfd make it show a list of columns that are selected, with a remove button for each
-// dfd make the guesser thingy check the next couple of answers using lenient accuracy 
 
 function column_data_object(input_name, column_number, input_values) { 
 	// this is an object that represents a column of data
@@ -104,7 +106,6 @@ function column_data_object(input_name, column_number, input_values) {
 			this.total_responses++
 		}
 	}
-
 
 	this.compute_levels = function(input_search_status) {
 		// figure out what different values are in the column, and how many times each one apears
@@ -152,16 +153,29 @@ function column_data_object(input_name, column_number, input_values) {
 		// this will check boxes for columns where it thinks there is a correct answer.
 		// It chooses columns where the top item's proportion correct is in a certain range, 
 		// and it ignores any column that starts with "Timing" (because of qualtrics conventions)
+		var i = 0;
+		var temp_sim = 0;
+		var top_response = this.sorted_array[0][0]
 		var highest_proportion = this.sorted_array[0][1]/this.total_responses
 		if (highest_proportion > .2 && highest_proportion < 1 && this.column_name.indexOf("Timing") !== 0) {
 			try {
 				if (document.getElementById(column_number+'*0').checked != true) {
 					document.getElementById(column_number+'*0').click();
-					console.log(this.column_name+': '+this.sorted_array[0][1]+'/'+this.total_responses+'='+highest_proportion*100)
+					for (i = 1; i < this.sorted_array.length; i++) {
+						// this loop goes through the other responses and if any look like misspellings
+						// (i.e., are similar) it marks them as correct as well
+						temp_sim = similarity(top_response, this.sorted_array[i][0]);
+						if (temp_sim >= good_match_threshold) {
+							if (document.getElementById(column_number+'*'+i).checked != true) {
+								document.getElementById(column_number+'*'+i).click();
+							}
+							console.log('Selected multiple in '+this.column_name+" "+this.sorted_array[i][0]+'=' + temp_sim)
+						}
+					}
 				}
 			} catch(err) {
 				// I think this error occurs in columns where the most common response is a blank, but 
-				// other responses are also given (i.e., it's not completely blanks). 
+				// other responses are also given (i.e., it's not all blanks). 
 				// It's fine to just ignore it.
 // 				console.log( 'error in ' + this.column_name+', '+column_number+'*0'+': '+err)
 			}
