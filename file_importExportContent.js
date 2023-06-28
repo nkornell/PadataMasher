@@ -105,24 +105,3 @@ function writeToFile(str, fileName) {
     a.target = '_blank';
 	a.download = fileName;
 }
-
-
-
-
-
-// ----- The function below works but only with files under like 1.6 mb, so I decided to use blobs and create a URL and stuff. 
-// function exportOutput(fName, outString) {
-// 	var element = document.createElement('a');
-
-// 	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(outString));
-// 	element.setAttribute('download', fName);
-
-// 	element.style.display = 'none';
-// 	document.body.appendChild(element);
-
-// 	element.click();
-
-// 	document.body.removeChild(element);
-// }
-
-	
