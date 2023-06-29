@@ -41,33 +41,37 @@
 			</div>
 		</div>
 		
-		<p align="center" style="font-size: 11px;">Or if you prefer <input type="file" id="files" name="files[]" single />
-		<output id="list"></output> <!-- I don't know what this is -->
+		<p align="center" style="font-size: 11px;">Or if you prefer <input type="file" id="files" name="files[]" single /></p>
+		<p><input type="checkbox" id="ignore_case" checked><label for="ignore_case">Ignore capitalization of user responses (e.g., Smith = smith)</label> 
 	</div>
 	</center>
-
 
 
 <div class='bigBox' id='lsBigBox' style="display: none">
 <!-- 	Variable selector -->
 	<div class='bigBox'> 
-		<div class='boxAroundTable' style="overflow-x: scroll;">
-			<div id="tableVariableSelector"></div>
+		<p style="margin-left: 10px">Instructions: Select checkboxes that should be given a score of 1. </p>
+		<div class='boxAroundTable' id='scrollable_box' style="overflow-x: scroll; height: 20rem; overflow-y: scroll; margin-bottom: 10px">
+			<div id="variable_selector_table"></div>
 		</div>
+		
+		<p><div id='status_text' style='display: inline-block; margin-left: 10px'>Columns selected: 0 Boxes selected: 0</div><div style="display: inline-block; float: right; text-align:right; margin-right: 10px"> jump to next selected column <button onclick="autoScroll('left')">←</button><button onclick="autoScroll('right')">→</button></div></p>
+		
+		<div class='boxAroundTable'>
+			<div style="font-weight: bold; padding-top: 1em">Selection Tools</div>
+			<p><button onclick="autoScore()">Select Correct Responses Automatically</button>
+			<input type="checkbox" id="lenient_checkbox" checked><label for="lenient_checkbox">Count misspelled answers as correct</label> 
 
-		<p>Instructions: Select checkboxes that should be given a score of 1. 
-		<p><button onclick="autoScore()">Select Correct Responses Automatically</button>
-
-		<div style="font-weight: bold; padding-top: 1em">Options</div>
-		<p>Mark blank responses as 
-		<select id='UseNA'>
-			<option value='Zero'>Zero</option>
-			<option value='na'>na</option>
-		</select>
 
 	
-		<div style="font-weight: bold; padding-top: 1em">Export</div>
-		<p><a id="exportButton" href="#" class='coolButton'>Export Results to File</a> 	
+			<div style="font-weight: bold; padding-top: 1em">Export</div>
+			<p><a id="exportButton" href="#" class='coolButton'>Export Results to File</a> 	
+			Mark blank responses as 
+			<select id='UseNA'>
+				<option value='Zero'>Zero</option>
+				<option value='na'>na</option>
+			</select>
+		</div>
 	</div>
 </div>
 
@@ -89,8 +93,6 @@
 var column_data = []
 var maximum_num_checkboxes = 9;
 var good_match_threshold = .80 // score when comparing two strings
-
-// dfd make it show a list of columns that are selected, with a remove button for each
 
 function column_data_object(input_name, column_number, input_values) { 
 	// this is an object that represents a column of data
@@ -158,25 +160,28 @@ function column_data_object(input_name, column_number, input_values) {
 		var top_response = this.sorted_array[0][0]
 		var highest_proportion = this.sorted_array[0][1]/this.total_responses
 		if (highest_proportion > .2 && highest_proportion < 1 && this.column_name.indexOf("Timing") !== 0) {
+			// if it's a column that should be scored automatically
 			try {
 				if (document.getElementById(column_number+'*0').checked != true) {
 					document.getElementById(column_number+'*0').click();
+				}
+				if (document.getElementById('lenient_checkbox').checked) {
+					// this loop goes through the other responses and if any look like misspellings
+					// (i.e., are similar) it marks them as correct as well
 					for (i = 1; i < this.sorted_array.length; i++) {
-						// this loop goes through the other responses and if any look like misspellings
-						// (i.e., are similar) it marks them as correct as well
 						temp_sim = similarity(top_response, this.sorted_array[i][0]);
 						if (temp_sim >= good_match_threshold) {
 							if (document.getElementById(column_number+'*'+i).checked != true) {
 								document.getElementById(column_number+'*'+i).click();
 							}
-							console.log('Selected multiple in '+this.column_name+" "+this.sorted_array[i][0]+'=' + temp_sim)
+// 							console.log('Selected multiple in '+this.column_name+" "+this.sorted_array[i][0]+'=' + temp_sim)
 						}
 					}
 				}
 			} catch(err) {
 				// I think this error occurs in columns where the most common response is a blank, but 
 				// other responses are also given (i.e., it's not all blanks). 
-				// It's fine to just ignore it.
+				// It's not actually a problem because the blank isn't correct anyway. Just ignore it.
 // 				console.log( 'error in ' + this.column_name+', '+column_number+'*0'+': '+err)
 			}
 		}
@@ -196,6 +201,9 @@ function computeLevels(colNum) {
 	for (i = 0; i < inputCell.length; i++) {
 // 		console.log( inputCell.length)
 		if (inputCell[i][colNum] !== undefined && inputCell[i][colNum] !== null) {
+			if (document.getElementById('ignore_case').checked && i > 0 && typeof inputCell[i][colNum] == 'string') {
+				inputCell[i][colNum] = inputCell[i][colNum].toLowerCase();
+			}
 			data_values.push(inputCell[i][colNum])
 		} else
 			data_values.push('')
@@ -217,16 +225,16 @@ function buildVariableSelectorTable_lenientScorer() {
 	var tempColName = '';
 	var tempItemValue = '';
 	var out = "";
-	out = out + "<div><table><tr><form>";
+	out = out + "<div><table><tr>";
 	// Build column names and checkboxes.
 	for (i = 0; i < inputCell[0].length; i++) {
 		tempColName = inputCell[0][i];
-		out = out + "<td style='vertical-align: top; min-width: 10em'><b>" + tempColName + "</b><br>";
+		out = out + "<td id='"+i+"*header' style='vertical-align: top; min-width: 10em'><b>" + tempColName + "</b><br>";
 		for (j = 0; j < column_data[i].level_text.length; j++) {
 			tempItemValue = column_data[i].sorted_array[j][0];
 			if (tempItemValue !== undefined && tempItemValue !== null) {
 				if (tempItemValue.length > 0) {
-					tempID = i+'*'+j;
+					tempID = i+'*'+j; // col*row
 					out = out + '<input type="checkbox" name="'+i+'" id="'+tempID+'" onchange="boxClicked(this.id)" ><label for="'+tempID+'">'+tempItemValue+'</label> <div style="display: inline-block; color: grey">n='+column_data[i].sorted_array[j][1]+'</div><br>'
 				}
 			} else {
@@ -236,10 +244,10 @@ function buildVariableSelectorTable_lenientScorer() {
 		}
 		out = out + "</td>";
 	}
-	out = out + "</form></tr></table></div>";
+	out = out + "</tr></table></div>";
 
 	// Show the table
-	document.getElementById("tableVariableSelector").innerHTML = out;
+	document.getElementById("variable_selector_table").innerHTML = out;
 	
 	hideFileSelectorStuff();
 	showLSstuff();
@@ -247,8 +255,39 @@ function buildVariableSelectorTable_lenientScorer() {
 
 function autoScore() {
 	var i;
+
 	for (i = 0; i < inputCell[0].length; i++) {
 		column_data[i].guess_what_is_correct()
+	}
+}
+
+function autoScroll(direction) {
+	var i = 0;
+	var pos = '';
+	var w = document.getElementById("scrollable_box").offsetWidth 	
+	
+	if (direction == "right") {
+		// Loop through columns from left to right and find the first selected column that is to the right of the visible window. Jump to it. 
+		for (i = 0; i < inputCell[0].length; i++) {
+			if (column_data[i].array_of_selected_items.length > 0) { // if something has been selected in the column
+				pos = document.getElementById(i+"*header").getBoundingClientRect().left
+				if (pos > w) { // this means if pos is beyond the visible area
+					document.getElementById(i+"*header").scrollIntoView();
+					break;
+				}
+			}
+		}
+	} else if (direction == "left") {
+		// Loop through columns from right to left and find the first selected column that is to the left of the visible window. Jump to it. 
+		for (i = inputCell[0].length-1; i >= 0; i--) {
+			if (column_data[i].array_of_selected_items.length > 0) { // if something has been selected in the column
+				pos = document.getElementById(i+"*header").getBoundingClientRect().left
+				if (pos < 0) { // this means if pos is beyond the visible area
+					document.getElementById(i+"*header").scrollIntoView();
+					break;			
+				}
+			}
+		}
 	}
 }
 
@@ -266,6 +305,21 @@ function boxClicked(element_id) {
 		const index = column_data[tempColumnNum].array_of_selected_items.indexOf(tempItemValue);
 		column_data[tempColumnNum].array_of_selected_items.splice(index, 1);
 	}
+	
+	// figure out how many columns have a checkbox selected, and the total number of checkboxes selected
+	var i;
+	var num = 0;
+	var num_columns_selected = 0;
+	var num_boxes_selected = 0;
+	for (i = 0; i < inputCell[0].length; i++) {
+		num = column_data[i].array_of_selected_items.length
+		if (num > 0) {
+			num_columns_selected++;
+			num_boxes_selected += num;	
+		}
+	}
+	document.getElementById('status_text').innerHTML = 'Columns selected: '+num_columns_selected+' Boxes selected: '+num_boxes_selected
+		
 }
 
 function buildOutputStringLenientScorer() {
