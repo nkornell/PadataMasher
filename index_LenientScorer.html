@@ -14,16 +14,28 @@
 
 <body> 
 	<!--  navigation menu -->
-<!-- 
-	<nav>
-		<ul>
-			<li><a href="index.html"><div class="navMenuItem"><img src="images/pm.png" > Masher Home</div></a></li>
-			<li><a href="index_CombineAndClean.html"><div class="navMenuItem"><img src="images/cac.png"> Combine Datafiles</div></a></li>
-			<li><div class="navMenuItem selected"><img src="images/ptp.png"> StatBuddy</div></li>
-			<li style="float:right"><a href="index_About.html"><div class="navMenuItem">About</div></a></li>
-		</ul>
-	</nav>
- -->
+	<a href="index.html">Home</a> | 
+	<div id = 'about_link' style="display: inline-block; cursor: pointer"" onclick="show_or_hide_about()">about ▾</div>
+	<div id='about' style="display: none">
+		<div class='boxAroundTable'>
+			<p><b>About</b>
+			<p>This program assumes your datafile format is similar to Qualtrics, where each
+			column of data represents a single question. 
+			After you pass it your datafile, it will show you all of your column names. 
+			Common responses are shown below each one. Just click on the correct responses!
+			(Or start by clicking the Auto-Score button.) 
+			<p>When you are done, press export. A new datafil will be created on your desktop. 
+			Any responses you've clicked will be given a score of 1. 
+			<p>Autoscore selects the most common answer in each column for you. It also selects
+			misspelled versions of that answer. It ignores columns where accuracy is perfect, or very low, and any 
+			column name that starts with the word "Timing."
+			It 
+			<p>This process keps your data private. The program never uploads your data 
+			and no one can access it except you.
+			
+		</div>
+	</div>
+
 
 	<!-- ~~- processing files ~~- -->
 	<div id="processingBox">
@@ -31,8 +43,8 @@
 	</div>
 
 	<!-- ~~- choosing a file ~~- -->
-	<center>
 	<div id="fileSelectorBox">
+		<center>
 		<div class="roundedBox dragDropBox" id="drop_zone">
 			<img src="images/ptp.png" style="position: relative; width: 300px; opacity: 0.2; ">
 			<div class="middleCenter">
@@ -41,32 +53,37 @@
 			</div>
 		</div>
 		
-		<p align="center" style="font-size: 11px;">Or if you prefer <input type="file" id="files" name="files[]" single /></p>
-		<p><input type="checkbox" id="ignore_case" checked><label for="ignore_case">Ignore capitalization of user responses (e.g., Smith = smith)</label> 
+		Or if you prefer <input type="file" id="files" name="files[]" single />
+		</center>
+
+<!-- 		The checkbox below works. I made it invisible because I think I will always want to ignore capitalization and it makes the visuals too busy/complicated -->
+		<p style="display: none"><input type="checkbox" id="ignore_case" checked ><label for="ignore_case">Ignore capitalization of user responses (e.g., Smith = smith)</label> </p>
 	</div>
-	</center>
 
 
 <div class='bigBox' id='lsBigBox' style="display: none">
 <!-- 	Variable selector -->
 	<div class='bigBox'> 
-		<p style="margin-left: 10px">Instructions: Select checkboxes that should be given a score of 1. </p>
+		<p style="margin-left: 10px">Select correct responses </p>
 		<div class='boxAroundTable' id='scrollable_box' style="overflow-x: scroll; height: 20rem; overflow-y: scroll; margin-bottom: 10px">
 			<div id="variable_selector_table"></div>
 		</div>
 		
-		<p><div id='status_text' style='display: inline-block; margin-left: 10px'>Columns selected: 0 Boxes selected: 0</div><div style="display: inline-block; float: right; text-align:right; margin-right: 10px"> jump to next selected column <button onclick="autoScroll('left')">←</button><button onclick="autoScroll('right')">→</button></div></p>
-		
+		<p><div id='status_text' style='display: inline-block; margin-left: 10px'></div> <!--  0 columns selected -->
+		<div style="display: inline-block; float: right; text-align:right; margin-right: 10px"> jump to next selected column <button onclick="autoScroll('left')">←</button><button onclick="autoScroll('right')">→</button></div></p>
+		<br>
 		<div class='boxAroundTable'>
-			<div style="font-weight: bold; padding-top: 1em">Selection Tools</div>
-			<p><button onclick="autoScore()">Select Correct Responses Automatically</button>
+<!-- 			<div style="font-weight: bold">Selection Tools</div> -->
+			<p><button onclick="autoScore()">Auto-Score</button>
 			<input type="checkbox" id="lenient_checkbox" checked><label for="lenient_checkbox">Count misspelled answers as correct</label> 
-
-
-	
-			<div style="font-weight: bold; padding-top: 1em">Export</div>
+			</div>
+		<div class='boxAroundTable'>
 			<p><a id="exportButton" href="#" class='coolButton'>Export Results to File</a> 	
-			Mark blank responses as 
+		</div>
+
+		<div class='boxAroundTable'>
+			<div style="font-weight: bold">Settings</div>
+			<p>Mark blank responses as 
 			<select id='UseNA'>
 				<option value='Zero'>Zero</option>
 				<option value='na'>na</option>
@@ -90,9 +107,21 @@
 <script src="functions_stats.js"></script>
 
 <script>
+
 var column_data = []
 var maximum_num_checkboxes = 9;
 var good_match_threshold = .80 // score when comparing two strings
+
+function show_or_hide_about() {
+	if (document.getElementById("about").style.display === "none") {
+		document.getElementById("about").style.display = "block";
+		document.getElementById("about_link").innerHTML = "about ▴"
+
+	} else {
+		document.getElementById("about").style.display = "none";
+		document.getElementById("about_link").innerHTML = "about ▾"
+	}
+}
 
 function column_data_object(input_name, column_number, input_values) { 
 	// this is an object that represents a column of data
@@ -216,7 +245,7 @@ function computeLevels(colNum) {
 
 function buildVariableSelectorTable_lenientScorer() {
 	var i = 0;
-	
+
 	for (i = 0; i < inputCell[0].length; i++) { 
 		computeLevels(i);
 	}
@@ -318,7 +347,11 @@ function boxClicked(element_id) {
 			num_boxes_selected += num;	
 		}
 	}
-	document.getElementById('status_text').innerHTML = 'Columns selected: '+num_columns_selected+' Boxes selected: '+num_boxes_selected
+	var temp_status = num_columns_selected+' columns selected'
+	if (num_boxes_selected > num_columns_selected) {
+		temp_status += ' ('+num_boxes_selected+' boxes)'
+	}
+	document.getElementById('status_text').innerHTML = temp_status
 		
 }
 
