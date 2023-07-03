@@ -14,9 +14,15 @@
 
 <body> 
 	<!--  navigation menu -->
-	<a href="index.html">Home</a> | 
-	<div id = 'about_link' style="display: inline-block; cursor: pointer"" onclick="show_or_hide_about()">about ▾</div>
-	<div id='about' style="display: none">
+	<nav>
+		<ul>
+			<li><div class="navMenuItem selected"><a href="index.html">Home</a></div></li>
+			<li style="float:right"><div class="navMenuItem" id = 'about_link' style="display: inline-block; cursor: pointer"" onclick="show_or_hide_about()">About ▾</div></li>
+		</ul>
+	</nav>
+
+	<!-- about -->
+	<div id='about' style="display: none;">
 		<div class='boxAroundTable'>
 			<p><b>About</b>
 			<p>This program assumes your datafile format is similar to Qualtrics, where each
@@ -46,7 +52,7 @@
 	<div id="fileSelectorBox">
 		<center>
 		<div class="roundedBox dragDropBox" id="drop_zone">
-			<img src="images/ptp.png" style="position: relative; width: 300px; opacity: 0.2; ">
+			<img src="images/pm.png" style="position: relative; width: 300px; opacity: 0.2; ">
 			<div class="middleCenter">
 				<h1>Lenient Scorer</h1>
 				<h2>drag a text file here</h2>
@@ -115,11 +121,11 @@ var good_match_threshold = .80 // score when comparing two strings
 function show_or_hide_about() {
 	if (document.getElementById("about").style.display === "none") {
 		document.getElementById("about").style.display = "block";
-		document.getElementById("about_link").innerHTML = "about ▴"
+		document.getElementById("about_link").innerHTML = "About ▴"
 
 	} else {
 		document.getElementById("about").style.display = "none";
-		document.getElementById("about_link").innerHTML = "about ▾"
+		document.getElementById("about_link").innerHTML = "About ▾"
 	}
 }
 

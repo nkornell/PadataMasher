@@ -36,40 +36,51 @@ Show hint hovery thingies for the export button and others.
 	<!--  navigation menu -->
 	<nav>
 		<ul>
-			<li><div class="navMenuItem selected"><img src="images/pm.png" > Masher Home</div></li>
+			<li style="float:right"><a href="index_About.html"><div class="navMenuItem">About</div></a></li>
+		</ul>
+	</nav>
+
+<!-- 
+	<nav>
+		<ul>
+			<li><div class="navMenuItem selected">Home</div></li>
 			<li><a href="index_CombineAndClean.html"><div class="navMenuItem"><img src="images/cac.png"> Combine Datafiles</div></a></li>
 			<li><a href="index_StatBuddy.html"><div class="navMenuItem"><img src="images/ptp.png"> StatBuddy</div></a></li>
 			<li style="float:right"><a href="index_About.html"><div class="navMenuItem">About</div></a></li>
 		</ul>
 	</nav>
+ -->
 	
 	<!-- about box -->
 	<center>
 
 	<div class="roundedBox">
-		<h1><img src="images/pm.png" height="50px" style="float: left; padding-right: 15px"> Padata Masher</h1>
+		<h1>Padata Masher</h1>
 		<p>Welcome to Padata Masher! We offer free tools to help you clean, score, and analyze your data. 
 		We never upload, store, or modify your files.  
 		
 		<p>
 		<div style="padding: 25px;">
+			<a href="index_CombineAndClean.html">
 			<img src="images/cac.png" height="100px" style="float: left; padding-right: 15px">
-			<strong><a href="index_CombineAndClean.html">Combine Datafiles </a></strong> Want to combine a batch of data files into a single file?  
+			<strong>Combine Datafiles </strong> </a>
+			Want to combine a batch of data files into a single file?  
 			This program will do it. It will also give you a report about each file (e.g., this file is incomplete).
 			And it adds column with flags for wonky rows of data. 			
 		</div>
 		<p>
 		<div style="padding: 25px;">
+			<a href="index_StatBuddy.html">
 			<img src="images/ptp.png" height="100px" style="float: left; padding-right: 15px">
-			<Strong><a href="index_StatBuddy.html">StatBuddy </a></strong> 
+			<Strong>StatBuddy</strong> </a>
 			Want to compute a correlation for each of your participants? Do that and more. 
 			Compute each participant's mean, median, or standard deviation, Pearson or a gamma correlation, or other stuff. 
 		</div>
 		<p>
 		<div style="padding: 25px;">
-			<img src="images/ptp.png" height="100px" style="float: left; padding-right: 15px">
-			<Strong><a href="index_LenientScorer.html">Lenient Scorer</a> </strong> 
-
+			<a href="index_LenientScorer.html">
+			<img src="images/pm.png" height="100px" style="float: left; padding-right: 15px">
+			<Strong>Lenient Scorer</strong> </a> 
 			Want to score your datafile by converting answers into 1s and 0s for correct and incorrect answers?
 			This page makes it easy; it organizes common answers, does automatic scoring, and 
 			recognizes spelling errors.
