@@ -41,14 +41,28 @@
 		</div>
 	</div>
 
-
+<!-- 
+dfd
+let you choose which columns to analyze
+add option to hide correct responses? maybe not
+ -->
 	<!-- ~~- processing files ~~- -->
 	<div id="processingBox">
 		<div class="dragDropBox" id="processing" style='text-align: left; vertical-align: bottom; padding: 5px'></div>
 	</div>
 
 	<!-- ~~- choosing a file ~~- -->
-	<div id="fileSelectorBox">
+	<div id="formatSelectorBox" class='boxAroundTable' style="margin: 25px; line-height: 2"> 
+		How is your data file organized?
+		<br>&emsp;
+		<input type="radio" id="in_columns" name="file_format" value="in_columns" onchange='formatButtonClicked(this.id)'>
+		<label for="in_columns">Like Qualtrics <div style="display: inline-block; color: grey">(each column of user responses has a single correct answer)</div></label>
+		<br>&emsp;
+		<input type="radio" id="verified_answers" name="file_format" value="verified_answers" onchange='formatButtonClicked(this.id)'> <!-- checked="checked" -->
+		<label for="verified_answers">Compare two columns <div style="display: inline-block; color: grey"> (one with correct answers and the other with user responses)</div></label>
+	</div>
+
+	<div id="fileSelectorBox" style="display: none">
 		<center>
 		<div class="roundedBox dragDropBox" id="drop_zone">
 			<img src="images/pm.png" style="position: relative; width: 300px; opacity: 0.2; ">
@@ -63,17 +77,6 @@
 
 <!-- 		The checkbox below works. I made it invisible because I think I will always want to ignore capitalization and it makes the visuals too busy/complicated -->
 		<p style="display: none"><input type="checkbox" id="ignore_case" checked ><label for="ignore_case">Ignore capitalization of user responses (e.g., Smith = smith)</label> </p>
-		
-		<div class='boxAroundTable' style="margin: 25px; line-height: 1.5"> 
-			<p>How is your data file organized?<br>
-				<input type="radio" id="in_columns" name="file_format" value="in_columns">
-				<label for="in_columns">&emsp;Like Qualtrics <div  style="color: grey">(each column has a single correct answer)</div></label>
-				<br>
-				<input type="radio" id="verified_answers" name="file_format" value="verified_answers" checked="checked">
-				<label for="verified_answers">&emsp;Two columns contain the correct answers and user responses</label>
-		</div>
-  <br>  
-
 	</div>
 
 
@@ -123,11 +126,17 @@
 <script src="functions_stats.js"></script>
 
 <script>
-
 var answer_group = []
 var maximum_num_checkboxes = 9;
 var good_match_threshold = .80 // score when comparing two strings
 var correct_answer = [];
+
+
+if (localStorage.getItem("leneint_scorer_file_format") != null) {
+	// if the user's preference for which file format is locally stored in the browser, click on that radio button
+	document.getElementById(localStorage.getItem("lenient_scorer_file_format")).click()
+}
+
 
 function show_or_hide_about() {
 	if (document.getElementById("about").style.display === "none") {
@@ -268,7 +277,9 @@ function answer_group_object(input_name, column_number, input_values, input_veri
 function showLSstuff() {
 	var x = document.getElementById("lsBigBox");
 	x.style.display = "flex";
-	
+	x = document.getElementById("formatSelectorBox");
+	x.style.display = "none";
+
 	if (document.getElementById("lsBigBox").scrollWidth >= document.getElementById("scrollable_box").scrollWidth) {
 		// if the window with the checkboxes doesn't go beyond the margin, don't show the number of columns selected or jump arrows
 		document.getElementById("jump_arrows").style.display = "none";
@@ -374,6 +385,7 @@ function buildVariableSelectorTable_lenientScorer() {
 					tempID = i+'*'+j; // col*row
 					if (document.getElementById('verified_answers').checked) {
 // 						tempValueToShow = tempColName+' - '+tempValueToShow;
+
 					}
 					out = out + '<input type="checkbox" name="'+i+'" id="'+tempID+'" onchange="boxClicked(this.id)" ><label for="'+tempID+'">'+tempValueToShow+'</label> <div style="display: inline-block; color: grey">n='+answer_group[i].sorted_array[j][1]+'</div><br>'
      				}
@@ -432,6 +444,11 @@ function autoScroll(direction) {
 			}
 		}
 	}
+}
+
+function formatButtonClicked(element_id) {
+	document.getElementById("fileSelectorBox").style.display = "block" // show the file selector box
+	localStorage.setItem("lenient_scorer_file_format", element_id); // put which format they selected in the local browser storage
 }
 
 function boxClicked(element_id) {
