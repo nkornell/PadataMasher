@@ -20,8 +20,6 @@ function createInputCell() {
 	
 	var countCommasQuotes = (first1000characters.match(/","/g) || []).length
 
-	
-
 	// Split the string into rows
 	var inputRow = rawFileInputString.split(/\r\n|\r|\n/g);
 
@@ -86,7 +84,7 @@ document.getElementById('exportButton').onclick = function(event){
 	} else if (analysisType == 'compute') {
 		writeToFile(buildOutputStringPTP(), 'StatBuddy_Output.txt');
 	} else if (analysisType == 'lenientscorer') {
-		writeToFile(buildOutputStringLenientScorer(), 'Lenient_Output.txt'); //dfd
+// 		writeToFile(buildOutputStringLenientScorer(), 'Lenient_Output.txt'); //dfd
 		console.log(buildOutputStringLenientScorer());
 
 	} else {

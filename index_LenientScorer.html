@@ -64,25 +64,34 @@
 
 <!-- 		The checkbox below works. I made it invisible because I think I will always want to ignore capitalization and it makes the visuals too busy/complicated -->
 		<p style="display: none"><input type="checkbox" id="ignore_case" checked ><label for="ignore_case">Ignore capitalization of user responses (e.g., Smith = smith)</label> </p>
+		
+		<p>How is your data file organized?
+  <input type="radio" id="in_columns" name="file_format" value="in_columns">
+  <label for="in_columns">In Columns</label>
+  
+  <input type="radio" id="verified_answers" name="file_format" value="verified_answers" checked="checked">
+  <label for="verified_answers">Verified Answers</label>
+  <br>  
+
 	</div>
 
 
 <div class='bigBox' id='lsBigBox' style="display: none">
 <!-- 	Variable selector -->
-	<div class='bigBox'> 
+	<div class='bigBox' style="width:100%;"> 
 		<p style="margin-left: 10px">Select correct responses </p>
 		<div class='boxAroundTable' id='scrollable_box' style="overflow-x: scroll; height: 20rem; overflow-y: scroll; margin-bottom: 10px">
 			<div id="variable_selector_table"></div>
 		</div>
 		
 		<p><div id='status_text' style='display: inline-block; margin-left: 10px'></div> <!--  0 columns selected -->
-		<div style="display: inline-block; float: right; text-align:right; margin-right: 10px"> jump to next selected column <button onclick="autoScroll('left')">←</button><button onclick="autoScroll('right')">→</button></div></p>
+		<div id='jump_arrows' style="display: inline-block; float: right; text-align:right; margin-right: 10px"> jump to next selected column <button onclick="autoScroll('left')">←</button><button onclick="autoScroll('right')">→</button></div></p>
+
 		<br>
-		<div class='boxAroundTable'>
-<!-- 			<div style="font-weight: bold">Selection Tools</div> -->
+		<div class='boxAroundTable' id="auto_score_box">
 			<p><button onclick="autoScore()">Auto-Score</button>
 			<input type="checkbox" id="lenient_checkbox" checked><label for="lenient_checkbox">Count misspelled answers as correct</label> 
-			</div>
+		</div>
 		<div class='boxAroundTable'>
 			<p><a id="exportButton" href="#" class='coolButton'>Export Results to File</a> 	
 		</div>
@@ -114,9 +123,10 @@
 
 <script>
 
-var column_data = []
+var answer_group = []
 var maximum_num_checkboxes = 9;
 var good_match_threshold = .80 // score when comparing two strings
+var correct_answer = [];
 
 function show_or_hide_about() {
 	if (document.getElementById("about").style.display === "none") {
@@ -129,10 +139,10 @@ function show_or_hide_about() {
 	}
 }
 
-function column_data_object(input_name, column_number, input_values) { 
-	// this is an object that represents a column of data
+function answer_group_object(input_name, column_number, input_values, input_verified_answer) { 
+	// this is an object that represents a correct answer. it might be a column of data (in qualtrics format) or responses that all have the same target
 	this.column_name = input_name;
-	
+	this.verified_answer = input_verified_answer;
 	this.level_text = []
 	this.level_num_observations = []
 	this.sorted_array = []
@@ -144,7 +154,7 @@ function column_data_object(input_name, column_number, input_values) {
 		}
 	}
 
-	this.compute_levels = function(input_search_status) {
+	this.compute_levels = function() {
 		// figure out what different values are in the column, and how many times each one apears
 		var i = 0;
 		var tempLevel = '';
@@ -169,6 +179,7 @@ function column_data_object(input_name, column_number, input_values) {
 		});
 	}
 	
+	
 	this.binary_array = function() {
 		// This returns an array with a value of 1 or 0 for each item in the column. 
 		// It's a 1 if the item is in the list of checked items and 0 if it's not. 
@@ -186,39 +197,69 @@ function column_data_object(input_name, column_number, input_values) {
 		return out
 	}
 	
+	this.binary_item = function(resp_string) {
+		// This returns a value of 1 or 0 for the specific item that's passed as the parameter. 
+// 		console.log( 'is this in the list below: '+resp_string)
+// 		console.log( this.array_of_selected_items)
+		resp_string = resp_string.toLowerCase();
+		if (this.array_of_selected_items.indexOf(resp_string) > -1) {
+			return 1;
+		} else if (resp_string.length == 0 && document.getElementById("UseNA").value == "na") {
+			return 'na';
+		} else {
+			return 0;
+		}
+	}
+	
+	
 	this.guess_what_is_correct = function() {
 		// this will check boxes for columns where it thinks there is a correct answer.
 		// It chooses columns where the top item's proportion correct is in a certain range, 
 		// and it ignores any column that starts with "Timing" (because of qualtrics conventions)
 		var i = 0;
 		var temp_sim = 0;
-		var top_response = this.sorted_array[0][0]
-		var highest_proportion = this.sorted_array[0][1]/this.total_responses
-		if (highest_proportion > .2 && highest_proportion < 1 && this.column_name.indexOf("Timing") !== 0) {
-			// if it's a column that should be scored automatically
-			try {
-				if (document.getElementById(column_number+'*0').checked != true) {
-					document.getElementById(column_number+'*0').click();
-				}
-				if (document.getElementById('lenient_checkbox').checked) {
-					// this loop goes through the other responses and if any look like misspellings
-					// (i.e., are similar) it marks them as correct as well
-					for (i = 1; i < this.sorted_array.length; i++) {
-						temp_sim = similarity(top_response, this.sorted_array[i][0]);
-						if (temp_sim >= good_match_threshold) {
-							if (document.getElementById(column_number+'*'+i).checked != true) {
-								document.getElementById(column_number+'*'+i).click();
+		if (this.verified_answer == undefined || this.verified_answer.length == 0){
+			// if there isn't a verified answer
+			var top_response = this.sorted_array[0][0]
+			var highest_proportion = this.sorted_array[0][1]/this.total_responses
+			if (highest_proportion > .2 && highest_proportion < 1 && this.column_name.indexOf("Timing") !== 0) {
+				// if it's a column that should be scored automatically
+				try {
+					if (document.getElementById(column_number+'*0').checked != true) {
+						document.getElementById(column_number+'*0').click();
+					}
+					if (document.getElementById('lenient_checkbox').checked) {
+						// this loop goes through the other responses and if any look like misspellings
+						// (i.e., are similar) it marks them as correct as well
+						for (i = 1; i < this.sorted_array.length; i++) {
+							temp_sim = similarity(top_response, this.sorted_array[i][0]);
+							if (temp_sim >= good_match_threshold) {
+								if (document.getElementById(column_number+'*'+i).checked != true) {
+									document.getElementById(column_number+'*'+i).click();
+								}
+	// 							console.log('Selected multiple in '+this.column_name+" "+this.sorted_array[i][0]+'=' + temp_sim)
 							}
-// 							console.log('Selected multiple in '+this.column_name+" "+this.sorted_array[i][0]+'=' + temp_sim)
 						}
 					}
+				} catch(err) {
+					// I think this error occurs in columns where the most common response is a blank, but 
+					// other responses are also given (i.e., it's not all blanks). 
+					// It's not actually a problem because the blank isn't correct anyway. Just ignore it.
+	// 				console.log( 'error in ' + this.column_name+', '+column_number+'*0'+': '+err)
 				}
-			} catch(err) {
-				// I think this error occurs in columns where the most common response is a blank, but 
-				// other responses are also given (i.e., it's not all blanks). 
-				// It's not actually a problem because the blank isn't correct anyway. Just ignore it.
-// 				console.log( 'error in ' + this.column_name+', '+column_number+'*0'+': '+err)
 			}
+		} else {
+			for (i = 0; i < this.sorted_array.length; i++) {
+// 			console.log( 'checking '+this.sorted_array[i][0])
+				temp_sim = similarity(this.verified_answer, this.sorted_array[i][0]);
+				if (temp_sim >= good_match_threshold) {
+					if (document.getElementById(column_number+'*'+i).checked != true) {
+						document.getElementById(column_number+'*'+i).click();
+					}
+// 							console.log('Selected multiple in '+this.column_name+" "+this.sorted_array[i][0]+'=' + temp_sim)
+				}
+			}
+
 		}
 	}
 }
@@ -226,58 +267,125 @@ function column_data_object(input_name, column_number, input_values) {
 function showLSstuff() {
 	var x = document.getElementById("lsBigBox");
 	x.style.display = "flex";
+	
+	if (document.getElementById("lsBigBox").scrollWidth >= document.getElementById("scrollable_box").scrollWidth) {
+		// if the window with the checkboxes doesn't go beyond the margin, don't show the number of columns selected or jump arrows
+		document.getElementById("jump_arrows").style.display = "none";
+		document.getElementById("status_text").style.display = "none";		
+	}
+	
+	if (document.getElementById('verified_answers').checked) {
+		document.getElementById("auto_score_box").style.display = "none";
+		autoScore();
+	}
 }
 
-function computeLevels(colNum) {
-	// Return an array listing all observed levels of the requested colNum.
+function computeLevels_verified_correct(columnNum) {
+	// The input parameter identifies the column num that has the correct answers in it. 
+	// This doesn't return anything. It sets values for an array called correct_answer. 
+	var tempCorrect = ''
 	
-	var i = 0;
-	var data_values = [];
-	for (i = 0; i < inputCell.length; i++) {
-// 		console.log( inputCell.length)
-		if (inputCell[i][colNum] !== undefined && inputCell[i][colNum] !== null) {
-			if (document.getElementById('ignore_case').checked && i > 0 && typeof inputCell[i][colNum] == 'string') {
-				inputCell[i][colNum] = inputCell[i][colNum].toLowerCase();
-			}
-			data_values.push(inputCell[i][colNum])
-		} else
-			data_values.push('')
+	for (i = 1; i < inputCell.length; i++) { // start with 1 to avoid column name
+		tempCorrect = inputCell[i][columnNum].toLowerCase()
+
+		if (correct_answer.indexOf(tempCorrect) == -1) { // it's identified a novel unique between-level combination
+			correct_answer.push(tempCorrect);
+		}
 	}
 
-	var columnName = data_values.shift(); // get rid of the first element, which is the column name
-	column_data[colNum] = new column_data_object(columnName, colNum, data_values)
-	column_data[colNum].compute_levels()
+	correct_answer.sort();
+}
+
+function computeLevels(input_array) {
+	// This takes an input array and return the same array but in lowercase (if appropriate) and with nulls
+	// having been replaced with ''
+	var i = 0;
+	var data_values = [];
+	
+	for (i = 0; i < input_array.length; i++) {
+		if (input_array[i] !== undefined && input_array[i] !== null) {
+			if (document.getElementById('ignore_case').checked && typeof input_array[i] == 'string') {
+				input_array[i] = input_array[i].toLowerCase();
+			}
+			data_values.push(input_array[i])
+		} else {
+			data_values.push('')
+		}
+	}
+	return data_values
 }
 
 function buildVariableSelectorTable_lenientScorer() {
+	// this is called by file_importExportContent.js
 	var i = 0;
-
+	var temp_array = [];
+	
+	
+	// turn empty cells into blanks
 	for (i = 0; i < inputCell[0].length; i++) { 
-		computeLevels(i);
+		for (j = 1; j < inputCell.length; j++) {
+			if (inputCell[j][i] == undefined || inputCell[j][i] == null) {
+				inputCell[j][i] = '';
+			}
+		}
 	}
 
+	if (document.getElementById('verified_answers').checked) {
+		computeLevels_verified_correct(0)
+		
+		for (i = 0; i < correct_answer.length; i++) { 
+			temp_array = [];
+			for (j = 0; j < inputCell.length; j++) {
+				if (inputCell[j][0] == correct_answer[i]) {
+					temp_array.push(inputCell[j][1])
+				}
+			}
+
+			answer_group[i] = new answer_group_object(correct_answer[i], i, computeLevels(temp_array), correct_answer[i])
+			answer_group[i].compute_levels()
+		}
+	} else {	
+		for (i = 0; i < inputCell[0].length; i++) { 
+			temp_array = [];
+			for (j = 1; j < inputCell.length; j++) {
+				temp_array.push(inputCell[j][i])
+			}
+
+			answer_group[i] = new answer_group_object(inputCell[0][i], i, computeLevels(temp_array))
+			answer_group[i].compute_levels()
+		}
+	}
+	
 	// Build Header
 	var tempColName = '';
-	var tempItemValue = '';
+	var tempValueToShow = '';
 	var out = "";
 	out = out + "<div><table><tr>";
 	// Build column names and checkboxes.
-	for (i = 0; i < inputCell[0].length; i++) {
-		tempColName = inputCell[0][i];
-		out = out + "<td id='"+i+"*header' style='vertical-align: top; min-width: 10em'><b>" + tempColName + "</b><br>";
-		for (j = 0; j < column_data[i].level_text.length; j++) {
-			tempItemValue = column_data[i].sorted_array[j][0];
-			if (tempItemValue !== undefined && tempItemValue !== null) {
-				if (tempItemValue.length > 0) {
+	for (i = 0; i < answer_group.length; i++) {
+		tempColName = answer_group[i].column_name;
+		if (document.getElementById('verified_answers').checked == false) {
+			out = out + "<td id='"+i+"*header' style='vertical-align: top; min-width: 10em'>"
+			out += "<b>" + tempColName + "</b><br>";
+		}
+		for (j = 0; j < answer_group[i].level_text.length; j++) {
+			tempValueToShow = answer_group[i].sorted_array[j][0];
+			if (tempValueToShow !== undefined && tempValueToShow !== null) {
+				if (tempValueToShow.length > 0) {
 					tempID = i+'*'+j; // col*row
-					out = out + '<input type="checkbox" name="'+i+'" id="'+tempID+'" onchange="boxClicked(this.id)" ><label for="'+tempID+'">'+tempItemValue+'</label> <div style="display: inline-block; color: grey">n='+column_data[i].sorted_array[j][1]+'</div><br>'
-				}
+					if (document.getElementById('verified_answers').checked) {
+						tempValueToShow = tempColName+' - '+tempValueToShow;
+					}
+					out = out + '<input type="checkbox" name="'+i+'" id="'+tempID+'" onchange="boxClicked(this.id)" ><label for="'+tempID+'">'+tempValueToShow+'</label> <div style="display: inline-block; color: grey">n='+answer_group[i].sorted_array[j][1]+'</div><br>'
+     				}
 			} else {
-				console.log( 'null: tempid = '+tempID+' tempcolnam='+tempColName+' tempItemValue='+tempItemValue)
+				console.log( 'null: tempid = '+tempID+' tempcolnam='+tempColName+' tempValueToShow='+tempValueToShow)
 			}
 			if (j >= maximum_num_checkboxes-1) {break;} // this means it never gives you more than x options
 		}
-		out = out + "</td>";
+		if (document.getElementById('verified_answers').checked == false) {
+			out = out + "</td>";
+		}
 	}
 	out = out + "</tr></table></div>";
 
@@ -291,8 +399,8 @@ function buildVariableSelectorTable_lenientScorer() {
 function autoScore() {
 	var i;
 
-	for (i = 0; i < inputCell[0].length; i++) {
-		column_data[i].guess_what_is_correct()
+	for (i = 0; i < answer_group.length; i++) {
+		answer_group[i].guess_what_is_correct()
 	}
 }
 
@@ -303,8 +411,8 @@ function autoScroll(direction) {
 	
 	if (direction == "right") {
 		// Loop through columns from left to right and find the first selected column that is to the right of the visible window. Jump to it. 
-		for (i = 0; i < inputCell[0].length; i++) {
-			if (column_data[i].array_of_selected_items.length > 0) { // if something has been selected in the column
+		for (i = 0; i < answer_group.length; i++) {
+			if (answer_group[i].array_of_selected_items.length > 0) { // if something has been selected in the column
 				pos = document.getElementById(i+"*header").getBoundingClientRect().left
 				if (pos > w) { // this means if pos is beyond the visible area
 					document.getElementById(i+"*header").scrollIntoView();
@@ -314,8 +422,8 @@ function autoScroll(direction) {
 		}
 	} else if (direction == "left") {
 		// Loop through columns from right to left and find the first selected column that is to the left of the visible window. Jump to it. 
-		for (i = inputCell[0].length-1; i >= 0; i--) {
-			if (column_data[i].array_of_selected_items.length > 0) { // if something has been selected in the column
+		for (i = answer_group.length-1; i >= 0; i--) {
+			if (answer_group[i].array_of_selected_items.length > 0) { // if something has been selected in the column
 				pos = document.getElementById(i+"*header").getBoundingClientRect().left
 				if (pos < 0) { // this means if pos is beyond the visible area
 					document.getElementById(i+"*header").scrollIntoView();
@@ -327,18 +435,18 @@ function autoScroll(direction) {
 }
 
 function boxClicked(element_id) {
-	// when a checkbox is clicked, update the column_data object so it knows what's selected.
+	// when a checkbox is clicked, update the answer_group object so it knows what's selected.
 	var ij = element_id.split('*')
 	var tempColumnNum = ij[0]
-	var tempItemValue = column_data[tempColumnNum].sorted_array[ij[1]][0]
+	var tempItemValue = answer_group[tempColumnNum].sorted_array[ij[1]][0]
 
 	if (document.getElementById(element_id).checked) {
  		// if the element was just checked
-		column_data[tempColumnNum].array_of_selected_items.push(tempItemValue)
+		answer_group[tempColumnNum].array_of_selected_items.push(tempItemValue)
 	} else {
 		// if the element has just been unchecked
-		const index = column_data[tempColumnNum].array_of_selected_items.indexOf(tempItemValue);
-		column_data[tempColumnNum].array_of_selected_items.splice(index, 1);
+		const index = answer_group[tempColumnNum].array_of_selected_items.indexOf(tempItemValue);
+		answer_group[tempColumnNum].array_of_selected_items.splice(index, 1);
 	}
 	
 	// figure out how many columns have a checkbox selected, and the total number of checkboxes selected
@@ -346,8 +454,8 @@ function boxClicked(element_id) {
 	var num = 0;
 	var num_columns_selected = 0;
 	var num_boxes_selected = 0;
-	for (i = 0; i < inputCell[0].length; i++) {
-		num = column_data[i].array_of_selected_items.length
+	for (i = 0; i < answer_group.length; i++) {
+		num = answer_group[i].array_of_selected_items.length
 		if (num > 0) {
 			num_columns_selected++;
 			num_boxes_selected += num;	
@@ -362,17 +470,28 @@ function boxClicked(element_id) {
 }
 
 function buildOutputStringLenientScorer() {
-	// have the column_data objects compute their scores (the objects already know what boxes are checked)
+	// have the answer_group objects compute their scores (the objects already know what boxes are checked)
 	// and then turn that into an output string.
 	var i = 0;
 	var out = "";
 	var out_array = [];
+	var temp_index = 0;
+		
+	console.log( '-building output string-')
 	
-	for (i = 0; i < inputCell[0].length; i++) {
-		// have each column_data object compute it's binary_array, which is the 0 or 1 scoring of each response
-		// then add the resulting array to the variable out_array. 
-		if (column_data[i].array_of_selected_items.length > 0) { // if at least one thing is selected in the column, score it
-			out_array.push(column_data[i].binary_array())
+	if (document.getElementById('verified_answers').checked) {
+		for (i = 1; i < inputCell.length; i++) { // go through the rows
+			temp_index = answer_group.findIndex(x => x.column_name === inputCell[i][0].toLowerCase())
+// 			console.log( temp_index+' '+inputCell[i][0]+' '+inputCell[i][1]+' '+answer_group[temp_index].binary_item(inputCell[i][1]))
+			out_array.push(inputCell[i][0]+'\t'+inputCell[i][1]+'\t'+answer_group[temp_index].binary_item(inputCell[i][1]))
+		}
+	} else {
+		for (i = 0; i < answer_group.length; i++) {
+			// have each answer_group object compute it's binary_array, which is the 0 or 1 scoring of each response
+			// then add the resulting array to the variable out_array. 
+			if (answer_group[i].array_of_selected_items.length > 0) { // if at least one thing is selected in the column, score it
+				out_array.push(answer_group[i].binary_array())
+			}
 		}
 	}
 
@@ -380,6 +499,11 @@ function buildOutputStringLenientScorer() {
 	// Out array is an array where each element is a binary array for a column. 
 	if (out_array.length < 1) {
 		return "No Output Data Available";
+	} else if (typeof out_array[0] == 'string') {
+		// if it's a one dimensional array because use verified answers is true
+		for (j = 0; j < out_array.length; j++) {
+			out += out_array[j]+'\r\n'
+		}
 	} else {
 		for (i = 0; i < out_array[0].length; i++) {
 			for (j = 0; j < out_array.length; j++) {
@@ -387,7 +511,7 @@ function buildOutputStringLenientScorer() {
 			}
 			out += '\r\n'
 		}
-		return out;
 	}
+	return out;
 }
 </script>
