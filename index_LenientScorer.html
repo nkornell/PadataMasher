@@ -25,8 +25,7 @@
 	<div id='about' style="display: none;">
 		<div class='boxAroundTable'>
 			<p><b>About</b>
-			<p>This program assumes your datafile format is similar to Qualtrics, where each
-			column of data represents a single question. 
+			<p>Start by selecting which of the two datafile formats suits you. 
 			After you pass it your datafile, it will show you all of your column names. 
 			Common responses are shown below each one. Just click on the correct responses!
 			(Or start by clicking the Auto-Score button.) 
@@ -65,12 +64,14 @@
 <!-- 		The checkbox below works. I made it invisible because I think I will always want to ignore capitalization and it makes the visuals too busy/complicated -->
 		<p style="display: none"><input type="checkbox" id="ignore_case" checked ><label for="ignore_case">Ignore capitalization of user responses (e.g., Smith = smith)</label> </p>
 		
-		<p>How is your data file organized?
-  <input type="radio" id="in_columns" name="file_format" value="in_columns">
-  <label for="in_columns">In Columns</label>
-  
-  <input type="radio" id="verified_answers" name="file_format" value="verified_answers" checked="checked">
-  <label for="verified_answers">Verified Answers</label>
+		<div class='boxAroundTable' style="margin: 25px; line-height: 1.5"> 
+			<p>How is your data file organized?<br>
+				<input type="radio" id="in_columns" name="file_format" value="in_columns">
+				<label for="in_columns">&emsp;Like Qualtrics <div  style="color: grey">(each column has a single correct answer)</div></label>
+				<br>
+				<input type="radio" id="verified_answers" name="file_format" value="verified_answers" checked="checked">
+				<label for="verified_answers">&emsp;Two columns contain the correct answers and user responses</label>
+		</div>
   <br>  
 
 	</div>
@@ -336,7 +337,7 @@ function buildVariableSelectorTable_lenientScorer() {
 		for (i = 0; i < correct_answer.length; i++) { 
 			temp_array = [];
 			for (j = 0; j < inputCell.length; j++) {
-				if (inputCell[j][0] == correct_answer[i]) {
+				if (inputCell[j][0].toLowerCase() == correct_answer[i]) { 
 					temp_array.push(inputCell[j][1])
 				}
 			}
@@ -364,17 +365,15 @@ function buildVariableSelectorTable_lenientScorer() {
 	// Build column names and checkboxes.
 	for (i = 0; i < answer_group.length; i++) {
 		tempColName = answer_group[i].column_name;
-		if (document.getElementById('verified_answers').checked == false) {
-			out = out + "<td id='"+i+"*header' style='vertical-align: top; min-width: 10em'>"
-			out += "<b>" + tempColName + "</b><br>";
-		}
+		out = out + "<td id='"+i+"*header' style='vertical-align: top; min-width: 10em; padding-bottom: 1em'>"
+		out += "<b>" + tempColName + "</b><br>";
 		for (j = 0; j < answer_group[i].level_text.length; j++) {
 			tempValueToShow = answer_group[i].sorted_array[j][0];
 			if (tempValueToShow !== undefined && tempValueToShow !== null) {
 				if (tempValueToShow.length > 0) {
 					tempID = i+'*'+j; // col*row
 					if (document.getElementById('verified_answers').checked) {
-						tempValueToShow = tempColName+' - '+tempValueToShow;
+// 						tempValueToShow = tempColName+' - '+tempValueToShow;
 					}
 					out = out + '<input type="checkbox" name="'+i+'" id="'+tempID+'" onchange="boxClicked(this.id)" ><label for="'+tempID+'">'+tempValueToShow+'</label> <div style="display: inline-block; color: grey">n='+answer_group[i].sorted_array[j][1]+'</div><br>'
      				}
@@ -383,8 +382,9 @@ function buildVariableSelectorTable_lenientScorer() {
 			}
 			if (j >= maximum_num_checkboxes-1) {break;} // this means it never gives you more than x options
 		}
-		if (document.getElementById('verified_answers').checked == false) {
-			out = out + "</td>";
+		out = out + "</td>";
+		if (document.getElementById('verified_answers').checked) {
+			out += "</tr><tr>"
 		}
 	}
 	out = out + "</tr></table></div>";
@@ -477,7 +477,7 @@ function buildOutputStringLenientScorer() {
 	var out_array = [];
 	var temp_index = 0;
 		
-	console.log( '-building output string-')
+// 	console.log( '-building output string-')
 	
 	if (document.getElementById('verified_answers').checked) {
 		for (i = 1; i < inputCell.length; i++) { // go through the rows
