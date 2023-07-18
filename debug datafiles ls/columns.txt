@@ -75,7 +75,7 @@ Chevrolet	1	11	plane	102.099	0	read
 Chevrolet	1	12	plane	7.376	0	read
 Chevrolet	1	13	plane	17.431	0	read
 Chevrolet	1	14	plane	5.709	0	read
-Chevrolet	1	16	plane	37.523	1.03626943	test
+Chevrolet	1	16	brane	37.523	1.03626943	test
 Chevrolet	1	17	plane	45.16	1.307189542	test
 Chevrolet	1	18	plane	89.004	0.735294118	test
 Chevrolet	1	19	plane	17.255	3.846153846	test

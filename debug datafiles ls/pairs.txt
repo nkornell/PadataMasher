@@ -1,6 +1,7 @@
 Target	Response
 plane	plane
 chortle	slam
+chortle	chop
 Link	0
 starfish	starfish
  tplane	 
@@ -8,4 +9,5 @@ starfish	Starfish
 planet	catfish
 chump	chump
 enchant	enchante
+enchant	enchant
 enchant	enchant
