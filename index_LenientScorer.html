@@ -80,7 +80,17 @@ let you choose which columns to analyze
 <!-- 		The checkbox below works. I made it invisible because I think I will always want to ignore capitalization and it makes the visuals too busy/complicated -->
 		<p style="display: none"><input type="checkbox" id="ignore_case" checked ><label for="ignore_case">Ignore capitalization of user responses (e.g., Smith = smith)</label> </p>
 	</div>
+	
+<!-- 	Choose columns (when there are verified answers) -->
 
+<div id = "select_pair_of_columns" class='boxAroundTable' style="width:100%;"> 
+<p>The correct answers are in column: 
+<p>Participant responses are in column:  
+</div>
+
+
+
+<!-- 	Select variables and analyze -->
 
 <div class='bigBox' id='lsBigBox' style="display: none">
 <!-- 	Variable selector -->
@@ -277,10 +287,10 @@ function answer_group_object(input_name, column_number, input_values, input_veri
 				}
 				document.getElementById(column_number+'-'+i+'-score').innerHTML = Math.floor(temp_sim*100)
 				if (temp_sim == 1) {
-					// if the answer's perfectly correct, hide the row
+					// if the answer's perfectly correct...
 // 					document.getElementById(column_number+'-'+i).disabled = true
-// 					document.getElementById(column_number+'-'+i+'-score').style.color = 'grey';
-					document.getElementById(column_number+'-'+i+'-row').style.display = 'none'
+// 					document.getElementById(column_number+'-'+i+'-score').style.color = 'grey'; 
+					document.getElementById(column_number+'-'+i+'-row').style.display = 'none' // hide the row
 				} else if (temp_sim >= good_match_threshold) { 
 					document.getElementById(column_number+'-'+i+'-score').style.color = 'green';
 				} else if (temp_sim > .4) { 
@@ -366,10 +376,13 @@ function buildVariableSelectorTable_lenientScorer() {
 	if (document.getElementById('verified_answers').checked) {
 		computeLevels_verified_correct(0)
 		
+// 		For each correct answer...
 		for (i = 0; i < correct_answer.length; i++) { 
 			temp_array = [];
+			// loop through all rows and add the user response
 			for (j = 0; j < inputCell.length; j++) {
-				if (inputCell[j][0].toLowerCase() == correct_answer[i]) { 
+				
+				if (inputCell[j][0].toLowerCase() == correct_answer[i]) { //dfd assumes
 					temp_array.push(inputCell[j][1])
 				}
 			}
