@@ -14,9 +14,9 @@ function sortTable(n,tableName,sortType) {
 	rows = table.getElementsByTagName("TR");
 	/* Loop through all table rows (except the first, which contains table headers): */
 	for (i = 1; i < (rows.length - 1); i++) {
-	  	console.log( 'letters')
 	  // Start by saying there should be no switching:
 	  shouldSwitch = false;
+	  try {
 	  /* Get the two elements you want to compare, one from current row and one from the next: */
 	  x = rows[i].getElementsByTagName("TD")[n];
 	  y = rows[i + 1].getElementsByTagName("TD")[n];
@@ -27,12 +27,18 @@ function sortTable(n,tableName,sortType) {
 		  y = y.innerHTML.toLowerCase();
 	  } else if (sortType == 'numbers') {
 	  	// numbers
-		x = Number(x.innerHTML);
-		y = Number(y.innerHTML);
+		x = Number(x.innerText);
+		y = Number(y.innerText);
 	  } else if (sortType == 'checkboxes') {
 	  	// checkboxes
 		x = checkboxOfThisRow(i,tableName).checked; //note: this function only works with combinefiles right now
 		y = checkboxOfThisRow(i+1,tableName).checked;
+	  }
+	  } catch (err) {
+	  	console.log( err)
+	  	console.log( x)
+	  	console.log( rows[i])
+	  	console.log( y)
 	  }
 	  
 //		// This figures out whether they're both numbers. Nate added it but I don't need it anymore. Note that this isn't perfect; number will convert the following to numbers: true, false, " ", "", and probably others. 

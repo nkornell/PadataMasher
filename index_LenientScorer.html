@@ -86,8 +86,9 @@ let you choose which columns to analyze
 <!-- 	Variable selector -->
 	<div class='bigBox' style="width:100%;"> 
 		<p style="margin-left: 10px">Select correct responses </p>
-		<div class='boxAroundTable' id='scrollable_box' style="overflow-x: scroll; height: 20rem; overflow-y: scroll; margin-bottom: 10px">
-			<div id="variable_selector_table" class='dataTable'></div>
+<!-- 		<div class='boxAroundTable' id='scrollable_box' style="height: 20rem; overflow-x: scroll; overflow-y: scroll; margin-bottom: 10px"> -->
+		<div class='boxAroundTable'>
+			<div id="variable_selector_table" class='dataTable' style="height: 20rem;  margin-bottom: 10px"></div>
 		</div>
 		
 		<p><div id='status_text' style='display: inline-block; margin-left: 10px'></div> <!--  0 columns selected -->
@@ -276,15 +277,10 @@ function answer_group_object(input_name, column_number, input_values, input_veri
 				}
 				document.getElementById(column_number+'-'+i+'-score').innerHTML = Math.floor(temp_sim*100)
 				if (temp_sim == 1) {
-					// if the answer's perfectly correct, hide and disable the checkbox 
-					document.getElementById(column_number+'-'+i).disabled = true
-					document.getElementById(column_number+'-'+i+'-label').style.color = 'grey';
-					document.getElementById(column_number+'-'+i+'-score').style.color = 'grey';
-// 					document.getElementById(column_number+'-'+i).style.display = "none" // hide the checkbox
-// 					document.getElementById(column_number+'-'+i+'-label').style.display = 'none'
-// 					document.getElementById(column_number+'-'+i+'-score').style.display = 'none'
-// 					document.getElementById(column_number+'-'+i+'-n').style.display = 'none'
-// 					document.getElementById(column_number+'-'+i+'-row').style.display = 'none'
+					// if the answer's perfectly correct, hide the row
+// 					document.getElementById(column_number+'-'+i).disabled = true
+// 					document.getElementById(column_number+'-'+i+'-score').style.color = 'grey';
+					document.getElementById(column_number+'-'+i+'-row').style.display = 'none'
 				} else if (temp_sim >= good_match_threshold) { 
 					document.getElementById(column_number+'-'+i+'-score').style.color = 'green';
 				} else if (temp_sim > .4) { 
@@ -305,7 +301,7 @@ function showLSstuff() {
 	x = document.getElementById("formatSelectorBox");
 	x.style.display = "none";
 
-	if (document.getElementById("lsBigBox").scrollWidth >= document.getElementById("scrollable_box").scrollWidth) {
+	if (document.getElementById("lsBigBox").scrollWidth >= document.getElementById("variable_selector_table").scrollWidth) {
 		// if the window with the checkboxes doesn't go beyond the margin, don't show the number of columns selected or jump arrows
 		document.getElementById("jump_arrows").style.display = "none";
 		document.getElementById("status_text").style.display = "none";		
@@ -398,6 +394,8 @@ function buildVariableSelectorTable_lenientScorer() {
 	var tempValueToShow = '';
 	
 	var out = "<table>";
+	
+	// build column names (if using verfieid answers)
 	if (document.getElementById('verified_answers').checked) {
 		out+= '<tr id="table_column_names">'
 // 		articleTableText += "<th onclick='sortTable(0, "+'"articleTable","letters"'+")' title='Click to Sort'>Input text</th>";
@@ -407,27 +405,22 @@ function buildVariableSelectorTable_lenientScorer() {
 		out += "<th onclick='sortTable(3, "+'"variable_selector_table","numbers"'+")' title='Click to Sort'>Number of observations</th>"
 		out += "</tr>"
 	}
+		if (document.getElementById('verified_answers').checked == false) {
+			out += "<tr>"
+		}	
 	// Build column names and checkboxes.
 	for (i = 0; i < answer_group.length; i++) {
 		tempColName = answer_group[i].column_name; // with verified answers this is the correct response 
-		if (document.getElementById('verified_answers').checked) {
-			out += "<tr id="+i+"-row>"
-			console.log( ',tr.'+tempColName)
-		}
-// 		out += "<td id='"+i+"-header' style='vertical-align: top; min-width: 10em; padding-bottom: 1em'>" // note I called this 'header' but that's a misnomer, it's actually the whole td, which includes all the answers too
+
 		if (document.getElementById('verified_answers').checked == false) {
+			out += "<td id='"+i+"-header' style='vertical-align: top; min-width: 10em; padding-bottom: 1em'>" // note I called this 'header' but that's a misnomer, it's actually the whole td, which includes all the answers too
 			out += "<b>" + tempColName + "</b><br>";
-		}
-		if (document.getElementById('verified_answers').checked) {
-// 			out += '</td></tr>'
 		}
 		for (j = 0; j < answer_group[i].level_text.length; j++) {
 			tempValueToShow = answer_group[i].sorted_array[j][0];
 			if (tempValueToShow !== undefined && tempValueToShow !== null) {
 				if (tempValueToShow.length > 0) {
 					tempID = i+'-'+j; // col-row
-					console.log( tempID+' '+answer_group[i].level_text.length)
-
 					if (document.getElementById('verified_answers').checked) {
 						out += '<tr id='+tempID+'-row><td>'
 					}
@@ -453,11 +446,11 @@ function buildVariableSelectorTable_lenientScorer() {
 			} else {
 				console.log( 'null: tempid = '+tempID+' tempcolnam='+tempColName+' tempValueToShow='+tempValueToShow)
 			}
+
 			if (j >= maximum_num_checkboxes-1) {break;} // this means it never gives you more than x options
 		}
-// 		out = out + "</td>";
-		if (document.getElementById('verified_answers').checked) {
-// 			out += "</tr><tr>"
+		if (document.getElementById('verified_answers').checked == false) {
+			out += "</td>"
 		}
 	}
 	out = out + "</tr></table>";
@@ -484,7 +477,7 @@ function autoScore() {
 function autoScroll(direction) {
 	var i = 0;
 	var pos = '';
-	var w = document.getElementById("scrollable_box").offsetWidth 	
+	var w = document.getElementById("variable_selector_table").offsetWidth 	
 	
 	if (direction == "right") {
 		// Loop through columns from left to right and find the first selected column that is to the right of the visible window. Jump to it. 
@@ -492,7 +485,7 @@ function autoScroll(direction) {
 			if (answer_group[i].array_of_selected_items.length > 0) { // if something has been selected in the column
 				pos = document.getElementById(i+"-header").getBoundingClientRect().left
 				if (pos > w) { // this means if pos is beyond the visible area
-					document.getElementById(i+"-header").scrollIntoView();
+					document.getElementById(i+"-header").scrollIntoView({block: "nearest"}); // block nearest makes it only scroll horizontally
 					break;
 				}
 			}
@@ -503,7 +496,7 @@ function autoScroll(direction) {
 			if (answer_group[i].array_of_selected_items.length > 0) { // if something has been selected in the column
 				pos = document.getElementById(i+"-header").getBoundingClientRect().left
 				if (pos < 0) { // this means if pos is beyond the visible area
-					document.getElementById(i+"-header").scrollIntoView();
+					document.getElementById(i+"-header").scrollIntoView({block: "nearest"});
 					break;			
 				}
 			}
