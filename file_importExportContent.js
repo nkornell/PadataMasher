@@ -58,7 +58,7 @@ function afterAllFilesAreProcessed() {
 		computeResults();
 		buildVariableSelectorTable();
 	} else if (analysisType == "lenientscorer" ) {
-		buildVariableSelectorTable_lenientScorer();
+		start_lenientScorer();
 	} else if (analysisType == "combine" ) {
 		// if it's combine files
 		analyzeCFexpectedvalues();

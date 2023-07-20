@@ -45,7 +45,7 @@
 
 <!-- 
 dfd
-let you choose which columns to analyze
+maybe make a column preview thingy?
  -->
 
 	<!-- ~~- processing files ~~- -->
@@ -53,7 +53,7 @@ let you choose which columns to analyze
 		<div class="dragDropBox" id="processing" style='text-align: left; vertical-align: bottom; padding: 5px'></div>
 	</div>
 
-	<!-- ~~- choosing a file ~~- -->
+<!-- 		choose a file format -->
 	<div id="formatSelectorBox" class='boxAroundTable' style="margin: 25px; line-height: 2"> 
 		How is your data file organized?
 		<br>&emsp;
@@ -64,6 +64,7 @@ let you choose which columns to analyze
 		<label for="verified_answers">Compare two columns <div style="display: inline-block; color: grey"> (one with correct answers and the other with user responses)</div></label>
 	</div>
 
+<!-- 	~~- choosing a file ~~- -->
 	<div id="fileSelectorBox" style="display: none">
 		<center>
 		<div class="roundedBox dragDropBox" id="drop_zone">
@@ -82,10 +83,7 @@ let you choose which columns to analyze
 	</div>
 	
 <!-- 	Choose columns (when there are verified answers) -->
-
-<div id = "select_pair_of_columns" class='boxAroundTable' style="width:100%;"> 
-<p>The correct answers are in column: 
-<p>Participant responses are in column:  
+<div id = "select_pair_of_columns" class='boxAroundTable' style="width:100%; display: none"> 
 </div>
 
 
@@ -144,13 +142,37 @@ var answer_group = []
 var maximum_num_checkboxes = 9;
 var good_match_threshold = .80 // score when comparing two strings
 var correct_answer = [];
+var correct_answer_column = 0
+var user_response_column = 1
 
 
-if (localStorage.getItem("leneint_scorer_file_format") != null) {
+if (localStorage.getItem("lenient_scorer_file_format") != null) {
 	// if the user's preference for which file format is locally stored in the browser, click on that radio button
 	document.getElementById(localStorage.getItem("lenient_scorer_file_format")).click()
 }
 
+function start_lenientScorer() {
+	// turn empty cells into blanks
+	var i = 0
+	var j = 0
+	console.log( 'starting')
+	for (i = 0; i < inputCell[0].length; i++) { 
+		for (j = 1; j < inputCell.length; j++) {
+			if (inputCell[j][i] == undefined || inputCell[j][i] == null) {
+				inputCell[j][i] = '';
+			}
+		}
+	}
+
+	hideFileSelectorStuff();
+	hideFileFormatSelector();
+
+	if (document.getElementById('verified_answers').checked) {
+		buildColumnPairSelector()
+	} else {
+		buildVariableSelectorTable_lenientScorer()
+	}
+}
 
 function show_or_hide_about() {
 	if (document.getElementById("about").style.display === "none") {
@@ -160,6 +182,17 @@ function show_or_hide_about() {
 	} else {
 		document.getElementById("about").style.display = "none";
 		document.getElementById("about_link").innerHTML = "About ▾"
+	}
+}
+
+function show_or_hide_preview() {
+	if (document.getElementById("column_preview_table").style.display === "none") {
+		document.getElementById("column_preview_table").style.display = "block";
+		document.getElementById("column_preview_table_link").innerHTML = "Preview Data ▴"
+
+	} else {
+		document.getElementById("column_preview_table").style.display = "none";
+		document.getElementById("column_preview_table_link").innerHTML = "Preview Data ▾"
 	}
 }
 
@@ -290,7 +323,7 @@ function answer_group_object(input_name, column_number, input_values, input_veri
 					// if the answer's perfectly correct...
 // 					document.getElementById(column_number+'-'+i).disabled = true
 // 					document.getElementById(column_number+'-'+i+'-score').style.color = 'grey'; 
-					document.getElementById(column_number+'-'+i+'-row').style.display = 'none' // hide the row
+// 					document.getElementById(column_number+'-'+i+'-row').style.display = 'none' // hide the row
 				} else if (temp_sim >= good_match_threshold) { 
 					document.getElementById(column_number+'-'+i+'-score').style.color = 'green';
 				} else if (temp_sim > .4) { 
@@ -305,11 +338,14 @@ function answer_group_object(input_name, column_number, input_values, input_veri
 	}
 }
 
-function showLSstuff() {
-	var x = document.getElementById("lsBigBox");
-	x.style.display = "flex";
+function hideFileFormatSelector() {
 	x = document.getElementById("formatSelectorBox");
 	x.style.display = "none";
+}
+
+function show_variable_selector_table() {
+	var x = document.getElementById("lsBigBox");
+	x.style.display = "flex";
 
 	if (document.getElementById("lsBigBox").scrollWidth >= document.getElementById("variable_selector_table").scrollWidth) {
 		// if the window with the checkboxes doesn't go beyond the margin, don't show the number of columns selected or jump arrows
@@ -335,7 +371,7 @@ function computeLevels_verified_correct(columnNum) {
 			correct_answer.push(tempCorrect);
 		}
 	}
-
+	
 	correct_answer.sort();
 }
 
@@ -358,55 +394,105 @@ function computeLevels(input_array) {
 	return data_values
 }
 
+function buildColumnPairSelector() {
+	var out = ''
+	var temp = ''
+	var i = 0;
+	var j = 0;
+
+	out += '<p>The correct answers are in column: '
+	out += '<select name="cor_col" id="cor_col">'
+	for (i = 0; i < inputCell[0].length; i++) { 
+		temp = inputCell[0][i]
+		out += '<option value="'+i+'">'+temp+'</option>'
+	}
+	out += '</select>'
+
+	out += '<p>Participant responses are in column:  '
+	out += '<select name="resp_col" id="resp_col">'
+	for (i = 0; i < inputCell[0].length; i++) { 
+		temp = inputCell[0][i]
+		out += '<option value="'+i+'">'+temp+'</option>'
+	}
+	out += '</select>'
+	
+	// preview of the data dfd
+	out += '<div id = "column_preview_table_link" style="display: inline-block; cursor: pointer"" onclick="show_or_hide_preview()">Preview Data ▾</div>'
+				
+	out += '<div id="column_preview_table" class="dataTable" style = "display: none">'
+	out += '<table>'
+	out += '<tr><td colspan="'+inputCell[0].length+'">Data Preview</td></tr>'
+	out += '<tr>'
+
+	
+	for (i = 0; i < inputCell[0].length; i++) { 
+		out += "<td style='min-width: 10em'>"
+		out += '<b>'+inputCell[0][i]+'</b><br>'
+		for (j = 1; j < Math.min(inputCell.length, 5); j++) { 
+			out += inputCell[j][i]+'<br>'
+		}
+		out += "...</td>"
+	}
+	out += '</tr></table>'
+	out += '</div>'
+
+	
+	out += '<p><button onclick="buildVariableSelectorTable_lenientScorer()">Start</button>'
+
+	document.getElementById("select_pair_of_columns").innerHTML = out;
+	document.getElementById("select_pair_of_columns").style.display = "block"
+	console.log( 'column pair')
+}
+
 function buildVariableSelectorTable_lenientScorer() {
 	// this is called by file_importExportContent.js
 	var i = 0;
-	var temp_array = [];
+	var temp_response_array = [];
+	var out = ''
 	
-	
-	// turn empty cells into blanks
-	for (i = 0; i < inputCell[0].length; i++) { 
-		for (j = 1; j < inputCell.length; j++) {
-			if (inputCell[j][i] == undefined || inputCell[j][i] == null) {
-				inputCell[j][i] = '';
-			}
-		}
+	if (document.getElementById("select_pair_of_columns").style.display == 'block') {
+		document.getElementById("select_pair_of_columns").style.display = "none"
+		correct_answer_column = document.getElementById("cor_col").value
+ 		user_response_column = document.getElementById("resp_col").value
+		console.log( document.getElementById("cor_col").value +' and '+document.getElementById("resp_col").value);
+		// dfd make it so the button is only enabled if the values are different? or maybe let them be dumb...
 	}
 
+
+	console.log( 'yo')
 	if (document.getElementById('verified_answers').checked) {
-		computeLevels_verified_correct(0)
+		computeLevels_verified_correct(correct_answer_column)
 		
 // 		For each correct answer...
 		for (i = 0; i < correct_answer.length; i++) { 
-			temp_array = [];
-			// loop through all rows and add the user response
+			temp_response_array = [];
+			// loop through all rows and add the user responses for that answer to a temp array
 			for (j = 0; j < inputCell.length; j++) {
 				
-				if (inputCell[j][0].toLowerCase() == correct_answer[i]) { //dfd assumes
-					temp_array.push(inputCell[j][1])
+				if (inputCell[j][correct_answer_column].toLowerCase() == correct_answer[i]) {
+					temp_response_array.push(inputCell[j][user_response_column])
 				}
 			}
 
-			answer_group[i] = new answer_group_object(correct_answer[i], i, computeLevels(temp_array), correct_answer[i])
-			answer_group[i].compute_levels()
+			answer_group[i] = new answer_group_object(correct_answer[i], i, computeLevels(temp_response_array), correct_answer[i])
+			answer_group[i].compute_levels() // is compute levels ignoring blank answers? 
 		}
 	} else {	
 		for (i = 0; i < inputCell[0].length; i++) { 
-			temp_array = [];
+			temp_response_array = [];
 			for (j = 1; j < inputCell.length; j++) {
-				temp_array.push(inputCell[j][i])
+				temp_response_array.push(inputCell[j][i])
 			}
 
-			answer_group[i] = new answer_group_object(inputCell[0][i], i, computeLevels(temp_array))
+			answer_group[i] = new answer_group_object(inputCell[0][i], i, computeLevels(temp_response_array))
 			answer_group[i].compute_levels()
 		}
 	}
 	
-	// Build Header
 	var tempColName = '';
 	var tempValueToShow = '';
 	
-	var out = "<table>";
+	out = "<table>";
 	
 	// build column names (if using verfieid answers)
 	if (document.getElementById('verified_answers').checked) {
@@ -471,8 +557,7 @@ function buildVariableSelectorTable_lenientScorer() {
 	// Show the table
 	document.getElementById("variable_selector_table").innerHTML = out;
 	
-	hideFileSelectorStuff();
-	showLSstuff();
+	show_variable_selector_table();
 }
 
 function autoScore() {
@@ -480,10 +565,6 @@ function autoScore() {
 
 	for (i = 0; i < answer_group.length; i++) {
 		answer_group[i].guess_what_is_correct()
-
-		if (document.getElementById('verified_answers').checked) {
-// 			document.getElementById(i+'-row').style.display = 'none'
-		}
 	}
 }
 
@@ -567,9 +648,8 @@ function buildOutputStringLenientScorer() {
 			
 	if (document.getElementById('verified_answers').checked) {
 		for (i = 1; i < inputCell.length; i++) { // go through the rows
-			temp_index = answer_group.findIndex(x => x.column_name === inputCell[i][0].toLowerCase())
-// 			console.log( temp_index+' '+inputCell[i][0]+' '+inputCell[i][1]+' '+answer_group[temp_index].binary_item(inputCell[i][1]))
-			out_array.push(inputCell[i][0]+'\t'+inputCell[i][1]+'\t'+answer_group[temp_index].binary_item(inputCell[i][1]))
+			temp_index = answer_group.findIndex(x => x.column_name === inputCell[i][correct_answer_column].toLowerCase()) // find the object for this row's correct answer
+			out_array.push(inputCell[i][correct_answer_column]+'\t'+inputCell[i][user_response_column]+'\t'+answer_group[temp_index].binary_item(inputCell[i][user_response_column]))
 		}
 	} else {
 		for (i = 0; i < answer_group.length; i++) {
