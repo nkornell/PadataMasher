@@ -83,8 +83,11 @@ maybe make a column preview thingy?
 	</div>
 	
 <!-- 	Choose columns (when there are verified answers) -->
-<div id = "select_pair_of_columns" class='boxAroundTable' style="width:100%; display: none"> 
+<div id = "select_pair_of_columns" class='boxAroundTable' style="display: none"> 
 </div>
+<div id = "column_preview_table_box" class='boxAroundTable' style="display: none"> 
+</div>
+
 
 
 
@@ -155,7 +158,7 @@ function start_lenientScorer() {
 	// turn empty cells into blanks
 	var i = 0
 	var j = 0
-	console.log( 'starting')
+
 	for (i = 0; i < inputCell[0].length; i++) { 
 		for (j = 1; j < inputCell.length; j++) {
 			if (inputCell[j][i] == undefined || inputCell[j][i] == null) {
@@ -400,31 +403,40 @@ function buildColumnPairSelector() {
 	var i = 0;
 	var j = 0;
 
+	out += '<table>'
+	out += '<tr><td style="width: 50%; padding: 1em">'
 	out += '<p>The correct answers are in column: '
-	out += '<select name="cor_col" id="cor_col">'
+	out += '<p><select name="cor_col" id="cor_col">'
 	for (i = 0; i < inputCell[0].length; i++) { 
 		temp = inputCell[0][i]
 		out += '<option value="'+i+'">'+temp+'</option>'
 	}
 	out += '</select>'
-
+	out += '</td><td style="width: 50%; padding: 1em">'
 	out += '<p>Participant responses are in column:  '
-	out += '<select name="resp_col" id="resp_col">'
+	out += '<p><select name="resp_col" id="resp_col">'
 	for (i = 0; i < inputCell[0].length; i++) { 
 		temp = inputCell[0][i]
 		out += '<option value="'+i+'">'+temp+'</option>'
 	}
 	out += '</select>'
+	out += '</td></tr>'
+	out += '<tr><td colspan="2" style="padding: 1em">'
 	
-	// preview of the data dfd
+	out += '<p><button onclick="buildVariableSelectorTable_lenientScorer()">Start</button>'
+	out += '</td></tr></table>'
+
+	document.getElementById("select_pair_of_columns").innerHTML = out;
+	document.getElementById("select_pair_of_columns").style.display = "block"
+
+	// preview of the data 
+	out = ''
 	out += '<div id = "column_preview_table_link" style="display: inline-block; cursor: pointer"" onclick="show_or_hide_preview()">Preview Data ▾</div>'
-				
 	out += '<div id="column_preview_table" class="dataTable" style = "display: none">'
 	out += '<table>'
 	out += '<tr><td colspan="'+inputCell[0].length+'">Data Preview</td></tr>'
 	out += '<tr>'
 
-	
 	for (i = 0; i < inputCell[0].length; i++) { 
 		out += "<td style='min-width: 10em'>"
 		out += '<b>'+inputCell[0][i]+'</b><br>'
@@ -435,13 +447,11 @@ function buildColumnPairSelector() {
 	}
 	out += '</tr></table>'
 	out += '</div>'
+	out += '</div>'	
 
-	
-	out += '<p><button onclick="buildVariableSelectorTable_lenientScorer()">Start</button>'
+	document.getElementById("column_preview_table_box").innerHTML = out;
+	document.getElementById("column_preview_table_box").style.display = "block"
 
-	document.getElementById("select_pair_of_columns").innerHTML = out;
-	document.getElementById("select_pair_of_columns").style.display = "block"
-	console.log( 'column pair')
 }
 
 function buildVariableSelectorTable_lenientScorer() {
@@ -452,14 +462,13 @@ function buildVariableSelectorTable_lenientScorer() {
 	
 	if (document.getElementById("select_pair_of_columns").style.display == 'block') {
 		document.getElementById("select_pair_of_columns").style.display = "none"
+		document.getElementById("column_preview_table_box").style.display = "none"
 		correct_answer_column = document.getElementById("cor_col").value
  		user_response_column = document.getElementById("resp_col").value
-		console.log( document.getElementById("cor_col").value +' and '+document.getElementById("resp_col").value);
-		// dfd make it so the button is only enabled if the values are different? or maybe let them be dumb...
+		//  make it so the button is only enabled if the values are different? or maybe let them be dumb...
 	}
 
 
-	console.log( 'yo')
 	if (document.getElementById('verified_answers').checked) {
 		computeLevels_verified_correct(correct_answer_column)
 		
