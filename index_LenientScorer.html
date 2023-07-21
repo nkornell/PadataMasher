@@ -20,33 +20,29 @@
 			<li style="float:right"><div class="navMenuItem" id = 'about_link' style="display: inline-block; cursor: pointer"" onclick="show_or_hide_about()">About ▾</div></li>
 		</ul>
 	</nav>
-
+	
+	<div align=center>
+	<h1>Lenient Scorer</h1>
+	<p>The easy way to add response accuracy columns to your datafile.</p>
+	</div>
 	<!-- about -->
-	<div id='about' style="display: none;">
-		<div class='boxAroundTable'>
-			<p><b>Steps</b>
-			<ol>
-			<li>Indicate how your datafile is organized. 
-			<li>Drag and drop your datafile onto the program. Your users' responses will appear. 
-			<li>Click on the correct responses. Those responses will get a score of 1 in the datafile. 
-			<li>When you are done, press Export Results to Desktop. 
-			</ol>
-			
-			<b>Autoscore</b><br>
-			Autoscore will select correct answers for you, including misspelled answers. 
-			It isn't always perfect, so double check it.
-			<i>(Autoscore ignores columns where accuracy is perfect, or very low, and any column name that starts with the word "Timing."</i>
-			</p>
-			<p><b>Privacy</b><br>
-			This program keeps your data private. Nothing is ever uploaded. 
-			</p>
-		</div>
+	<div id='about' class='boxAroundTable' style="display: none; margin: 25px;">
+		<p><b>Steps</b>
+		<ol>
+		<li>Indicate how your datafile is organized. 
+		<li>Drag and drop your datafile onto the program. 
+		<li>Click on correct responses. 
+		<li>When you are done, press Export Results to Desktop. 
+		</ol>
+		
+		<p><b>Autoscore</b><br>
+		Autoscore will select correct answers for you, including misspelled answers. 
+		It isn't always perfect, so double check it.</p>
+		<p><b>Privacy</b><br>
+		This program keeps your data private. Your data are never uploaded to anywhere. 
+		</p>
 	</div>
 
-<!-- 
-dfd
-maybe make a column preview thingy?
- -->
 
 	<!-- ~~- processing files ~~- -->
 	<div id="processingBox">
@@ -61,51 +57,46 @@ maybe make a column preview thingy?
 		<label for="in_columns">Like Qualtrics <div style="display: inline-block; color: grey">(each column of user responses has a single correct answer)</div></label>
 		<br>&emsp;
 		<input type="radio" id="verified_answers" name="file_format" value="verified_answers" onchange='formatButtonClicked(this.id)'> <!-- checked="checked" -->
-		<label for="verified_answers">Compare two columns <div style="display: inline-block; color: grey"> (one with correct answers and the other with user responses)</div></label>
+		<label for="verified_answers">Compare two columns <div style="display: inline-block; color: grey"> (there is a column of correct answers and a column of user responses)</div></label>
 	</div>
 
-<!-- 	~~- choosing a file ~~- -->
+<!-- 	~~- choose a file ~~- -->
 	<div id="fileSelectorBox" style="display: none">
 		<center>
 		<div class="roundedBox dragDropBox" id="drop_zone">
 			<img src="images/pm.png" style="position: relative; width: 300px; opacity: 0.2; ">
 			<div class="middleCenter">
 				<h1>Lenient Scorer</h1>
-				<h2>drag a text file here</h2>
+				<h2>drag a text datafile here</h2>
 			</div>
 		</div>
 		
 		Or if you prefer <input type="file" id="files" name="files[]" single />
 		</center>
 
-<!-- 		The checkbox below works. I made it invisible because I think I will always want to ignore capitalization and it makes the visuals too busy/complicated -->
-		<p style="display: none"><input type="checkbox" id="ignore_case" checked ><label for="ignore_case">Ignore capitalization of user responses (e.g., Smith = smith)</label> </p>
+		<p style="display: none"><input type="checkbox" id="ignore_case" checked ><label for="ignore_case">Ignore capitalization of user responses (e.g., Smith = smith)</label> </p> <!-- This checkbox below works. I made it invisible because I think I will always want to ignore capitalization and it makes the visuals too busy/complicated -->
 	</div>
 	
 <!-- 	Choose columns (when there are verified answers) -->
-<div id = "select_pair_of_columns" class='boxAroundTable' style="display: none"> 
-</div>
-<div id = "column_preview_table_box" class='boxAroundTable' style="display: none"> 
-</div>
-
-
-
+	<div id = "select_pair_of_columns" class='boxAroundTable' style="display: none"> 
+	</div>
+	<div id = "column_preview_table_box" class='boxAroundTable' style="display: none"> 
+	</div>
 
 <!-- 	Select variables and analyze -->
 
 <div class='bigBox' id='lsBigBox' style="display: none">
 <!-- 	Variable selector -->
 	<div class='bigBox' style="width:100%;"> 
-		<p style="margin-left: 10px">Select correct responses </p>
 <!-- 		<div class='boxAroundTable' id='scrollable_box' style="height: 20rem; overflow-x: scroll; overflow-y: scroll; margin-bottom: 10px"> -->
 		<div class='boxAroundTable'>
+			<p style="margin-left: 10px">Select correct responses </p>
 			<div id="variable_selector_table" class='dataTable' style="height: 20rem;  margin-bottom: 10px"></div>
-		</div>
 		
-		<p><div id='status_text' style='display: inline-block; margin-left: 10px'></div> <!--  0 columns selected -->
-		<div id='jump_arrows' style="display: inline-block; float: right; text-align:right; margin-right: 10px"> jump to next selected column <button onclick="autoScroll('left')">←</button><button onclick="autoScroll('right')">→</button></div></p>
+			<div id='status_text' style='display: inline-block; margin-left: 10px'></div> <!--  0 columns selected -->
+			<div id='jump_arrows' style="display: inline-block; float: right; text-align:right; margin-right: 10px"> jump to next selected column <button onclick="autoScroll('left')">←</button><button onclick="autoScroll('right')">→</button></div></p>
+		</div>
 
-		<br>
 		<div class='boxAroundTable' id="auto_score_box">
 			<p><button onclick="autoScore()">Auto-Score</button>
 			<input type="checkbox" id="lenient_checkbox" checked><label for="lenient_checkbox">Count misspelled answers as correct</label> 
@@ -423,11 +414,13 @@ function buildColumnPairSelector() {
 	out += '</td></tr>'
 	out += '<tr><td colspan="2" style="padding: 1em">'
 	
-	out += '<p><button onclick="buildVariableSelectorTable_lenientScorer()">Start</button>'
+	out += '<button onclick="buildVariableSelectorTable_lenientScorer()">Start</button>'
 	out += '</td></tr></table>'
 
 	document.getElementById("select_pair_of_columns").innerHTML = out;
 	document.getElementById("select_pair_of_columns").style.display = "block"
+	
+	document.getElementById("resp_col").value = 1
 
 	// preview of the data 
 	out = ''
@@ -460,6 +453,7 @@ function buildVariableSelectorTable_lenientScorer() {
 	var temp_response_array = [];
 	var out = ''
 	
+	// hide variable selector columns
 	if (document.getElementById("select_pair_of_columns").style.display == 'block') {
 		document.getElementById("select_pair_of_columns").style.display = "none"
 		document.getElementById("column_preview_table_box").style.display = "none"
@@ -508,7 +502,7 @@ function buildVariableSelectorTable_lenientScorer() {
 		out+= '<tr id="table_column_names">'
 // 		articleTableText += "<th onclick='sortTable(0, "+'"articleTable","letters"'+")' title='Click to Sort'>Input text</th>";
 		out += "<th onclick='sortTable(0, "+'"variable_selector_table","checkboxes"'+")' title='Click to Sort'>Status</th>";
-		out += "<th onclick='sortTable(1, "+'"variable_selector_table","letters"'+")' title='Click to Sort'>Pair</th>";
+		out += "<th onclick='sortTable(1, "+'"variable_selector_table","letters"'+")' title='Click to Sort'>Correct - Response</th>";
 		out += "<th onclick='sortTable(2, "+'"variable_selector_table","numbers"'+")' title='Click to Sort'>Match quality</th>";
 		out += "<th onclick='sortTable(3, "+'"variable_selector_table","numbers"'+")' title='Click to Sort'>Number of observations</th>"
 		out += "</tr>"

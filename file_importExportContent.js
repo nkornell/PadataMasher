@@ -84,8 +84,8 @@ document.getElementById('exportButton').onclick = function(event){
 	} else if (analysisType == 'compute') {
 		writeToFile(buildOutputStringPTP(), 'StatBuddy_Output.txt');
 	} else if (analysisType == 'lenientscorer') {
-// 		writeToFile(buildOutputStringLenientScorer(), 'Lenient_Output.txt'); //dfd
-		console.log(buildOutputStringLenientScorer());
+		writeToFile(buildOutputStringLenientScorer(), 'Lenient_Output.txt'); 
+// 		console.log(buildOutputStringLenientScorer());
 
 	} else {
 		writeToFile(buildOutputStringFO(), "Citation Overlap "+uniqueId_of_oldest+".txt");
