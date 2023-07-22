@@ -21,10 +21,6 @@
 		</ul>
 	</nav>
 	
-	<div align=center>
-	<h1>Score My Data</h1>
-	<p>Convert participant response data into accuracy scores. It's easy, private, and free. </p>
-	</div>
 	<!-- about -->
 	<div id='about' class='boxAroundTable' style="display: none; margin: 25px;">
 		<p><b>Steps</b>
@@ -43,6 +39,11 @@
 		</p>
 	</div>
 
+	<!-- 	title -->
+	<div align=center style="color: navy">
+		<h1>Score My Data</h1>
+		<p>Convert participant response data into accuracy scores. It's easy, private, and free. </p>
+	</div>
 
 	<!-- ~~- processing files ~~- -->
 	<div id="processingBox">
@@ -424,7 +425,7 @@ function buildColumnPairSelector() {
 
 	// preview of the data 
 	out = ''
-	out += '<div id = "column_preview_table_link" style="display: inline-block; cursor: pointer"" onclick="show_or_hide_preview()">Preview Data ▾</div>'
+	out += '<div id = "column_preview_table_link" style="display: inline-block; cursor: pointer" onclick="show_or_hide_preview()">Preview Data ▾</div>'
 	out += '<div id="column_preview_table" class="dataTable" style = "display: none">'
 	out += '<table>'
 	out += '<tr><td colspan="'+inputCell[0].length+'">Data Preview</td></tr>'
@@ -503,8 +504,8 @@ function buildVariableSelectorTable_lenientScorer() {
 // 		articleTableText += "<th onclick='sortTable(0, "+'"articleTable","letters"'+")' title='Click to Sort'>Input text</th>";
 		out += "<th onclick='sortTable(0, "+'"variable_selector_table","checkboxes"'+")' title='Click to Sort'>Status</th>";
 		out += "<th onclick='sortTable(1, "+'"variable_selector_table","letters"'+")' title='Click to Sort'>Correct - Response</th>";
-		out += "<th onclick='sortTable(2, "+'"variable_selector_table","numbers"'+")' title='Click to Sort'>Match quality</th>";
-		out += "<th onclick='sortTable(3, "+'"variable_selector_table","numbers"'+")' title='Click to Sort'>Number of observations</th>"
+		out += "<th onclick='sortTable(2, "+'"variable_selector_table","numbers","desc"'+")' title='Click to Sort'>Match quality</th>";
+		out += "<th onclick='sortTable(3, "+'"variable_selector_table","numbers","desc"'+")' title='Click to Sort'>Number of observations</th>"
 		out += "</tr>"
 	}
 		if (document.getElementById('verified_answers').checked == false) {

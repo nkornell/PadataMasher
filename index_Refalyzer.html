@@ -167,7 +167,7 @@ Basic procedure:
 <html lang="en">
 
 <head>
-	<title>Citation Fixer</title>
+	<title>Fix My References</title>
 	<meta charset="utf-8" />
 	<meta name="description" content="format citations">
 	<meta name="keywords" content="program">
@@ -1964,10 +1964,10 @@ Basic procedure:
         var authorTableText = "";
         // create the html table 
         authorTableText = "<table><tr>";
-        authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes"'+")' title='Click to Sort'>Highlight <br>co-authors</th>";
+        authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes","desc"'+")' title='Click to Sort'>Highlight <br>co-authors</th>";
         authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Author</th>";
-        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers"'+")' title='Click to Sort'>Citations</th>";
-        authorTableText += "<th onclick='sortTable(3, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
+        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Citations</th>";
+//         authorTableText += "<th onclick='sortTable(3, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
         authorTableText += "</tr>";
 
         for (var key in author_obj) {
@@ -1975,8 +1975,8 @@ Basic procedure:
             authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
             authorTableText += "<td><div id='name_" + author_obj[key].name + "'>" + author_obj[key].name + "</td>";
             authorTableText += "<td>" + author_obj[key].citation_count + "</td>";
-            authorTableText +=  "<td>" + author_obj[key].all_coauthors_string();
-            authorTableText += "</td></tr>";
+//             authorTableText +=  "<td>" + author_obj[key].all_coauthors_string() + "</td>";
+            authorTableText += "</tr>";
         }
 
         authorTableText += "</table>"
@@ -2147,7 +2147,8 @@ Basic procedure:
 
 		if (current_mode == 'completely done') {
 			t = '<tr>'
-			t +=  "<th style='line-height: 2' onclick='sortTable(0, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort By Status ▾</th>";
+			// dfd this isn't sorting right. I think the problem occurs when the name of the first author changes (e.g., the text is green in the bottom table)
+			t +=  "<th style='line-height: 2' onclick='sortTable(0, "+'"simple_table","letters","desc"'+")' title='Click to Sort'>Sort By Status ▾</th>";
 			t +=  "<th style='line-height: 2' onclick='sortTable(1, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort Alphabetical ▾</th>";
 			t += '</tr>'
 		}
@@ -2220,12 +2221,23 @@ Basic procedure:
 	}
 	
 	
-	function show_or_hide_burgerBox() {
-	    var s = "none"
-	    if (document.getElementById("burgerBox").style.display == "none") {
-	    	s = "inline-block"
-	    }
-		document.getElementById("burgerBox").style.display = s
+// 	function show_or_hide_burgerBox() {
+// 	    var s = "none"
+// 	    if (document.getElementById("burgerBox").style.display == "none") {
+// 	    	s = "inline-block"
+// 	    }
+// 		document.getElementById("burgerBox").style.display = s
+// 	}
+
+	function show_or_hide_about() {
+		if (document.getElementById("about").style.display === "none") {
+			document.getElementById("about").style.display = "block";
+			document.getElementById("about_link").innerHTML = "About ▴"
+
+		} else {
+			document.getElementById("about").style.display = "none";
+			document.getElementById("about_link").innerHTML = "About ▾"
+		}
 	}
 
 	function show_or_hide_everything(input) {
@@ -2261,6 +2273,7 @@ Basic procedure:
 	function copy_to_clipboard() {
 		// This copies text to the clipboard. It stores two versions in the clipboard, plain text and html. 
 		
+		// dfd create checkboxes to include/exclude maybe rows and wrong rows
 	    var out = ''
         var i = 0;
         
@@ -2330,21 +2343,50 @@ project.org/package=metaBMA.
 
 <body onload='show_previous_user_input()'>
 
+	<nav>
+		<ul>
+			<li><div class="navMenuItem selected"><a href="index.html">Home</a></div></li>
+			<li style="float:right"><div class="navMenuItem" id = 'about_link' style="display: inline-block; cursor: pointer" onclick="show_or_hide_about()">About ▾</div></li>
+		</ul>
+	</nav>
+
+	<div id='about' class='boxAroundTable' style="display: none; margin: 25px;">
+<!-- 	<span onclick="show_or_hide_burgerBox()" style="cursor: pointer; display: inline-block">☰&nbsp</span> -->
+	<p><b>Fix Errors</b><br>
+		This program will check your references against the digital object identified (doi) database and fix any errors if finds. 
+	<p><b>Formatting</b><br>
+		It will reformat your references using proper American Psychological Association (APA) formatting.
+	<p><b>Text Parsing</b><br>
+		This program has smart algorithms to parse input. If you copy and paste a reference section from a pdf, 
+		and it's got line breaks in weird places, and line numbers, etc., this program will still work (mostly). 
+		<p><b>Privacy</b><br>
+		This program keeps your data private. Your data are never uploaded, stored, or modified. 
+		<p><b>Advanced</b> (not recommended)<br>
+			<div style="display: inline-block; cursor: pointer" onclick="localStorage.clear()" id="clear_storage_button">Clear local storage </div> 
+			<div style="display: inline-block; cursor: pointer" onclick="show_or_hide_everything()" id="show_everything_button" >Show/hide everything</div> 
+
+		</p>
+	</div>
+
+	<div align=center style="color: navy">
+		<h1>Fix My References</h1>
+		<p>Paste your references below to get properly formated APA citations with errors fixed. It's easy, private, and free. </p>
+	</div>
+	<!-- about -->
+
 
 <!-- input -->
-<div class='wideBoxWithMargin'>
-	Cool thing
-	<span onclick="show_or_hide_burgerBox()" style="cursor: pointer">
-		☰&nbsp 
-	</span>
-</div>
+<!-- <div class='wideBoxWithMargin'> -->
+<!-- </div> -->
 
 <!-- just a place to stick information and buttons etc -->
 
+<!-- 
 <div class='wideBoxWithMargin' id='burgerBox' style = "display: none">
 	<button onclick="show_or_hide_everything()" id="show_everything_button" >show/hide everything</button>
 	<button onclick="localStorage.clear()" id="clear_storage_button">clear local storage</button> 
 </div>
+ -->
 
 <div class='wideBoxWithMargin' id = 'inputTextBox'>
 	<textarea id="myText" name="inputTextArea" style='width: 100%; '>
