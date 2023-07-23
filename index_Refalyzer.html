@@ -1617,7 +1617,8 @@ Basic procedure:
         console.log('database string 1')
 		console.log( databaseString)
 		console.log( 'text_obj[userString].url_status='+text_obj[userString].url_status)
-		
+		console.groupEnd();
+
         try {		
             // return a score
             if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	// with typeof, put undefined in quotes
@@ -1640,7 +1641,6 @@ Basic procedure:
                 databaseString = remove_doi_or_url_from_string(databaseString, databaseURL);
                 console.log('database string 2')
                 console.log( databaseString)
-                console.groupEnd();
                 return compute_letter_match(databaseString,userString);
             }
 		} catch(err) {
@@ -2147,7 +2147,6 @@ Basic procedure:
 
 		if (current_mode == 'completely done') {
 			t = '<tr>'
-			// dfd this isn't sorting right. I think the problem occurs when the name of the first author changes (e.g., the text is green in the bottom table)
 			t +=  "<th style='line-height: 2' onclick='sortTable(0, "+'"simple_table","letters","desc"'+")' title='Click to Sort'>Sort By Status ▾</th>";
 			t +=  "<th style='line-height: 2' onclick='sortTable(1, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort Alphabetical ▾</th>";
 			t += '</tr>'
@@ -2174,18 +2173,18 @@ Basic procedure:
 
 				// left column
 				if (t_o.match_status == 'unknown') { // unknown
-					t += '<div style="border-right:5px solid; border-right-color: white; color: greywolf">searching...</div>'
+					t += '<div style="border-right:0px solid; border-right-color: white; color: greywolf">searching...</div>'
 				}
 				else if (t_o.match_status == 'correct') { // correct
-					t += '<div style="border-right:5px solid; border-right-color: lawngreen; font-size: 3em; color: lawngreen;">'
+					t += '<div style="border-right:0px solid; border-right-color: lawngreen; font-size: 1.5em; color: lawngreen;">'
 					t += '✔'
 					t += '</div>'
 				} else if (t_o.match_status == 'wrong') { // wrong
-					t += '<div style="border-right:5px solid; border-right-color: red; font-size: 3em; color: red;">'
+					t += '<div style="border-right:0px solid; border-right-color: red; font-size: 1.5em; color: red;">'
 					t += '✘'
 					t += '</div>'
 				} else { // maybe
-					t += '<div style="border-right:5px solid; border-right-color: orange;">'
+					t += '<div style="border-right:0px solid; border-right-color: orange;">'
 					var button_value = 'show user input'
 					if (t_o.output == t_o.user_input) {
 						button_value = 'show search result'
@@ -2254,7 +2253,7 @@ Basic procedure:
         document.getElementById("inputTextBox").style.display = d
         document.getElementById("extra_references").style.display = d
         
-                document.getElementById("refalyzerArticleListBox").style.display = "block" // dfdd this is temporary, for debugging purposes
+		document.getElementById("refalyzerArticleListBox").style.display = "block" // dfdd this is temporary, for debugging purposes
 	}
 	
 	function show_or_hide_authors() {
@@ -2349,28 +2348,33 @@ project.org/package=metaBMA.
 			<li style="float:right"><div class="navMenuItem" id = 'about_link' style="display: inline-block; cursor: pointer" onclick="show_or_hide_about()">About ▾</div></li>
 		</ul>
 	</nav>
+	
+
 
 	<div id='about' class='boxAroundTable' style="display: none; margin: 25px;">
 <!-- 	<span onclick="show_or_hide_burgerBox()" style="cursor: pointer; display: inline-block">☰&nbsp</span> -->
+<!-- 
 	<p><b>Fix Errors</b><br>
 		This program will check your references against the digital object identified (doi) database and fix any errors if finds. 
 	<p><b>Formatting</b><br>
 		It will reformat your references using proper American Psychological Association (APA) formatting.
 	<p><b>Text Parsing</b><br>
-		This program has smart algorithms to parse input. If you copy and paste a reference section from a pdf, 
-		and it's got line breaks in weird places, and line numbers, etc., this program will still work (mostly). 
+		This program has smart algorithms to parse input. It can handle unwanted formatting so you can paste in a reference section from a pdf (etc). 
+ -->
+		<p><b>How to use this program</b><br>
+		Copy a reference section (from a PDF, word processor, etc) and paste it below. This program will use the doi database to fix your references' accuracy and then output them in proper APA format.
 		<p><b>Privacy</b><br>
 		This program keeps your data private. Your data are never uploaded, stored, or modified. 
 		<p><b>Advanced</b> (not recommended)<br>
-			<div style="display: inline-block; cursor: pointer" onclick="localStorage.clear()" id="clear_storage_button">Clear local storage </div> 
-			<div style="display: inline-block; cursor: pointer" onclick="show_or_hide_everything()" id="show_everything_button" >Show/hide everything</div> 
+		<p><button style="display: inline-block; cursor: pointer" onclick="localStorage.clear()" id="clear_storage_button">Clear local storage </button> 
+		<button style="display: inline-block; cursor: pointer" onclick="show_or_hide_everything()" id="show_everything_button" >Show/hide everything</button> 
 
 		</p>
 	</div>
 
 	<div align=center style="color: navy">
 		<h1>Fix My References</h1>
-		<p>Paste your references below to get properly formated APA citations with errors fixed. It's easy, private, and free. </p>
+		<p>Paste a list of references below. You'll get APA citations in proper format with errors fixed. It's easy, private, and free. </p>
 	</div>
 	<!-- about -->
 
@@ -2402,7 +2406,7 @@ project.org/package=metaBMA.
 <!-- progress and summary -->
 <div id='progressAndSummaryBox' class='wideBoxWithMargin'>
 	<div id='progressText'>
-		Paste in the list of references you'd like to fix. 
+<!-- 		Paste in the list of references you'd like to fix.  -->
 	</div>
 	<div id="myBar" style="display: none;">
 	</div>
@@ -2411,7 +2415,7 @@ project.org/package=metaBMA.
 
 <!-- buttons -->
 <div class='wideBoxWithMargin' id='buttonBox' "> 
-	<button onclick="start()" id="fix_button" class="bigButton">fix</button> 
+	<button onclick="start()" id="fix_button" class="bigButton">fix & format</button> 
 	<button onclick="copy_to_clipboard()" id="copy_button" class="bigButton" style="display: none">copy</button>
 	<p>
 </div>

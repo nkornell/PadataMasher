@@ -29,8 +29,10 @@ function sortTable(n,tableName,sortType,direction) {
 	  /* Convert them to values that fit their type */
 	  if (sortType == 'letters') {
 	  	// strings
-		  x = x.innerHTML.toLowerCase();
-		  y = y.innerHTML.toLowerCase();
+// 		  x = x.innerHTML.toLowerCase(); //this used to use innerhtml but I changed it to innertext. I hope that's fine. 
+// 		  y = y.innerHTML.toLowerCase();
+		  x = x.innerText.toLowerCase();
+		  y = y.innerText.toLowerCase();
 	  } else if (sortType == 'numbers') {
 	  	// numbers
 		x = Number(x.innerText);
