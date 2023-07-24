@@ -332,9 +332,7 @@ Basic procedure:
 		var total_metadata_found = 0;
 		const month_array = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-// 		console.groupCollapsed(input_json.title)
-//         console.log(input_json)
-
+		console.warn("get_apa_from_json_URL was called")
 		if (input_json.author !== undefined && input_json.author !== null) {
 			input_json.author = fix_author_string(input_json.author)
 			author = author_in_apa_format(input_json.author);
@@ -346,7 +344,7 @@ Basic procedure:
 		if (input_json.date !== undefined && input_json.date !== null) {
 			var pub_date = new Date(input_json.date);
 			const how_long_ago = Math.floor((Date.now() - pub_date)/1000); // seconds since the publication date
-			if (how_long_ago < 600000) { // dfd should be 60
+			if (how_long_ago < 60) {
 				// if the publication date is less than 60 seconds ago, then it's probably not a real publication date. 
 				apa_date = " (n.d.). "
 				console.log('date difference = ' + how_long_ago + ' seconds. Using n.d.')
@@ -695,6 +693,7 @@ Basic procedure:
 
     	} catch(err) {
     	    console.error ('error in new reference obj')
+    	    console.log( 'input_userInput='+input_userInput)
     	    console.log(err);
     	}
  	} 
@@ -748,7 +747,10 @@ Basic procedure:
 
                         var woof = author_in_apa_format(input_json.author[a].given + ' ' + input_json.author[a].family)
                         if (name_apa != woof) {
-                            console.warning(arf + ' ≠ ' + woof)
+                        	console.warn('author_in_apa_format returned output that looks wrong')
+                            console.warn(name_apa + ' ≠ ' + woof)
+                            console.log( 'given = '+author_in_apa_format(input_json.author[a].given))
+                            console.log( 'family = '+input_json.author[a].family)
                         }
                     }
                 }
@@ -2353,19 +2355,11 @@ project.org/package=metaBMA.
 
 	<div id='about' class='boxAroundTable' style="display: none; margin: 25px;">
 <!-- 	<span onclick="show_or_hide_burgerBox()" style="cursor: pointer; display: inline-block">☰&nbsp</span> -->
-<!-- 
-	<p><b>Fix Errors</b><br>
-		This program will check your references against the digital object identified (doi) database and fix any errors if finds. 
-	<p><b>Formatting</b><br>
-		It will reformat your references using proper American Psychological Association (APA) formatting.
-	<p><b>Text Parsing</b><br>
-		This program has smart algorithms to parse input. It can handle unwanted formatting so you can paste in a reference section from a pdf (etc). 
- -->
-		<p><b>How to use this program</b><br>
-		Copy a reference section (from a PDF, word processor, etc) and paste it below. This program will use the doi database to fix your references' accuracy and then output them in proper APA format.
-		<p><b>Privacy</b><br>
-		This program keeps your data private. Your data are never uploaded, stored, or modified. 
-		<p><b>Advanced</b> (not recommended)<br>
+		<p><b>How to use this program</b>
+		<p>Copy a reference section from any document (including PDFs) and paste it below. This program will use the doi database to fix your references' accuracy and then output them in proper APA format.
+		<p><b>Privacy</b>
+		<p>This program keeps your data private. Your data are never uploaded, stored, or modified. 
+		<p><b>Advanced</b> (not recommended)
 		<p><button style="display: inline-block; cursor: pointer" onclick="localStorage.clear()" id="clear_storage_button">Clear local storage </button> 
 		<button style="display: inline-block; cursor: pointer" onclick="show_or_hide_everything()" id="show_everything_button" >Show/hide everything</button> 
 
@@ -2374,16 +2368,10 @@ project.org/package=metaBMA.
 
 	<div align=center style="color: navy">
 		<h1>Fix My References</h1>
-		<p>Paste a list of references below. You'll get APA citations in proper format with errors fixed. It's easy, private, and free. </p>
+		<p style="margin: 25px">Paste a list of references below. This will fix the content and return perfectly formatted APA citations. It's easy, private, and free. </p>
 	</div>
 	<!-- about -->
 
-
-<!-- input -->
-<!-- <div class='wideBoxWithMargin'> -->
-<!-- </div> -->
-
-<!-- just a place to stick information and buttons etc -->
 
 <!-- 
 <div class='wideBoxWithMargin' id='burgerBox' style = "display: none">
