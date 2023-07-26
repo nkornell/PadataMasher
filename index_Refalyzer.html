@@ -1,4 +1,8 @@
 <!-- 
+// I could have two boxes, one for good and one for bad. And for bad, I could have an option to "try again" after they edit. 
+// and then also, maybe the ability to promote something to the good section? 
+// and buttons to copy good and copy all in alphabetical order? 
+
 To do: 
 
 - When it gets a non-doi reference, maybe have it look at the first 2 or 3 that are returned, and see if they have a matching year, author, etc? 
@@ -167,7 +171,7 @@ Basic procedure:
 <html lang="en">
 
 <head>
-	<title>Citation Fixer</title>
+	<title>Fix My References</title>
 	<meta charset="utf-8" />
 	<meta name="description" content="format citations">
 	<meta name="keywords" content="program">
@@ -332,9 +336,7 @@ Basic procedure:
 		var total_metadata_found = 0;
 		const month_array = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-// 		console.groupCollapsed(input_json.title)
-//         console.log(input_json)
-
+		console.warn("get_apa_from_json_URL was called")
 		if (input_json.author !== undefined && input_json.author !== null) {
 			input_json.author = fix_author_string(input_json.author)
 			author = author_in_apa_format(input_json.author);
@@ -346,7 +348,7 @@ Basic procedure:
 		if (input_json.date !== undefined && input_json.date !== null) {
 			var pub_date = new Date(input_json.date);
 			const how_long_ago = Math.floor((Date.now() - pub_date)/1000); // seconds since the publication date
-			if (how_long_ago < 600000) { // dfd should be 60
+			if (how_long_ago < 60) {
 				// if the publication date is less than 60 seconds ago, then it's probably not a real publication date. 
 				apa_date = " (n.d.). "
 				console.log('date difference = ' + how_long_ago + ' seconds. Using n.d.')
@@ -695,6 +697,7 @@ Basic procedure:
 
     	} catch(err) {
     	    console.error ('error in new reference obj')
+    	    console.log( 'input_userInput='+input_userInput)
     	    console.log(err);
     	}
  	} 
@@ -748,7 +751,10 @@ Basic procedure:
 
                         var woof = author_in_apa_format(input_json.author[a].given + ' ' + input_json.author[a].family)
                         if (name_apa != woof) {
-                            console.warning(arf + ' ≠ ' + woof)
+                        	console.warn('author_in_apa_format returned output that looks wrong')
+                            console.warn(name_apa + ' ≠ ' + woof)
+                            console.log( 'given = '+author_in_apa_format(input_json.author[a].given))
+                            console.log( 'family = '+input_json.author[a].family)
                         }
                     }
                 }
@@ -1617,7 +1623,8 @@ Basic procedure:
         console.log('database string 1')
 		console.log( databaseString)
 		console.log( 'text_obj[userString].url_status='+text_obj[userString].url_status)
-		
+		console.groupEnd();
+
         try {		
             // return a score
             if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	// with typeof, put undefined in quotes
@@ -1640,7 +1647,6 @@ Basic procedure:
                 databaseString = remove_doi_or_url_from_string(databaseString, databaseURL);
                 console.log('database string 2')
                 console.log( databaseString)
-                console.groupEnd();
                 return compute_letter_match(databaseString,userString);
             }
 		} catch(err) {
@@ -1964,10 +1970,10 @@ Basic procedure:
         var authorTableText = "";
         // create the html table 
         authorTableText = "<table><tr>";
-        authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes"'+")' title='Click to Sort'>Highlight <br>co-authors</th>";
+        authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes","desc"'+")' title='Click to Sort'>Highlight <br>co-authors</th>";
         authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Author</th>";
-        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers"'+")' title='Click to Sort'>Citations</th>";
-        authorTableText += "<th onclick='sortTable(3, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
+        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Citations</th>";
+//         authorTableText += "<th onclick='sortTable(3, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
         authorTableText += "</tr>";
 
         for (var key in author_obj) {
@@ -1975,8 +1981,8 @@ Basic procedure:
             authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
             authorTableText += "<td><div id='name_" + author_obj[key].name + "'>" + author_obj[key].name + "</td>";
             authorTableText += "<td>" + author_obj[key].citation_count + "</td>";
-            authorTableText +=  "<td>" + author_obj[key].all_coauthors_string();
-            authorTableText += "</td></tr>";
+//             authorTableText +=  "<td>" + author_obj[key].all_coauthors_string() + "</td>";
+            authorTableText += "</tr>";
         }
 
         authorTableText += "</table>"
@@ -2147,7 +2153,7 @@ Basic procedure:
 
 		if (current_mode == 'completely done') {
 			t = '<tr>'
-			t +=  "<th style='line-height: 2' onclick='sortTable(0, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort By Status ▾</th>";
+			t +=  "<th style='line-height: 2' onclick='sortTable(0, "+'"simple_table","letters","desc"'+")' title='Click to Sort'>Sort By Status ▾</th>";
 			t +=  "<th style='line-height: 2' onclick='sortTable(1, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort Alphabetical ▾</th>";
 			t += '</tr>'
 		}
@@ -2173,18 +2179,18 @@ Basic procedure:
 
 				// left column
 				if (t_o.match_status == 'unknown') { // unknown
-					t += '<div style="border-right:5px solid; border-right-color: white; color: greywolf">searching...</div>'
+					t += '<div style="border-right:0px solid; border-right-color: white; color: greywolf">searching...</div>'
 				}
 				else if (t_o.match_status == 'correct') { // correct
-					t += '<div style="border-right:5px solid; border-right-color: lawngreen; font-size: 3em; color: lawngreen;">'
+					t += '<div style="border-right:0px solid; border-right-color: lawngreen; font-size: 1.5em; color: lawngreen;">'
 					t += '✔'
 					t += '</div>'
 				} else if (t_o.match_status == 'wrong') { // wrong
-					t += '<div style="border-right:5px solid; border-right-color: red; font-size: 3em; color: red;">'
+					t += '<div style="border-right:0px solid; border-right-color: red; font-size: 1.5em; color: red;">'
 					t += '✘'
 					t += '</div>'
 				} else { // maybe
-					t += '<div style="border-right:5px solid; border-right-color: orange;">'
+					t += '<div style="border-right:0px solid; border-right-color: orange;">'
 					var button_value = 'show user input'
 					if (t_o.output == t_o.user_input) {
 						button_value = 'show search result'
@@ -2220,12 +2226,23 @@ Basic procedure:
 	}
 	
 	
-	function show_or_hide_burgerBox() {
-	    var s = "none"
-	    if (document.getElementById("burgerBox").style.display == "none") {
-	    	s = "inline-block"
-	    }
-		document.getElementById("burgerBox").style.display = s
+// 	function show_or_hide_burgerBox() {
+// 	    var s = "none"
+// 	    if (document.getElementById("burgerBox").style.display == "none") {
+// 	    	s = "inline-block"
+// 	    }
+// 		document.getElementById("burgerBox").style.display = s
+// 	}
+
+	function show_or_hide_about() {
+		if (document.getElementById("about").style.display === "none") {
+			document.getElementById("about").style.display = "block";
+			document.getElementById("about_link").innerHTML = "About ▴"
+
+		} else {
+			document.getElementById("about").style.display = "none";
+			document.getElementById("about_link").innerHTML = "About ▾"
+		}
 	}
 
 	function show_or_hide_everything(input) {
@@ -2242,7 +2259,7 @@ Basic procedure:
         document.getElementById("inputTextBox").style.display = d
         document.getElementById("extra_references").style.display = d
         
-                document.getElementById("refalyzerArticleListBox").style.display = "block" // dfdd this is temporary, for debugging purposes
+		document.getElementById("refalyzerArticleListBox").style.display = "block" // dfdd this is temporary, for debugging purposes
 	}
 	
 	function show_or_hide_authors() {
@@ -2261,6 +2278,7 @@ Basic procedure:
 	function copy_to_clipboard() {
 		// This copies text to the clipboard. It stores two versions in the clipboard, plain text and html. 
 		
+		// dfd create checkboxes to include/exclude maybe rows and wrong rows
 	    var out = ''
         var i = 0;
         
@@ -2287,7 +2305,7 @@ Basic procedure:
 
 		navigator.clipboard.write([clipboardItem]);
 
-        document.getElementById('buffer_for_copying').style = "display:none"
+//         document.getElementById('buffer_for_copying').style = "display:none" // dfd put back (?)
     }
 	
 </script>
@@ -2330,21 +2348,41 @@ project.org/package=metaBMA.
 
 <body onload='show_previous_user_input()'>
 
+	<nav>
+		<ul>
+			<li><div class="navMenuItem selected"><a href="index.html">Home</a></div></li>
+			<li style="float:right"><div class="navMenuItem" id = 'about_link' style="display: inline-block; cursor: pointer" onclick="show_or_hide_about()">About ▾</div></li>
+		</ul>
+	</nav>
+	
 
-<!-- input -->
-<div class='wideBoxWithMargin'>
-	Cool thing
-	<span onclick="show_or_hide_burgerBox()" style="cursor: pointer">
-		☰&nbsp 
-	</span>
-</div>
 
-<!-- just a place to stick information and buttons etc -->
+	<div id='about' class='boxAroundTable' style="display: none; margin: 25px;">
+<!-- 	<span onclick="show_or_hide_burgerBox()" style="cursor: pointer; display: inline-block">☰&nbsp</span> -->
+		<p><b>How to use this program</b>
+		<p>Copy a reference section from any document (including PDFs) and paste it below. This program will use the doi database to fix your references' accuracy and then output them in proper APA format.
+		<p><b>Privacy</b>
+		<p>This program keeps your data private. Your data are never uploaded, stored, or modified. 
+		<p><b>Advanced</b> (not recommended)
+		<p><button style="display: inline-block; cursor: pointer" onclick="localStorage.clear()" id="clear_storage_button">Clear local storage </button> 
+		<button style="display: inline-block; cursor: pointer" onclick="show_or_hide_everything()" id="show_everything_button" >Show/hide everything</button> 
 
+		</p>
+	</div>
+
+	<div align=center style="color: navy">
+		<h1>Fix My References</h1>
+		<p style="margin: 25px">Paste a list of references below. This will fix errors and return citations in APA format. It's easy, private, and free. </p>
+	</div>
+	<!-- about -->
+
+
+<!-- 
 <div class='wideBoxWithMargin' id='burgerBox' style = "display: none">
 	<button onclick="show_or_hide_everything()" id="show_everything_button" >show/hide everything</button>
 	<button onclick="localStorage.clear()" id="clear_storage_button">clear local storage</button> 
 </div>
+ -->
 
 <div class='wideBoxWithMargin' id = 'inputTextBox'>
 	<textarea id="myText" name="inputTextArea" style='width: 100%; '>
@@ -2360,7 +2398,7 @@ project.org/package=metaBMA.
 <!-- progress and summary -->
 <div id='progressAndSummaryBox' class='wideBoxWithMargin'>
 	<div id='progressText'>
-		Paste in the list of references you'd like to fix. 
+<!-- 		Paste in the list of references you'd like to fix.  -->
 	</div>
 	<div id="myBar" style="display: none;">
 	</div>
@@ -2369,7 +2407,7 @@ project.org/package=metaBMA.
 
 <!-- buttons -->
 <div class='wideBoxWithMargin' id='buttonBox' "> 
-	<button onclick="start()" id="fix_button" class="bigButton">fix</button> 
+	<button onclick="start()" id="fix_button" class="bigButton">fix & format</button> 
 	<button onclick="copy_to_clipboard()" id="copy_button" class="bigButton" style="display: none">copy</button>
 	<p>
 </div>
@@ -2389,7 +2427,7 @@ project.org/package=metaBMA.
 
 
 <!-- div where output is displayed so that it can be copied (and then it's hidden again) -->
-<div id="buffer_for_copying">
+<div class='boxAroundTable' id="buffer_for_copying" contenteditable="true"> <!--  you can select all and only get whats in there because contenteditable="true"  -->
 </div>
 
 <!-- 	Article table 	-->
