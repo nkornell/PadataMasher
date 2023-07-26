@@ -1,4 +1,8 @@
 <!-- 
+// I could have two boxes, one for good and one for bad. And for bad, I could have an option to "try again" after they edit. 
+// and then also, maybe the ability to promote something to the good section? 
+// and buttons to copy good and copy all in alphabetical order? 
+
 To do: 
 
 - When it gets a non-doi reference, maybe have it look at the first 2 or 3 that are returned, and see if they have a matching year, author, etc? 
@@ -2301,7 +2305,7 @@ Basic procedure:
 
 		navigator.clipboard.write([clipboardItem]);
 
-        document.getElementById('buffer_for_copying').style = "display:none"
+//         document.getElementById('buffer_for_copying').style = "display:none" // dfd put back (?)
     }
 	
 </script>
@@ -2368,7 +2372,7 @@ project.org/package=metaBMA.
 
 	<div align=center style="color: navy">
 		<h1>Fix My References</h1>
-		<p style="margin: 25px">Paste a list of references below. This will fix the content and return perfectly formatted APA citations. It's easy, private, and free. </p>
+		<p style="margin: 25px">Paste a list of references below. This will fix errors and return citations in APA format. It's easy, private, and free. </p>
 	</div>
 	<!-- about -->
 
@@ -2423,7 +2427,7 @@ project.org/package=metaBMA.
 
 
 <!-- div where output is displayed so that it can be copied (and then it's hidden again) -->
-<div id="buffer_for_copying">
+<div class='boxAroundTable' id="buffer_for_copying" contenteditable="true"> <!--  you can select all and only get whats in there because contenteditable="true"  -->
 </div>
 
 <!-- 	Article table 	-->
