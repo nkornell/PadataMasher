@@ -2115,7 +2115,8 @@ Basic procedure:
 		}
 		w = w + m; // collapse w and m into one value for anything that's not right
         
-		document.getElementById('progressText').innerHTML = 'Done. ' + rows_total + " entries processed in " +  Math.floor((Date.now() - startTime)/1000) + " seconds."
+// 		document.getElementById('progressText').innerHTML = 'Done. ' + rows_total + " entries processed in " +  Math.floor((Date.now() - startTime)/1000) + " seconds."
+		document.getElementById('progressText').style = "display: none"
 		document.getElementById("myBarBackground").style = "display: none;"
 		
 // 		document.getElementById('progressText_good').innerHTML =  "<span style='font-weight: bold; color: green'>" + c + " ✔</span>, <span style='font-weight: bold; color: red'>" + w + " ✘</span> , <span style='font-weight: bold; color: orange'>" + m + " maybe</span>";
@@ -2124,13 +2125,15 @@ Basic procedure:
 
 		
 		build_author_table();
-		document.getElementById("refalyzerAuthorsBox").style = "display: block;"	
+		document.getElementById("refalyzerAuthorsBox").style = "display: block;"
+		document.getElementById("articleDetailBox").style = "display: block;"
+		
 		
 		show_simple_output();
 		show_or_hide_everything('hide');
 		show_simple_boxes();
 		
-		document.getElementById("authors_button").style.display = "inline-block";
+// 		document.getElementById("authors_button").style.display = "inline-block";
 		document.getElementById("copy_button").style.display = "inline-block";
 		document.getElementById("clear_storage_button").style.display = "none";
 		
@@ -2150,7 +2153,7 @@ Basic procedure:
 		    initial_scroll_top = document.getElementById('simple_table').scrollTop;
 		} else {
 			// this should only happen once, before the simple table has been created. this creates it and formats it. 
-// 			document.getElementById("simpleOutputTable").style.display = "flex";  // dfd use this to show the table
+// 			document.getElementById("simpleOutputTable").style.display = "flex";  // dfd if you want to go back to showing the simple table, use this
 			document.getElementById('simple_table_div').innerHTML = '<table id="simple_table"></table>';
 			document.getElementById('simple_table').style = "display: flex; overflow-y: scroll;"
 			document.getElementById('simple_table').style.height = (innerHeight-300)+'px';
@@ -2234,7 +2237,7 @@ Basic procedure:
         var out = ''
 	    var out_wrong = ''
         
-        for (i = 1; i <= document.getElementById('simple_table').rows.length - 1; i++) {
+		for (i = 1; i <= document.getElementById('simple_table').rows.length - 1; i++) {
 
         	if (document.getElementById("simple_table").rows[i].cells[0].innerText == '✔') {
 			    out += document.getElementById("simple_table").rows[i].cells[1].innerHTML;
@@ -2242,12 +2245,13 @@ Basic procedure:
 			    out_wrong += document.getElementById("simple_table").rows[i].cells[1].innerHTML
 		    }
         }
-        document.getElementById('correct_box_big').style = "display: inline-block;  width: 49%;  background-color: #cfc" // dfd it's weird to use 49% but I don't want to figure out why it isn't 50% right now
-        document.getElementById('output_correct_box').style = "overflow-y: scroll; height: 20em; margin-bottom: 10px;" // the copy thing doesn't work if this isn't made visible
+		// if you make these boxes 49% each instead of 99% each, they'll be side by side. 
+        document.getElementById('correct_box_big').style = "display: inline-block;  width: 99%;  background-color: #cfc"
+        document.getElementById('output_correct_box').style = "overflow-y: scroll; height: 20em; margin-bottom: 10px;" 
         document.getElementById('output_correct_box').innerHTML = out; 
 
-        document.getElementById('wrong_box_big').style = "display: inline-block;  width: 49%;  background-color: #fcc"
-        document.getElementById('output_wrong_box').style = "overflow-y: scroll; height: 20em; margin-bottom: 10px;" // the copy thing doesn't work if this isn't made visible
+        document.getElementById('wrong_box_big').style = "display: inline-block;  width: 99%;  background-color: #fcc"
+        document.getElementById('output_wrong_box').style = "overflow-y: scroll; height: 20em; margin-bottom: 10px;" 
         document.getElementById('output_wrong_box').innerHTML = out_wrong;
 	
 	}
@@ -2274,19 +2278,17 @@ Basic procedure:
 	function show_or_hide_everything(input) {
 	    var d = ''
 	    
-	    if (document.getElementById("refalyzerArticleListBox").style.display == "none" && input != "hide") {
+	    if (input != "hide") {
 	        d = "block"
 	    } else {
             d = "none"	    
 	    }
         document.getElementById("output_correct_box").style.display = d
         document.getElementById("output_wrong_box").style.display = d
-        document.getElementById("refalyzerArticleListBox").style.display = d
+        document.getElementById("articleTable").style.display = d
         document.getElementById("authorTable").style.display = d
         document.getElementById("inputTextBox").style.display = d
         document.getElementById("extra_references").style.display = d
-        
-		document.getElementById("refalyzerArticleListBox").style.display = "block" // dfdd this is temporary, for debugging purposes
 	}
 	
 	function show_or_hide_authors() {
@@ -2301,14 +2303,39 @@ Basic procedure:
 		}
 	}
 
-	  
-	function copy_to_clipboard() {
+	function show_or_hide_details() {
+		if (document.getElementById("articleTable").style.display === "none") {
+			document.getElementById("articleTable").style.display = "block";
+			document.getElementById("details_button").innerHTML = "hide details ▴"
+// 			document.getElementById("author_table_instructions").style.display = "inline-block";
+		} else {
+			document.getElementById("articleTable").style.display = "none";
+			document.getElementById("details_button").innerHTML = "show details ▾"
+// 			document.getElementById("author_table_instructions").style.display = "none";
+		}
+	}
+
+
+	function copy_to_clipboard(type) {
 		// This copies text to the clipboard. It stores two versions in the clipboard, plain text and html. 
+		var out = ''
 		
+		if (type == 'good') {
+			var richTextDiv = document.getElementById("output_correct_box")
+		} else if (type == 'bad') {
+			var richTextDiv = document.getElementById("output_wrong_box")		
+		} else if (type == 'all') {
+			for (i = 1; i <= document.getElementById('simple_table').rows.length - 1; i++) {
+			    out += document.getElementById("simple_table").rows[i].cells[1].innerHTML;
+		    }
+			document.getElementById('buffer_for_copying').style = "display:block" // the copy thing doesn't work if this isn't made visible
+			document.getElementById('buffer_for_copying').innerHTML = out;
+			var richTextDiv = document.getElementById("buffer_for_copying")		
+        }
+
+
 
 		// below comes (partially) from https://www.nikouusitalo.com/blog/why-isnt-clipboard-write-copying-my-richtext-html/
-		const richTextDiv = document.getElementById("output_correct_box");
-
 		const clipboardItem = new ClipboardItem({
 			"text/plain": new Blob(
 				[richTextDiv.innerText],
@@ -2322,7 +2349,7 @@ Basic procedure:
 
 		navigator.clipboard.write([clipboardItem]);
 
-//         document.getElementById('output_correct_box').style = "display:none" // dfd put back (?)
+        document.getElementById('buffer_for_copying').style = "display:none" 
     }
 	
 </script>
@@ -2376,7 +2403,7 @@ project.org/package=metaBMA.
 	<div id='about' class='boxAroundTable' style="display: none; margin: 25px;">
 <!-- 	<span onclick="show_or_hide_burgerBox()" style="cursor: pointer; display: inline-block">☰&nbsp</span> -->
 		<p><b>How to use this program</b>
-		<p>Copy a reference section from any document (including PDFs) and paste it below. This program will use the doi database to fix your references' accuracy and then output them in proper APA format.
+		<p>Copy a reference section from any document (including PDFs) and paste it in. This program will use the doi database to fix your references' accuracy and then output them in proper APA format.
 		<p><b>Privacy</b>
 		<p>This program keeps your data private. Your data are never uploaded, stored, or modified. 
 		<p><b>Advanced</b> (not recommended)
@@ -2423,43 +2450,46 @@ project.org/package=metaBMA.
 <!-- div where output is displayed so that it can be copied -->
 <div id='correct_box_big' style = "display: none; width: 50%">
 	<div class='boxAroundTable' id="output_correct_box" contenteditable="true" ></div> <!--  you can select all and only get whats in there because contenteditable="true"  -->
-	<div id='progressText_good' style='margin: 10px'></div>
+	<div id='progressText_good' style='margin: 10px; display: inline-block'></div>
+	<button style="display: inline-block; float:right; margin: 10px; cursor: pointer" onclick="copy_to_clipboard('good')">Copy Correct References</button>
 </div>
 
 <div id='wrong_box_big' style = "display: none;">
 	<div class='boxAroundTable' id="output_wrong_box" contenteditable="true" style = "display: none;"></div>
-	<div id='progressText_bad' style='margin: 10px'></div>
+	<div id='progressText_bad' style='margin: 10px; display: inline-block'></div>
+	<button style="display: inline-block; float:right; margin: 10px; cursor: pointer" onclick="copy_to_clipboard('bad')">Copy Incorrect References</button>
 </div>
+
+<div class='boxAroundTable' id="buffer_for_copying" contenteditable="true" style = "display: none;"></div>
 
 <!-- make one or two new copy buttons. have it show originals instead of best guesses for maybes in the wrong box.  -->
 
 <!-- buttons -->
 <div class='wideBoxWithMargin' id='buttonBox' "> 
 	<button onclick="start()" id="fix_button" class="bigButton">fix & format</button> 
-	<button onclick="copy_to_clipboard()" id="copy_button" class="bigButton" style="display: none">copy</button>
-	<p>
+	<p><div align=center><button onclick="copy_to_clipboard('all')" id="copy_button" style="display: none">Copy All References in Alphabetical Order</button></div>
+	</p>
 </div>
 
 <!-- 	Author table 	-->
-<div class='wideBoxWithMargin' id='refalyzerAuthorsBox' style="display: none"> 
+<div class='boxAroundTable' id='refalyzerAuthorsBox' style="display: none"> 
 	<p>
-	<button onclick="show_or_hide_authors()" id="authors_button" style="display: none">show author analysis ▾</button>
+	<button onclick="show_or_hide_authors()" id="authors_button" >show author analysis ▾</button>
 	<div id="author_table_instructions" style="display: none">Select an author to highlight their co-authors.</div>
 	<p>
 	<div id='authorTable' class='dataTable'></div>
 </div>
 
-
+<!-- 	Detailed table 	-->
+<div class='boxAroundTable' id='articleDetailBox' style="display: none">
+	<p>
+	<button onclick="show_or_hide_details()" id="details_button">show details ▾</button>
+	<div id='articleTable' class='dataTable'></div>
+</div>
+<!-- </div> -->
 
 <!-- empty space at the bottom of the screen -->
-<div id='empty' class='wideBoxWithMargin' style="height: 10em;"> 
-</div>
-
-
-
-<!-- 	Article table 	-->
-<div class='boxAroundTable' id='refalyzerArticleListBox' style="display: none">
-	<div id='articleTable' class='dataTable'></div>
+<div id='empty' class='wideBoxWithMargin' style="height: 2em;"> 
 </div>
 
 
