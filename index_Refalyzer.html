@@ -993,11 +993,22 @@ Basic procedure:
                 } else {
                     temp_search_string = input_string;
                 }
-                console.log('temp_search_string=' + temp_search_string)
                 temp_search_string = temp_search_string.replace(/&/g, '%26'); // encode ampersand for the url 
+
+                console.log('temp_search_string=' + temp_search_string +' (length ='+temp_search_string.length+')')
+                if (temp_search_string.length < 1) {
+                    // dfd I think if a url is bad, temp_search_string ends up being blank and this creates an error
+					text_obj[input_string].update_input('done')
+					return;
+					// dfd this creates a reference that is not found, and apparently those don't go into the table, which is bad. try this example
+					// https://www.scribbr.cm/apa-examples/wete/#:~:text=APA%20weate
+					// they have a match status of not found or something, I think I just need to add those to the simple table. 
+                }
+                
 
                 stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
                 myJSON = await $.getJSON(encodeURI(stringToSend));
+                console.log( myJSON.message)
                 myJSONobj = myJSON.message.items[0];
                 myJSONobj.url_status = text_obj[input_string].url_status;
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj));
@@ -2285,6 +2296,7 @@ Basic procedure:
 	    }
         document.getElementById("output_correct_box").style.display = d
         document.getElementById("output_wrong_box").style.display = d
+        document.getElementById("simpleOutputTable").style.display = d
         document.getElementById("articleTable").style.display = d
         document.getElementById("authorTable").style.display = d
         document.getElementById("inputTextBox").style.display = d
