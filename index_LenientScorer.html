@@ -17,12 +17,12 @@
 	<nav>
 		<ul>
 			<li><div class="navMenuItem selected"><a href="index.html">Home</a></div></li>
-			<li style="float:right"><div class="navMenuItem" id = 'about_link' style="display: inline-block; cursor: pointer"" onclick="show_or_hide_about()">About ▾</div></li>
+			<li style="float:right"><div class="navMenuItem" id = 'help_link' style="display: inline-block; cursor: pointer"" onclick="show_or_hide_help()">Help ▾</div></li>
 		</ul>
 	</nav>
 	
-	<!-- about -->
-	<div id='about' class='boxAroundTable' style="display: none; margin: 25px;">
+	<!-- help -->
+	<div id='help' class='boxAroundTable' style="display: none; margin: 25px;">
 		<p><b>Steps</b>
 		<ol>
 		<li>Indicate how your datafile is organized. 
@@ -91,17 +91,16 @@
 	<div class='bigBox' style="width:100%;"> 
 <!-- 		<div class='boxAroundTable' id='scrollable_box' style="height: 20rem; overflow-x: scroll; overflow-y: scroll; margin-bottom: 10px"> -->
 		<div class='boxAroundTable'>
-			<p style="margin-left: 10px">Select correct responses </p>
+			<p style="margin-left: 10px">Select correct responses below. <span id="auto_score_span">Or try <button onclick="autoScore()">Auto Score</button></span></p>
 			<div id="variable_selector_table" class='dataTable' style="height: 20rem;  margin-bottom: 10px"></div>
 		
 			<div id='status_text' style='display: inline-block; margin-left: 10px'></div> <!--  0 columns selected -->
 			<div id='jump_arrows' style="display: inline-block; float: right; text-align:right; margin-right: 10px"> jump to next selected column <button onclick="autoScroll('left')">←</button><button onclick="autoScroll('right')">→</button></div></p>
 		</div>
 
-		<div class='boxAroundTable' id="auto_score_box">
-			<p><button onclick="autoScore()">Auto-Score</button>
-			<input type="checkbox" id="lenient_checkbox" checked><label for="lenient_checkbox">Count misspelled answers as correct</label> 
-		</div>
+<!-- 	 I made the checkbox below invisible and I'm jsut assuming they'll always want lenient scoring, but if not it could become visible again.  -->
+		<input type="checkbox" id="lenient_checkbox" style="display: none" checked><label for="lenient_checkbox" style="display: none" >Count misspelled answers as correct</label> 
+
 		<div class='boxAroundTable'>
 			<p><a id="exportButton" href="#" class='coolButton'>Export Results to Desktop</a> 	
 		</div>
@@ -169,14 +168,14 @@ function start_lenientScorer() {
 	}
 }
 
-function show_or_hide_about() {
-	if (document.getElementById("about").style.display === "none") {
-		document.getElementById("about").style.display = "block";
-		document.getElementById("about_link").innerHTML = "About ▴"
+function show_or_hide_help() {
+	if (document.getElementById("help").style.display === "none") {
+		document.getElementById("help").style.display = "block";
+		document.getElementById("help_link").innerHTML = "Help ▴"
 
 	} else {
-		document.getElementById("about").style.display = "none";
-		document.getElementById("about_link").innerHTML = "About ▾"
+		document.getElementById("help").style.display = "none";
+		document.getElementById("help_link").innerHTML = "Help ▾"
 	}
 }
 
@@ -349,7 +348,7 @@ function show_variable_selector_table() {
 	}
 	
 	if (document.getElementById('verified_answers').checked) {
-		document.getElementById("auto_score_box").style.display = "none";
+		document.getElementById("auto_score_span").style.display = "none";
 		autoScore();
 	}
 }

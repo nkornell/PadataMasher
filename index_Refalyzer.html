@@ -2275,14 +2275,14 @@ Basic procedure:
 // 		document.getElementById("burgerBox").style.display = s
 // 	}
 
-	function show_or_hide_about() {
-		if (document.getElementById("about").style.display === "none") {
-			document.getElementById("about").style.display = "block";
-			document.getElementById("about_link").innerHTML = "About ▴"
+	function show_or_hide_help() {
+		if (document.getElementById("help").style.display === "none") {
+			document.getElementById("help").style.display = "block";
+			document.getElementById("help_link").innerHTML = "Help ▴"
 
 		} else {
-			document.getElementById("about").style.display = "none";
-			document.getElementById("about_link").innerHTML = "About ▾"
+			document.getElementById("help").style.display = "none";
+			document.getElementById("help_link").innerHTML = "Help ▾"
 		}
 	}
 
@@ -2407,12 +2407,12 @@ project.org/package=metaBMA.
 	<nav>
 		<ul>
 			<li><div class="navMenuItem selected"><a href="index.html">Home</a></div></li>
-			<li style="float:right"><div class="navMenuItem" id = 'about_link' style="display: inline-block; cursor: pointer" onclick="show_or_hide_about()">About ▾</div></li>
+			<li style="float:right"><div class="navMenuItem" id = 'help_link' style="display: inline-block; cursor: pointer" onclick="show_or_hide_help()">Help ▾</div></li>
 		</ul>
 	</nav>
 	
 
-	<div id='about' class='boxAroundTable' style="display: none; margin: 25px;">
+	<div id='help' class='boxAroundTable' style="display: none; margin: 25px;">
 <!-- 	<span onclick="show_or_hide_burgerBox()" style="cursor: pointer; display: inline-block">☰&nbsp</span> -->
 		<p><b>How to use this program</b>
 		<p>Copy a reference section from any document (including PDFs) and paste it in. This program will use the doi database to fix your references' accuracy and then output them in proper APA format.
@@ -2429,7 +2429,6 @@ project.org/package=metaBMA.
 		<h1>Fix My References</h1>
 		<p style="margin: 25px">Paste a list of references below. This will fix errors and return citations in APA format. It's easy, private, and free. </p>
 	</div>
-	<!-- about -->
 
 
 <!-- 
