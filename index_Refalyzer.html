@@ -336,7 +336,8 @@ Basic procedure:
 		var total_metadata_found = 0;
 		const month_array = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-		console.warn("get_apa_from_json_URL was called")
+// 		console.warn("get_apa_from_json_URL was called")
+
 		if (input_json.author !== undefined && input_json.author !== null) {
 			input_json.author = fix_author_string(input_json.author)
 			author = author_in_apa_format(input_json.author);
@@ -615,7 +616,6 @@ Basic procedure:
                         }
                     }
                 }
-                
             
                 if (this.match_status == 'unknown' || this.match_status == 'correct') {
                     var temp_match_status_to_show = '';
@@ -993,15 +993,9 @@ Basic procedure:
                     temp_search_string = input_string;
                 }
                 temp_search_string = temp_search_string.replace(/&/g, '%26'); // encode ampersand for the url 
-
-                console.log('temp_search_string=' + temp_search_string +' (length ='+temp_search_string.length+')')
                 if (temp_search_string.length < 1) {
-                    // dfd I think if a url is bad, temp_search_string ends up being blank and this creates an error
 					text_obj[input_string].update_input('done')
 					return;
-					// dfd this creates a reference that is not found, and apparently those don't go into the table, which is bad. try this example
-					// https://www.scribbr.cm/apa-examples/wete/#:~:text=APA%20weate
-					// they have a match status of not found or something, I think I just need to add those to the simple table. 
                 }
                 
 
@@ -1051,10 +1045,11 @@ Basic procedure:
                 text_obj[input_string].update_input('done');
             } else if (err == 'Network request failed') {
 			    console.error('Network request failed: '+input_string);
-                text_obj[input_string].update_input('done');            
+                text_obj[input_string].update_input('done');     
 			} else {
 			    console.error('in get one url, '+input_string+' returned: ');
 				console.error(err);
+// 				text_obj[input_string].combine_status='done' 
                 text_obj[input_string].update_input('done');            
 			}
 		}
@@ -1647,16 +1642,16 @@ Basic procedure:
                     // this happens when there's a bad doi, it searches without the doi, and finds a good doi to replace the bad one
                     return compute_letter_match(databaseString,userString);
                 }
-            } else if (userURL !='' && text_obj[userString].url_status == "good") {
-                // if there's a good url
-                return 83; // dfd this is totally wrong but good for testing            
+//             } else if (userURL !='' && text_obj[userString].url_status == "good") {
+//                 // if there's a good url
+//                 return 83; // dfd this is totally wrong but good for testing            
             } else {
                 // if there is not a valid doi or url in the user input, remove the doi or url from the database string for the sake of comparison. 
                 // this does not use percentage because without a doi, I can't assume either side is good 
                 databaseString = remove_doi_or_url_from_string(databaseString, databaseDOI);
                 databaseString = remove_doi_or_url_from_string(databaseString, databaseURL);
-                console.log('database string 2')
-                console.log( databaseString)
+//                 console.log('database string 2')
+//                 console.log( databaseString)
                 return compute_letter_match(databaseString,userString);
             }
 		} catch(err) {
@@ -2109,7 +2104,7 @@ Basic procedure:
         }
         
         current_mode = 'completely done'
-        
+
         var c = 0;
         var m = 0;
         var w = 0;
@@ -2132,7 +2127,7 @@ Basic procedure:
 		
 // 		document.getElementById('progressText_good').innerHTML =  "<span style='font-weight: bold; color: green'>" + c + " ✔</span>, <span style='font-weight: bold; color: red'>" + w + " ✘</span> , <span style='font-weight: bold; color: orange'>" + m + " maybe</span>";
 		document.getElementById('progressText_good').innerHTML =  "<span style='font-weight: bold; color: green'>" + c + " correct references</span>";
-		document.getElementById('progressText_bad').innerHTML =  "<span style='font-weight: bold; color: red'>" + w + " references not found</span>";
+		document.getElementById('progressText_bad').innerHTML =  "<span style='font-weight: bold; color: red'>" + w + " references that are guesses or not found</span>";
 
 		
 		build_author_table();
@@ -2141,6 +2136,8 @@ Basic procedure:
 		
 		
 		show_simple_output();
+        sortTable(1, "simple_table","letters","asc") // this way it starts out alphabetical
+        
 		show_or_hide_everything('hide');
 		show_simple_boxes();
 		
@@ -2176,12 +2173,12 @@ Basic procedure:
 			t +=  "<th style='line-height: 2' onclick='sortTable(1, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort Alphabetical ▾</th>";
 			t += '</tr>'
 		}
-		
+
 		// loop through all of the items twice, first doing unknown ones and then doing known ones
 		for (showingUnknown = 0; showingUnknown <= 1; showingUnknown++) {
 			for (let key in text_obj) { // this loops through all of text_obj
 				var t_o = text_obj[key];
-				if (t_o.removed || t_o.combine_status != 'done') {
+				if (t_o.removed || t_o.combine_status == 'not done') {
 					// if this item has been removed, or it's combine status doesn't equal done, then skip it
 				    continue;
 				}
@@ -2197,14 +2194,13 @@ Basic procedure:
 				t += '<td style="vertical-align: top; text-align: center; min-width: 18ex">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
 
 				// left column
-				if (t_o.match_status == 'unknown') { // unknown
+				if (t_o.match_status == 'unknown' && current_mode != 'completely done') { // unknown
 					t += '<div style="border-right:0px solid; border-right-color: white; color: greywolf">searching...</div>'
-				}
-				else if (t_o.match_status == 'correct') { // correct
+				} else if (t_o.match_status == 'correct') { // correct
 					t += '<div style="border-right:0px solid; border-right-color: lawngreen; font-size: 1.5em; color: lawngreen;">'
 					t += '✔'
 					t += '</div>'
-				} else if (t_o.match_status == 'wrong') { // wrong
+				} else if (t_o.match_status == 'wrong' || (t_o.match_status == 'unknown' && current_mode == 'completely done')) { // wrong
 					t += '<div style="border-right:0px solid; border-right-color: red; font-size: 1.5em; color: red;">'
 					t += '✘'
 					t += '</div>'
@@ -2228,7 +2224,7 @@ Basic procedure:
 				t += '</div></td>'
 		
 				// right column
-				if (t_o.match_status == 'unknown') {
+				if (t_o.match_status == 'unknown'  && current_mode != 'completely done') {
 					t += '<td></td>';
 				} else {
 // 					temp_json = reference_obj[t_o.doi].json
