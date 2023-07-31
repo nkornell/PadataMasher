@@ -435,9 +435,10 @@ Basic procedure:
 		if (jstring.match(pattern_404_surrounded_by_nonletters) != null) {
             return true;
         }
-        // dfdd: make it look for other 400-style errors? 
+
+        // make it look for other 400-style errors? 
 		
-// 		if (input.headers != null && input.headers.date == null) { // dfdd maybe I should do more (or less) with this?
+// 		if (input.headers != null && input.headers.date == null) { // maybe I should do more (or less) with this? future nate: i don't know what this is
 // 		    return true;
 // 		}
 		
@@ -547,11 +548,11 @@ Basic procedure:
             const pattern_uppercase = new RegExp("^(?=.*[A-Z]).+$"); // uppercase letters
             if (pattern_uppercase.test(flim) == false) {
                 if (flim.toLowerCase() != 'htt') {
-                    this.weird_first_letters = true;
+                    this.weird_first_letters = true; //basically, this means I expected a capitalized letter for a name, unless it starts with http, and didn't find one.
                 }
             }
-			// if there are non-letters in the string
-            // dfd maybe move this to parse user input and have it combine when it finds (some?) of these?
+			// if there are non-letters in the first few letters
+            // in the future, maybe move this to parse user input and have it combine rows when it finds (some?) of these?
             const pattern_non_letters = new RegExp("^(?=.*[-+_!@ #$%^&*.,?]).+$"); // non-letters (including space character)
             if (pattern_non_letters.test(flim)) {
                 this.weird_first_letters = true;
@@ -693,7 +694,7 @@ Basic procedure:
                 // using cite
                 this.apa = input_apa.toString().replace(/(<div([^>]+)>)/gi,'').replace(/(<\/div>)/gi, '').trim(); // remove all div tags
             }
-			this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, ""); // dfd this should be moved into get apa from json, once it's returning an object
+			this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, "");
 
     	} catch(err) {
     	    console.error ('error in new reference obj')
@@ -763,15 +764,13 @@ Basic procedure:
             }
         
             // figure out editors
-            // dfd I haven't worked on this because I can't find a doi with editors!! note to self: try a book
-            if (typeof input_json.editor != "undefined") {
-                console.log( 'EDITOR FOUND *$*# '+all_author)
-                for (a = 0; a < input_json.editor.length; a++) {
-                    console.log(input_json.editor[a].family)
-                }
-            } else {
-//                 console.log('editors not found for '+all_author)
-            }
+            // I haven't worked on this because barely any dois have editors, so there's not much point going further.
+//             if (typeof input_json.editor != "undefined") {
+//                 console.log( 'EDITOR FOUND *$*# '+all_author)
+//                 for (a = 0; a < input_json.editor.length; a++) {
+//                     console.log(input_json.editor[a].family)
+//                 }
+//             }
             
             // figure out title
             if (input_json.title !== undefined && input_json.title !== null) {
@@ -818,7 +817,7 @@ Basic procedure:
             }
             
             return out;
-            // dfd have it return an object that has: 
+            // maybe as a future project, have it return an object that has: 
             // val.apa
             // val.apa_no_html
             // val.notes
@@ -1068,7 +1067,7 @@ Basic procedure:
         
         
         if (input_JSON.DOI == null) {
-            input_JSON.DOI = input_string; // dfdd is this right? when there's more to the text than the url will it be bad?
+            input_JSON.DOI = input_string; // dfd is this right? when there's more to the text than the url will it be bad?
             input_JSON.type = 'web-page'
 //             console.log( 'url found(?) = ' + )
         }
@@ -1127,7 +1126,7 @@ Basic procedure:
 
 		if (myJSON.data.url != inputURL) {
 			// mismatched urls
-			return "bad" // dfd maybe add this to the json instead?
+			return "bad" // maybe add this to the json instead?
 		}
 
 		if (get_apa_from_json_URL(myJSON.data) == myJSON.data.url) {
@@ -1138,34 +1137,34 @@ Basic procedure:
 		return "good"
 	}
 
-	async function get_author(input_string) {
-    	// dfd this function isn't done. but the idea was to get authors from the database. 
-    	// I don't think I'd actually use this. Unless if there was a thing that would let a user dig deeper on a specific person. 
-
-	    var i = 0, j = 0;
-	    var temp_name = '';
-	    var temp_name_array = [];
-	    
-	    console.log( 'starting author search')
-        var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&query.author='+input_string.replaceAll(' ', '+');
-        console.log( stringToSend)
-        var myJSON = await $.getJSON(encodeURI(stringToSend));
-
-        console.log( 'author='+input_string)
-        
-        for (i = 0; i < 20; i++) {
-            temp_obj = myJSON.message.items[i];
-//             console.log( temp_obj)
-            temp_name_array.push('[' + temp_obj.type + '] ' + temp_obj.title[0])
-            for (j = 0; j < temp_obj.author.length; j++) {
-//                 console.log(temp_obj.author[j]);
-                temp_name = temp_obj.author[j].given + ' ' + temp_obj.author[j].family;
-                temp_name_array.push(temp_name)
-    	    // once you have the author json, use parse json for authors to turn the json into a string
-            }
-        }
-        console.log(temp_name_array)
-    }
+// 	async function get_author(input_string) {
+//     	// this function isn't done and it doesn't get called. 
+//     	
+//     	// The idea was to get authors from the database so a user could dig deeper on a specific person. 
+//     	// By the way, if I do develop this, what if it also used ORCID? I wonder if it has an API.
+// 
+// 	    var i = 0, j = 0;
+// 	    var temp_name = '';
+// 	    var temp_name_array = [];
+// 	    
+// 	    console.log( 'starting author search')
+//         var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&query.author='+input_string.replaceAll(' ', '+');
+//         console.log( stringToSend)
+//         var myJSON = await $.getJSON(encodeURI(stringToSend));
+// 
+//         console.log( 'author='+input_string)
+//         
+//         for (i = 0; i < 20; i++) {
+//             temp_obj = myJSON.message.items[i];
+//             temp_name_array.push('[' + temp_obj.type + '] ' + temp_obj.title[0])
+//             for (j = 0; j < temp_obj.author.length; j++) {
+//                 temp_name = temp_obj.author[j].given + ' ' + temp_obj.author[j].family;
+//                 temp_name_array.push(temp_name)
+//     	    // once you have the author json, the plan was to use parse json for authors to turn the json into a string
+//             }
+//         }
+//         console.log(temp_name_array)
+//     }
 
 	
 	function remove_duplicate_references() {
@@ -1821,7 +1820,7 @@ Basic procedure:
 		// - they're too short and don't contiain a doi, combine with above
 		// - end with '-', combine with below
 
-// 		const min_length = Math.min(40, string_length_median/2); // dfd could use this, but it just doesn't seem necessary because references can't really be shorter than 40 
+// 		const min_length = Math.min(40, string_length_median/2); // I could use this, but it just doesn't seem necessary because references can't really be shorter than 40. So below I just use 40. 
 
         // combine rows if they're short or have a -
 		const min_length = 40; // This seems good. If you go to 50, it makes a mistake on Dweck's book.  
@@ -1878,10 +1877,11 @@ Basic procedure:
                     console.error( "**error: textobj already exists [skipping it]: "+urlSuffix[i])
 					duplicate_input_text.push(urlSuffix[i]);
                     continue;
-                    // dfd here's a known issue: If two rows are identical (and don't have a doi), there's a problem. 
+                    // here's a known issue: If two rows are identical (and don't have a doi), there's a problem. 
                     // you can't make two text_obj because they'll have the same index and therefore be indistinuishable. 
                     // so only one gets added to the html table. basically, the second one (and beyond) kinda disappears. 
-                    // And you won't see a problem in the output, necessarily, because the disappeared line doesn't get processed. 
+                    // And you won't see a problem in the output, necessarily, because the disappeared line doesn't get 
+                    // processed (although it will show up in the console)
                     // And btw, here's why I don't want to just disappear: it's possible that the same line appearing twice is correct. (by contrast, disappearing a duplicate doi is fine.) 
                 }
                 text_obj[urlSuffix[i]] = new Text_object(urlSuffix[i], tempDOI, tempDOItype, tempURL, i); // if there's no doi, or the doi is new, use it. 
@@ -2164,7 +2164,7 @@ Basic procedure:
 		    initial_scroll_top = document.getElementById('simple_table').scrollTop;
 		} else {
 			// this should only happen once, before the simple table has been created. this creates it and formats it. 
-// 			document.getElementById("simpleOutputTable").style.display = "flex";  // dfd if you want to go back to showing the simple table, use this
+// 			document.getElementById("simpleOutputTable").style.display = "flex";  // if you want to go back to showing the simple table by default, use this
 			document.getElementById('simple_table_div').innerHTML = '<table id="simple_table"></table>';
 			document.getElementById('simple_table').style = "display: flex; overflow-y: scroll;"
 			document.getElementById('simple_table').style.height = (innerHeight-300)+'px';
@@ -2415,7 +2415,7 @@ project.org/package=metaBMA.
 	<div id='help' class='boxAroundTable' style="display: none; margin: 25px;">
 <!-- 	<span onclick="show_or_hide_burgerBox()" style="cursor: pointer; display: inline-block">☰&nbsp</span> -->
 		<p><b>How to use this program</b>
-		<p>Copy a reference section from any document (including PDFs) and paste it in. This program will use the doi database to fix your references' accuracy and then output them in proper APA format.
+		<p>Copy a reference section from any document (including PDFs) and paste it in. This program will fix your references' accuracy (using the DOI database) and then output them in proper APA format.
 		<p><b>Privacy</b>
 		<p>This program keeps your data private. Your data are never uploaded, stored, or modified. 
 		<p><b>Advanced</b> (not recommended)
