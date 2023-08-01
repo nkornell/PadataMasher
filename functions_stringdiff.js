@@ -1397,7 +1397,7 @@ function fix_html_tag_order(input) {
 		}
 		
 		if (current.length > 0) {
-			console.log('**Warning: At the end, current='+current) // If it works correctly, current should be empty
+			console.warn('After fixing tag order, end='+current+". In "+output.slice(0,19)+'...') // If it works correctly, current should be empty
 		}
 		
 		output += input; // get whatever's left after the last tag (this happens after the looping is done)
