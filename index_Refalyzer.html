@@ -1,4 +1,8 @@
 <!-- 
+// dfd
+if you edit the boxes after running it, and then copy, it won't copy what you type in. 
+it's weird how it kind of shows guesses and unchanged mixed together. (mabuye have a button for "show all unchanged" or "show all guesses")
+
 // I could have two boxes, one for good and one for bad. And for bad, I could have an option to "try again" after they edit. 
 // and then also, maybe the ability to promote something to the good section? 
 // and buttons to copy good and copy all in alphabetical order? 
@@ -418,7 +422,7 @@ Basic procedure:
 				out += input_json.url
 			}
 		}
-		console.groupEnd();
+// 		console.log(out);
 		return out;
 	}
 
@@ -885,9 +889,7 @@ Basic procedure:
             }
 		}
 
-		console.groupCollapsed('-A- getting [' + row_queue.length + '] rows ('+doi_or_url_type_to_handle+')')
-		console.log(row_queue)
-		console.groupEnd()
+		console.log('-A- getting [' + row_queue.length + '] rows ('+doi_or_url_type_to_handle+')')
         if (row_queue.length > 0) {
 		    current_mode = "searching for dois"
             for (i = 0; i < row_queue.length; i++) {
@@ -981,7 +983,6 @@ Basic procedure:
 
                 myJSONobj = myJSON.data
                 myJSONobj.url_status = text_obj[input_string].url_status
-                console.log( 'myJSONobj.url_status='+myJSONobj.url_status)
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj)); // if there's a url, add it to local storage
  
             } else if (inputDOI === "" || temp_ignore_doi_and_url == true) {
@@ -1001,7 +1002,7 @@ Basic procedure:
 
                 stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
                 myJSON = await $.getJSON(encodeURI(stringToSend));
-                console.log( myJSON.message)
+//                 console.log( myJSON.message)
                 myJSONobj = myJSON.message.items[0];
                 myJSONobj.url_status = text_obj[input_string].url_status;
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj));
@@ -1062,9 +1063,12 @@ Basic procedure:
         
         
         if (input_JSON.DOI == null) {
-            input_JSON.DOI = input_string; // dfd is this right? when there's more to the text than the url will it be bad?
+            input_JSON.DOI = input_JSON.url; // to be honest, i'm not sure why i do this. but it doesn't seem to hurt.
             input_JSON.type = 'web-page'
-//             console.log( 'url found(?) = ' + )
+//         	console.log( 'null doi for ' + input_string)
+//             console.log( 'url found(?) = ' + input_JSON.url)
+//             console.log( 'type='+input_JSON.type)
+//             console.log( 'url status='+text_obj[input_string].url_status)
         }
         
         text_obj[input_string].doi = input_JSON.DOI;
@@ -1079,7 +1083,7 @@ Basic procedure:
                     // this isn't an error. It happens when
                     //    1) It tried to combine two rows and decided not to because best combo was better without one of them
                     //    2) Crossref returned the same doi for both. In other words, crossref say the best match for b is x, but this thinks a matches x better without b. 
-                    console.log( 'u37')
+                    // console.log( 'u37')
                 }
                 text_obj[input_string].doi = reference_obj[input_JSON.DOI].doi; // this is helpful because sometimes an incorrect doi will be corrected when the json is returned (eg // turns into /)
                 text_obj[input_string].update_input('done');
@@ -1087,7 +1091,6 @@ Basic procedure:
                 // since I can't handle it, get the URL again (using Cite this time) 
                 text_obj[input_string].use_Cite = true;
                 getOneURL(input_string);
-    //       		weirdthing(input_string);
                 return;
             }
         } catch (err) {
@@ -1095,24 +1098,6 @@ Basic procedure:
             console.log( err)
         }
     }
-
-// 	async function weirdthing(input_url) {
-//         // This gets a reference in apa format from Crossref. (I think it's from Crossref?) 
-//         // So it kinda does what Cite does. They seem to be about the same speed. 
-//         // But this doesn't return formatted text (e.g., italics), which I confirmed in email
-//         // with Crossref, so I'm sticking with Cite. 
-//         var xy = await $.ajax({
-//             headers: { 
-//         //         Accept : "application/vnd.citationstyles.csl+json" // this returns json
-//                 Accept : "text/bibliography; style=apa"
-//             },
-//             type: "GET",
-//             mailto: 'nkornell@gmail.com',
-//             url: input_url, // e.g., https://doi.org/10.1093/oxfordhb/9780199336746.013.8
-//         })
-//         console.log( input_url)
-//         console.log(xy)
-//     }
 
 	function url_status_checker(myJSON, inputURL) {
 		if (has_404_etc(myJSON)) { 
@@ -1431,9 +1416,9 @@ Basic procedure:
 		        // when the mode is removing duplicate references, it's not going to check both input strings. so just go ahead and combine it (i.e., don't return)
 		    } else {
                 // return here, and then wait for the other input string to be called. 
-                // dfd: if both are wrong, then they won't get combined given the way this is set up now. 
-    		    // this is where it would be smart to check whether the other one is also wrong, and if it is, join the strings and send that to the database. 
                 return false; 
+                // note for the future: if both are wrong, then they won't get combined given the way this is set up now. 
+    		    // this is where it would be smart to check whether the other one is also wrong, and if it is, join the strings and send that to the database. 
             }
 		}
         
@@ -1502,7 +1487,7 @@ Basic procedure:
                         console.log( "[didn't change user input] "+input_string + " != "+bestcombo)
                     }
                 }
-                console.log('bestcombo='+bestcombo)
+//                 console.log('bestcombo='+bestcombo)
                 return true;
             } else {
                 return false;
@@ -1622,8 +1607,7 @@ Basic procedure:
 		var userURL = text_obj[userString].url;
 		var databaseURL = text_obj[userString].url_found;
 		
-		// dfdd make scoring work for urls
-		console.groupCollapsed( 'computing score')
+		console.groupCollapsed( 'scoring '+userString.slice(0,14))
 		console.log( userString)
         console.log('database string 1')
 		console.log( databaseString)
@@ -1643,8 +1627,10 @@ Basic procedure:
                     return compute_letter_match(databaseString,userString);
                 }
 //             } else if (userURL !='' && text_obj[userString].url_status == "good") {
-//                 // if there's a good url
-//                 return 83; // dfd this is totally wrong but good for testing            
+					// if there's a good url
+// 				return 83; // dfd this is totally wrong but good for testing     
+					// dfd make scoring work for urls -- right now, the problem is that just a URL is never going to match with a URL plus info found in the database. so i don't know what to do here.
+					// but maybe I should just return zero and not even try to score URLs because that thing only works x times a day anyway. 
             } else {
                 // if there is not a valid doi or url in the user input, remove the doi or url from the database string for the sake of comparison. 
                 // this does not use percentage because without a doi, I can't assume either side is good 
@@ -1825,14 +1811,14 @@ Basic procedure:
 			    if (i > 0) { // if it's not the first row (bc there's no previous row)
                     urlSuffix[i-1] = urlSuffix[i-1] + urlSuffix[i];
                     urlSuffix.splice(i, 1);
-                    console.log('combined short thing: ' + urlSuffix[i-1])
+//                     console.log('combined short thing: ' + urlSuffix[i-1])
                 }
 			} else if (urlSuffix[i].charAt(urlSuffix[i].length-1) == '-') {
         		// if it ends with - combine it with the following row (if there is one).
         		if (typeof urlSuffix[i+1] != undefined && urlSuffix[i+1] != null) {
 					urlSuffix[i+1] = urlSuffix[i] + urlSuffix[i+1];
+//                     console.log('combined thing that ended in -: ' + urlSuffix[i+1])
 					urlSuffix.splice(i, 1);
-                    console.log('combined thing that ended in -: ' + urlSuffix[i+1])
 				}
 			}
 		}
@@ -2357,7 +2343,7 @@ Basic procedure:
 
 		navigator.clipboard.write([clipboardItem]);
 
-        document.getElementById('buffer_for_copying').style = "display:none" 
+        document.getElementById('buffer_for_copying').style = "display:none"         
     }
 	
 </script>
