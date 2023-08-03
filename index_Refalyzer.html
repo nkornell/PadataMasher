@@ -323,7 +323,7 @@ Basic procedure:
     }
 	
 	function get_apa_from_json_URL(input_json) {
-		// apa rules    from https://www.scribbr.com/apa-examples/website/#:~:text=APA%20website%20citations%20usually%20include,time%2C%20add%20a%20retrieval%20date.
+		// apa rules from https://www.scribbr.com/apa-examples/website/#:~:text=APA%20website%20citations%20usually%20include,time%2C%20add%20a%20retrieval%20date.
 		// if there is an author
 		// Last name, Initials. (Year, Month Day). Article title. Publication Name. URL
 		// if there is no author but there is an organization
@@ -574,7 +574,7 @@ Basic procedure:
 					var d = dmp.diff_main(this.user_input, temp_ref_to_show, false); // note, after the two strings, there are two optional parameters. Just use one and set it to false.  
 					this.percent_unchanged = dmp.diff_percentage_unchanged(d);
 
-                    this.score = compute_score(temp_apa_no_html, this.user_input); // order has to be database version, user version 
+                    this.score = compute_score(reference_obj[this.doi], temp_apa_no_html, this.user_input); // order has to be database version, user version 
                     this.letter_match = compute_letter_match(temp_apa_no_html, this.user_input);
                     this.letter_match_percentage = compute_letter_match_percentage(this.user_input, temp_apa_no_html); // order has to be user, database
                     if (this.score > good_match_threshold) {
@@ -678,7 +678,44 @@ Basic procedure:
             this.user_input = input_userInput;
             this.json = input_json;
             this.doi = this.json.DOI;
+            this.last_names = []
+            this.year = ''
+            
         
+// 			Figure out authors, year, and title.
+            if (input_json.author !== undefined && input_json.author !== null) {
+				for (a = 0; a < input_json.author.length; a++) {
+					if (input_json.author[a].family !== undefined && input_json.author[a].family !== null) {
+						this.last_names.push(input_json.author[a].family)
+					}
+				}
+			}
+            if (input_json.issued != undefined && input_json.issued != null) {
+            	this.year = input_json.issued["date-parts"][0][0]
+            } else if (input_json.date !== undefined && input_json.date !== null) {
+				var pub_date = new Date(input_json.date);
+				this.year = pub_date.getFullYear();
+			}
+            // figure out title
+            if (input_json.title !== undefined && input_json.title !== null) {
+                this.title = input_json.title.toString().trim();
+            } 
+            // if there's a subtitle
+            if (input_json.subtitle != undefined && input_json.subtitle != null && input_json.subtitle != '') {
+                // remove period and colon at the end of the title
+                if (this.title.charAt(this.title.length-1) == '.' || this.title.charAt(this.title.length-1) == ':') {
+                    this.title = this.title.slice(0, -1).trim();
+                }
+//                 console.log( '---subtitle found for '+ title)
+                // add together title, colon, then subtitle
+                this.title = this.title + ': ' + input_json.subtitle.toString().trim();
+            }
+            // if it doesn't end with a period or question mark, end it
+            if (this.title.charAt(this.title.length-1) != '.' && this.title.charAt(this.title.length-1) != '?') {
+                this.title = this.title + '.';
+            }
+
+
             // maybe check here if it's a chapter, and if it is see if it can find the book by cutting off the last 1-2 numbers of the doi and checking crossref?
             // then it would have to check whether the title seems right, and if it does, it could find the editors and amend the reference object? 
             // this sounds risky because what if something (the title, the editors) seems right but it's wrong?
@@ -692,13 +729,16 @@ Basic procedure:
 	                    this.apa = get_apa_from_json_URL(input_json);
 	                }
                 } else {
-                    this.apa = get_apa_from_json(input_json);
+                    this.apa = get_apa_from_json(this);
                 }
             } else {
                 // using cite
                 this.apa = input_apa.toString().replace(/(<div([^>]+)>)/gi,'').replace(/(<\/div>)/gi, '').trim(); // remove all div tags
             }
 			this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, "");
+			
+
+
 
     	} catch(err) {
     	    console.error ('error in new reference obj')
@@ -724,19 +764,16 @@ Basic procedure:
 // Interventions for mental health professionals (pp. 11–26). American Psychological Association.
 // https://doi.org/10.1037/0000157-002
 
- 	function get_apa_from_json(input_json) {
+ 	function get_apa_from_json(input_ref) {
  		// Use json to create a properly formatted reference. 
- 		
+ 		input_json = input_ref.json
         // https://apastyle.apa.org/instructional-aids/reference-examples.pdf
         var firstname = '';
 	    var all_author = '';
 	    var name_apa = '';
         var a = 0;
-        var title = '';
         var out = '';
-        
-//         console.log(input_json)
-        
+                
         try {
             // figure out authors
             if (input_json.author !== undefined && input_json.author !== null) {
@@ -766,41 +803,12 @@ Basic procedure:
             } else {
                 console.log( 'no author found')
             }
-        
-            // figure out editors
-            // I haven't worked on this because barely any dois have editors, so there's not much point going further.
-//             if (typeof input_json.editor != "undefined") {
-//                 console.log( 'EDITOR FOUND *$*# '+all_author)
-//                 for (a = 0; a < input_json.editor.length; a++) {
-//                     console.log(input_json.editor[a].family)
-//                 }
-//             }
-            
-            // figure out title
-            if (input_json.title !== undefined && input_json.title !== null) {
-                title = input_json.title.toString().trim();
-            }
-                        
-            // if there's a subtitle
-            if (input_json.subtitle != undefined && input_json.subtitle != null && input_json.subtitle != '') {
-                // remove period and colon at the end of the title
-                if (title.charAt(title.length-1) == '.' || title.charAt(title.length-1) == ':') {
-                    title = title.slice(0, -1).trim();
-                }
-//                 console.log( '---subtitle found for '+ title)
-                // add together title, colon, then subtitle
-                title = title + ': ' + input_json.subtitle.toString().trim();
-            }
-            // if it doesn't end with a period or question mark, end it
-            if (title.charAt(title.length-1) != '.' && title.charAt(title.length-1) != '?') {
-                title = title + '.';
-            }
-
+        			
             // put it all together
             if (input_json.type == 'journal-article') {
                 out += all_author 
-                out += ' (' + input_json.issued["date-parts"][0][0] + '). ';
-                out += title;
+                out += ' (' + input_ref.year + '). ';
+                out += input_ref.title;
                 out += ' <i>' + input_json['container-title'] + ', ';
                 out += input_json.volume + '</i>';
                 if (typeof input_json.issue != "undefined") {
@@ -815,8 +823,8 @@ Basic procedure:
                 }
             } else if (input_json.type == 'chapter' || input_json.type == 'book-chapter') {
                 out += all_author 
-                out += ' (' + input_json.issued["date-parts"][0][0] + '). ';
-                out += title;  
+                out += ' (' + input_ref.year + '). ';
+                out += input_ref.title;  
                 out += '. https://doi.org/' + input_json.DOI;   
             }
             
@@ -1600,12 +1608,17 @@ Basic procedure:
 		}
 	}
 	
-	function compute_score(databaseString, userString) {
+	function compute_score(database_obj, databaseString, userString) {
 		// figure out whether a DOI was found in the user input
+		var temp_score = 0;
+		var bonus_score = 0;
 		var userDOI = userString.match(doi_pattern); 
 		var databaseDOI = databaseString.match(doi_pattern); 
 		var userURL = text_obj[userString].url;
 		var databaseURL = text_obj[userString].url_found;
+		var a = 0;
+		var a_count = 0;
+
 		
 		console.groupCollapsed( 'scoring '+userString.slice(0,14))
 		console.log( userString)
@@ -1615,20 +1628,20 @@ Basic procedure:
 		console.groupEnd();
 
         try {		
-            // return a score
+            // compute a letter-based score
             if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	// with typeof, put undefined in quotes
                 if (userDOI[0].toLowerCase() == databaseDOI[0].toLowerCase()) { 
-                    // if a doi was found, it returns percentage. why? basically, if it's part of a reference with the right doi, this 
+                    // if a doi was found, score returns percentage. why? basically, if it's part of a reference with the right doi, this 
                     // will be high. but if it's the wrong reference, it'll be low. 
-                    return compute_letter_match_percentage(userString,databaseString);
+                    temp_score = compute_letter_match_percentage(userString,databaseString);
                 } else {
                     // if the user doi wasn't the same as the database one (is this possible?!) return the match strength without removing the doi
                     // this happens when there's a bad doi, it searches without the doi, and finds a good doi to replace the bad one
-                    return compute_letter_match(databaseString,userString);
+                    temp_score = compute_letter_match(databaseString,userString);
                 }
 //             } else if (userURL !='' && text_obj[userString].url_status == "good") {
 					// if there's a good url
-// 				return 83; // dfd this is totally wrong but good for testing     
+// 				temp_score = 83; // dfd this is totally wrong but good for testing     
 					// dfd make scoring work for urls -- right now, the problem is that just a URL is never going to match with a URL plus info found in the database. so i don't know what to do here.
 					// but maybe I should just return zero and not even try to score URLs because that thing only works x times a day anyway. 
             } else {
@@ -1638,12 +1651,40 @@ Basic procedure:
                 databaseString = remove_doi_or_url_from_string(databaseString, databaseURL);
 //                 console.log('database string 2')
 //                 console.log( databaseString)
-                return compute_letter_match(databaseString,userString);
+                temp_score = compute_letter_match(databaseString,userString);
             }
 		} catch(err) {
 		    console.warn("Warning in compute score. (Note; this error can happen if the database string doesn't contain a doi.)")
 		    console.log(err)
 		}
+
+ 		// Figure out bonus points
+		// this gives extra points if there's a match with year, title, and authors. 
+
+		// if the year is present in the user string (not surrounded by other numbers)
+		const pattern_year = new RegExp("(?<!\d)"+database_obj.year+"(?!\d)"); // the year not surrounded by other numbers
+		if (pattern_year.test(userString) == true) {
+			bonus_score += 5;			
+		}
+		// if the title is present in the user string
+		if (userString.indexOf(database_obj.title) >= 0) {
+// 		if (compute_letter_match_percentage(database_obj.title, userString) > 95) { // dfd this isn't a good way to do it. the problem is, you can put a ton of junk in the title and this will think it's correct. and also, for letter match percentage, the second parameter is supposed to be correct. maybe I need letter match percentage of the user guess??
+			bonus_score += 10;
+			console.log( 'title good='+compute_letter_match_percentage(database_obj.title, userString))
+		}
+		// if the last names of all the authors are present in the title string
+		if (database_obj.last_names !== undefined && database_obj.last_names !== null && database_obj.last_names.length > 0) {
+			for (a = 0; a < database_obj.last_names.length; a++) {
+				if (userString.indexOf(database_obj.last_names[a]) >= 0) {
+					a_count++
+				}
+			}
+			bonus_score += 10*(a_count/database_obj.last_names.length); // this is 10 times the proportion of author last names found
+			console.log('authors found = '+100*(a_count/database_obj.last_names.length)+'%')
+		}
+
+		
+		return temp_score + bonus_score;
 	}
 	
 	function compute_letter_match(a, b) {
@@ -1651,7 +1692,7 @@ Basic procedure:
 	}
 	
 	function compute_letter_match_percentage(a, b) {
-        // This returns how good a match it is in terms of doing the best it could. 
+        // This returns how good a match it is in terms of doing the best it could. Order matters, b should be the correct answer.
         // In other words, the amount of letter match divided by the total possible amount of letter match. 
         
 		var tempMatch = compute_letter_match(a, b);
@@ -2113,7 +2154,7 @@ Basic procedure:
 		
 // 		document.getElementById('progressText_good').innerHTML =  "<span style='font-weight: bold; color: green'>" + c + " ✔</span>, <span style='font-weight: bold; color: red'>" + w + " ✘</span> , <span style='font-weight: bold; color: orange'>" + m + " maybe</span>";
 		document.getElementById('progressText_good').innerHTML =  "<span style='font-weight: bold; color: green'>" + c + " correct references</span>";
-		document.getElementById('progressText_bad').innerHTML =  "<span style='font-weight: bold; color: red'>" + w + " references that are guesses or not found</span>";
+		document.getElementById('progressText_bad').innerHTML =  "<span style='font-weight: bold; color: red'>" + w + " guesses at references</span>";
 
 		
 		build_author_table();
