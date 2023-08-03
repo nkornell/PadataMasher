@@ -2,8 +2,9 @@
 // dfd
 if you edit the boxes after running it, and then copy, it won't copy what you type in. 
 it's weird how it kind of shows guesses and unchanged mixed together. (mabuye have a button for "show all unchanged" or "show all guesses")
+Check whether it's categorizing well. Am I getting false alarms by adding the bonus points?
 
-// I could have two boxes, one for good and one for bad. And for bad, I could have an option to "try again" after they edit. 
+// I could have an option to "try again" after they edit. 
 // and then also, maybe the ability to promote something to the good section? 
 // and buttons to copy good and copy all in alphabetical order? 
 
@@ -1618,17 +1619,11 @@ Basic procedure:
 		var databaseURL = text_obj[userString].url_found;
 		var a = 0;
 		var a_count = 0;
+		var good_author_order = false;
+		var previous_author_name_position = 0;
 
-		
-		console.groupCollapsed( 'scoring '+userString.slice(0,14))
-		console.log( userString)
-        console.log('database string 1')
-		console.log( databaseString)
-		console.log( 'text_obj[userString].url_status='+text_obj[userString].url_status)
-		console.groupEnd();
-
+		// compute a letter-based scores
         try {		
-            // compute a letter-based score
             if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	// with typeof, put undefined in quotes
                 if (userDOI[0].toLowerCase() == databaseDOI[0].toLowerCase()) { 
                     // if a doi was found, score returns percentage. why? basically, if it's part of a reference with the right doi, this 
@@ -1658,8 +1653,7 @@ Basic procedure:
 		    console.log(err)
 		}
 
- 		// Figure out bonus points
-		// this gives extra points if there's a match with year, title, and authors. 
+ 		// Figure out bonus points. This gives extra points if there's a match with year, title, and authors. 
 
 		// if the year is present in the user string (not surrounded by other numbers)
 		const pattern_year = new RegExp("(?<!\d)"+database_obj.year+"(?!\d)"); // the year not surrounded by other numbers
@@ -1668,24 +1662,44 @@ Basic procedure:
 		}
 		// if the title is present in the user string
 		if (userString.indexOf(database_obj.title) >= 0) {
-// 		if (compute_letter_match_percentage(database_obj.title, userString) > 95) { // dfd this isn't a good way to do it. the problem is, you can put a ton of junk in the title and this will think it's correct. and also, for letter match percentage, the second parameter is supposed to be correct. maybe I need letter match percentage of the user guess??
+			// the title has to be written perfectly. It would be cool if the title didn't have to be perfect. but I don't have a way to do it. I don't think letter match or letter match percentage is good. the problem is, you can put a ton of junk in the title and this will think it's correct. and also, for letter match percentage, the second parameter is supposed to be correct. 
 			bonus_score += 10;
-			console.log( 'title good='+compute_letter_match_percentage(database_obj.title, userString))
 		}
 		// if the last names of all the authors are present in the title string
 		if (database_obj.last_names !== undefined && database_obj.last_names !== null && database_obj.last_names.length > 0) {
+			good_author_order = true
 			for (a = 0; a < database_obj.last_names.length; a++) {
 				if (userString.indexOf(database_obj.last_names[a]) >= 0) {
+					// if the author is in the userString, count it
 					a_count++
+					if (a > 0) {
+						// if the position of the previous author in the string is greater than the position of this author (starting the search from after this author) then they're out of order
+ 						if (previous_author_name_position >= userString.indexOf(database_obj.last_names[a], previous_author_name_position + 1)) {
+							console.warn( 'out of order: '+database_obj.last_names[a-1]+' '+database_obj.last_names[a])
+							good_author_order = false;
+						}
+					}
+					previous_author_name_position = userString.indexOf(database_obj.last_names[a])
 				}
 			}
-			bonus_score += 10*(a_count/database_obj.last_names.length); // this is 10 times the proportion of author last names found
-			console.log('authors found = '+100*(a_count/database_obj.last_names.length)+'%')
+			bonus_score += 5*(a_count/database_obj.last_names.length); // this bonus = 5 times the proportion of author last names found
+			if (good_author_order) {
+				bonus_score += 5*(a_count/database_obj.last_names.length) // if the authors are in the right order, double the bonus
+			}			
 		}
 
-		
+		console.groupCollapsed( 'scoring '+userString.slice(0,14))
+			console.log( userString)
+			console.log('database string 1')
+			console.log( databaseString)
+			console.log( 'text_obj[userString].url_status='+text_obj[userString].url_status)
+			console.log( 'score='+temp_score+'+'+bonus_score+'='+(temp_score+bonus_score))
+		console.groupEnd();
+
+
 		return temp_score + bonus_score;
 	}
+	
 	
 	function compute_letter_match(a, b) {
 		return Math.ceil(100*similarity(a,b));
