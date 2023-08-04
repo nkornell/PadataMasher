@@ -1169,9 +1169,9 @@ Basic procedure:
 //         problems
 // 		This finds the same title & doi twice and lists one as correct and one as wrong. It also puts a double period on a title but that might not be my fault:
 // 
-// 		Nelson, T. O., & Narens, L. (1990). Metamemory: A theoretical framework and new findings. In G. H. Bower (Ed.), The Psychology of Learning and Motivation (Vol. 26, pp. 125–141). San Diego, CA: Academic Press. 
+// Nelson, T. O., & Narens, L. (1990). Metamemory: A theoretical framework and new findings. In G. H. Bower (Ed.), The Psychology of Learning and Motivation (Vol. 26, pp. 125–141). San Diego, CA: Academic Press. 
 // 
-// 		https://doi.org/10.1016/S0079-7421(08)60053-5 
+// https://doi.org/10.1016/S0079-7421(08)60053-5 
 
         var i = 0;
         var foof = 0;
@@ -1321,7 +1321,7 @@ Basic procedure:
                 var row_to_remove = document.getElementById(input_string).rowIndex;
                 document.getElementById("article_table").deleteRow(row_to_remove);
                 
-//                 console.log( 'removing row: '+input_string)
+                console.log( 'setting removed = true for: '+input_string)
 
 				text_obj[input_string].search_status = 'done';				
                 text_obj[input_string].removed = true; // I think I did this rather than deleting it because get URL might be looking for it later. 
@@ -1444,6 +1444,7 @@ Basic procedure:
 		        // when the mode is removing duplicate references, it's not going to check both input strings. so just go ahead and combine it (i.e., don't return)
 		    } else {
                 // return here, and then wait for the other input string to be called. 
+//                 console.warn('this is happpppppp '+input_string)
                 return false; 
                 // note for the future: if both are wrong, then they won't get combined given the way this is set up now. 
     		    // this is where it would be smart to check whether the other one is also wrong, and if it is, join the strings and send that to the database. 
@@ -1454,11 +1455,17 @@ Basic procedure:
             if (otherRow_doi == this_row_doi) {
                 // if they have the same doi
                 shouldCombine = true;
+                console.log( 'same doi')
+                console.log( input_string)
+                console.log( otherRow_input_string)
             } else if (text_obj[otherRow_input_string].search_status == "searching") {
                 // if it's still searching for the other row, return. it'll try again with that row later. 
                 return false; 
             } else if (text_obj[otherRow_input_string].match_status == "correct") {
                 // if the other one is correct (and we already know the dois are different), return. when the other one gets its chance, it'll combine with this one (if appropriate)
+//                 console.warn( "not combining because it's correct "+ input_string)
+//                 console.log( otherRow_doi)
+//                 console.log( this_row_doi)
                 return false;
             }
         } catch(err) {
@@ -1476,6 +1483,11 @@ Basic procedure:
             if (input_string !== bestcombo) {
                 shouldCombine = true;
                 shouldChangeUserInput = true;
+            } else {
+            	console.warn('combo but no user input change')
+                console.log( input_string)
+                console.log( otherRow_input_string)
+				console.log( shouldCombine)
             }
             
             if (shouldCombine) {
@@ -1544,6 +1556,8 @@ Basic procedure:
             change_elementIDs(from_string, to_string);
         
             // create a new version of the input obj (with a new array index), but then copy the old one into it. I think I did this because get url is going to be expecting to return info to this thingy
+			console.warn('changing from '+from_string)
+			console.warn('changing to '+to_string)
             text_obj[to_string] = new Text_object(to_string, "","","",-1); // not giving it a doi means it won't add 1 to numRows withDOIsTotal
             text_obj[to_string] = Object.assign({}, text_obj[from_string]);
             text_obj[to_string].user_input = to_string;
@@ -1945,6 +1959,7 @@ Basic procedure:
                     // And btw, here's why I don't want to just disappear: it's possible that the same line appearing twice is correct. (by contrast, disappearing a duplicate doi is fine.) 
                 }
                 text_obj[urlSuffix[i]] = new Text_object(urlSuffix[i], tempDOI, tempDOItype, tempURL, i); // if there's no doi, or the doi is new, use it. 
+                console.log( 'new text obj '+urlSuffix[i])
                 if (tempDOI.length > 0) {
                     tempDOIsFoundSoFar.push(tempDOI);
                 }
@@ -2170,6 +2185,15 @@ Basic procedure:
         }
         
         current_mode = 'completely done'
+        
+		for (let key in text_obj) { 
+			if (text_obj[key].removed) {
+				console.log('removed: ' + text_obj[key].user_input)
+			} else {
+				console.log('included: ' + text_obj[key].user_input)                    
+			}
+		}
+
 
         var c = 0;
         var m = 0;
