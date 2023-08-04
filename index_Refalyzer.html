@@ -2,7 +2,9 @@
 // dfd
 if you edit the boxes after running it, and then copy, it won't copy what you type in. 
 it's weird how it kind of shows guesses and unchanged mixed together. (mabuye have a button for "show all unchanged" or "show all guesses")
+relatedly, sometimes the user wrote too much but it still thinks it's right. I could make the program differentiate between 'my answer is wrong' and 'your input was wrong'
 Check whether it's categorizing well. Am I getting false alarms by adding the bonus points?
+make a button to load everything in memory? 
 
 // I could have an option to "try again" after they edit. 
 // and then also, maybe the ability to promote something to the good section? 
@@ -20,21 +22,11 @@ To do:
 -   And maybe even fix the errors?? like if eds are missing, use the user input to insert them?
 -   do this by having it return an object, and have the object include, like, .apa (so the user could type something like, returnthing(x).apa)
 
-- look at strings more
--       by the way, at some point worry about line numbers. like, find them and remove them.
--       I could try to characterize the typical last character of rows. Like, is it usually a number? usually a period? and then if something deviates, 
--           maybe it's not the last character? 
 
 - this returns a crazy reference that's way too long. It returns fragment but it should probably return wrong. So maybe part of the right/wrong score should be
 - based on total length? (Is it already?)
 - Learning and Motivation: Advances in Research and Theory, vol. 54, ed. BH Ross, pp. 103–40. San Diego, CA: Elsevier
 
-- this returns wrong. what it means is, the user was wrong. in other words, the user had stuff that needed to be deleted. 
--   that's different than thinking the answer it's giving is wrong. 
-- make the program differentiate between 'my answer is wrong' and 'your input was wrong'
-	Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. go to the store and buy a carpet, buy a floor https://doi.org/10.1037/xlm0000246
-
-- Add google analytics tags so i can see if it gets used. 
 
 - It would speed things up to not wait for all of the lines to come in before trying to combine. Maybe if an obj is correct it should try to combine right away?
 
@@ -45,6 +37,10 @@ To do:
 - Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
 
 -->
+
+<!-- 
+
+ -->
 
 
 <!-- author stuff-->
@@ -176,6 +172,16 @@ Basic procedure:
 <html lang="en">
 
 <head>
+	<!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-F6TKH9ZNZX"></script>
+	<script>
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'G-F6TKH9ZNZX');
+	</script>
+
 	<title>Fix My References</title>
 	<meta charset="utf-8" />
 	<meta name="description" content="format citations">
@@ -1157,7 +1163,16 @@ Basic procedure:
 
 	
 	function remove_duplicate_references() {
-        // could this whole function be merged with remove duplicate rows?
+        // dfd I think this is only looking at the user input. so if it found something with a doi in the output, it's not going to see it.
+        // but also, before we even get to the idea of combining, why is it finding a doi and then putting it in with the previous 
+        
+//         problems
+// 		This finds the same title & doi twice and lists one as correct and one as wrong. It also puts a double period on a title but that might not be my fault:
+// 
+// 		Nelson, T. O., & Narens, L. (1990). Metamemory: A theoretical framework and new findings. In G. H. Bower (Ed.), The Psychology of Learning and Motivation (Vol. 26, pp. 125–141). San Diego, CA: Academic Press. 
+// 
+// 		https://doi.org/10.1016/S0079-7421(08)60053-5 
+
         var i = 0;
         var foof = 0;
         var temp_doi = '';
@@ -1193,6 +1208,9 @@ Basic procedure:
 // 			    console.log( 'found a duplicate doi ['+temp_doi+'] in rows '+r1+', '+r2+': ' + r1_text)
                 if (decide_whether_to_combine_rows(r1_text, r2 - r1) == true) {
                 	foof++; 
+                	console.warn('duplicate reference removed '+r1_text)
+                } else {
+                	console.warn( 'decided not to')
                 }
 			} else {
 			    temp_doi_array.push(temp_doi);
@@ -1346,12 +1364,11 @@ Basic procedure:
                 	continue;
                 }
 // 				console.log( 'deciding about: '+temp_DOI)
-				if (decide_whether_to_combine_rows(temp_row_text,-1) == true) {
+				if (decide_whether_to_combine_rows(temp_row_text,-1) == true) { // looking back at -1
 					run_me_again = true;
                     break; // exit this loop
-
 				}
-				if (decide_whether_to_combine_rows(temp_row_text, 1) == true) {
+				if (decide_whether_to_combine_rows(temp_row_text, 1) == true) { // looking forward at 1
 					run_me_again = true;
                     break; // exit this loop
 				}
@@ -1515,10 +1532,10 @@ Basic procedure:
 	
         try {
 			if (text_obj[from_string].removed == true) {
-				console.log( '**error: trying to change user input for a removed thing;)')
+				console.warn( 'trying to change user input for a removed thing;)')
 			}
 			if (typeof text_obj[to_string] !== 'undefined' && text_obj[to_string] !== null) {
-			    console.log( '**error 8484: tried to change user input to something that already existed [returning]')
+			    console.log( 'tried to change user input to something that already existed [returning]. '+to_string)
 			    return;
 			}
         
@@ -1617,12 +1634,8 @@ Basic procedure:
 		var databaseDOI = databaseString.match(doi_pattern); 
 		var userURL = text_obj[userString].url;
 		var databaseURL = text_obj[userString].url_found;
-		var a = 0;
-		var a_count = 0;
-		var good_author_order = false;
-		var previous_author_name_position = 0;
 
-		// compute a letter-based scores
+		// -compute scores based on letter match-
         try {		
             if (typeof userDOI !== 'undefined' && userDOI !== null && userDOI.length > 0) {	// with typeof, put undefined in quotes
                 if (userDOI[0].toLowerCase() == databaseDOI[0].toLowerCase()) { 
@@ -1644,8 +1657,6 @@ Basic procedure:
                 // this does not use percentage because without a doi, I can't assume either side is good 
                 databaseString = remove_doi_or_url_from_string(databaseString, databaseDOI);
                 databaseString = remove_doi_or_url_from_string(databaseString, databaseURL);
-//                 console.log('database string 2')
-//                 console.log( databaseString)
                 temp_score = compute_letter_match(databaseString,userString);
             }
 		} catch(err) {
@@ -1653,21 +1664,32 @@ Basic procedure:
 		    console.log(err)
 		}
 
- 		// Figure out bonus points. This gives extra points if there's a match with year, title, and authors. 
+ 		// -compute bonus points that are given if there's a match with year, title, and/or authors. 
 
-		// if the year is present in the user string (not surrounded by other numbers)
+		// if the year is present in the user string (and it's not surrounded by other numbers (e.g., e44.200411.r5))
 		const pattern_year = new RegExp("(?<!\d)"+database_obj.year+"(?!\d)"); // the year not surrounded by other numbers
 		if (pattern_year.test(userString) == true) {
 			bonus_score += 5;			
 		}
 		// if the title is present in the user string
-		if (userString.indexOf(database_obj.title) >= 0) {
-			// the title has to be written perfectly. It would be cool if the title didn't have to be perfect. but I don't have a way to do it. I don't think letter match or letter match percentage is good. the problem is, you can put a ton of junk in the title and this will think it's correct. and also, for letter match percentage, the second parameter is supposed to be correct. 
-			bonus_score += 10;
+		const user__string_alphanumeric = userString.replace(/[^a-zA-Z0-9]/g, ""); // remove all spaces and special characters
+		const database_title_alphanumeric = database_obj.title.replace(/[^a-zA-Z0-9]/g, ""); // remove all spaces and special characters
+		if (user__string_alphanumeric.indexOf(database_title_alphanumeric) >= 0) {
+			// the letters and numbers in the title have to be written perfectly, although this does ignore special characters, capitalization, and spaces. It would be cool if the title didn't have to be perfect. but I don't have a way to do it. I don't think letter match or letter match percentage is good. the problem is, you can put a ton of junk in the title and this will think it's correct. and also, for letter match percentage, the second parameter is supposed to be correct. 
+			bonus_score += .1*database_obj.title.length; // longer titles get more points. 80 characters gets 8 points, etc. 
 		}
-		// if the last names of all the authors are present in the title string
+
+		// if the last names of all the database authors are present in the title string (note, this is not impacted by there being an extra author in the user string)
+		var a = 0;
+		var a_count = 0;
+		var good_author_order = false;
+		var previous_author_name_position = 0;
+
 		if (database_obj.last_names !== undefined && database_obj.last_names !== null && database_obj.last_names.length > 0) {
-			good_author_order = true
+			if (database_obj.last_names.length > 1) {
+				// if there are two or more authors, assume they're in the right order for now
+				good_author_order = true
+			}
 			for (a = 0; a < database_obj.last_names.length; a++) {
 				if (userString.indexOf(database_obj.last_names[a]) >= 0) {
 					// if the author is in the userString, count it
@@ -1689,10 +1711,10 @@ Basic procedure:
 		}
 
 		console.groupCollapsed( 'scoring '+userString.slice(0,14))
+			console.log('user string then database string:')
 			console.log( userString)
-			console.log('database string 1')
 			console.log( databaseString)
-			console.log( 'text_obj[userString].url_status='+text_obj[userString].url_status)
+			console.log( 'url status='+text_obj[userString].url_status)
 			console.log( 'score='+temp_score+'+'+bonus_score+'='+(temp_score+bonus_score))
 		console.groupEnd();
 
