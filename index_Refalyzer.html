@@ -305,6 +305,8 @@ Basic procedure:
     	// fixes funky characters (namely ( and ,) 
     	// rearranges them so it's first, last
     	// turns stuff into initials
+    	
+    	// problem: with a name like De Leonardis, D. M., this returns Leonardis, D. M. D.
 
     	// find unexpected characters
     	if (str_count('(', input) > 0 && str_count(')', input) > 0) {
@@ -797,18 +799,8 @@ Basic procedure:
                         } else {
                             all_author += ', ' + name_apa;
                         }
-
-                        var woof = author_in_apa_format(input_json.author[a].given + ' ' + input_json.author[a].family)
-                        if (name_apa != woof) {
-                        	console.warn('author_in_apa_format returned output that looks wrong')
-                            console.warn(name_apa + ' ≠ ' + woof)
-                            console.log( 'given = '+author_in_apa_format(input_json.author[a].given))
-                            console.log( 'family = '+input_json.author[a].family)
-                        }
                     }
                 }
-            } else {
-                console.log( 'no author found')
             }
         			
             // put it all together
@@ -1163,16 +1155,6 @@ Basic procedure:
 
 	
 	function remove_duplicate_references() {
-        // dfd I think this is only looking at the user input. so if it found something with a doi in the output, it's not going to see it.
-        // but also, before we even get to the idea of combining, why is it finding a doi and then putting it in with the previous 
-        
-//         problems
-// 		This finds the same title & doi twice and lists one as correct and one as wrong. It also puts a double period on a title but that might not be my fault:
-// 
-// Nelson, T. O., & Narens, L. (1990). Metamemory: A theoretical framework and new findings. In G. H. Bower (Ed.), The Psychology of Learning and Motivation (Vol. 26, pp. 125–141). San Diego, CA: Academic Press. 
-// 
-// https://doi.org/10.1016/S0079-7421(08)60053-5 
-
         var i = 0;
         var foof = 0;
         var temp_doi = '';
@@ -1198,7 +1180,6 @@ Basic procedure:
 			    continue;
 			}
 			
-// 		    console.log( 'tempdoi='+temp_doi)
 			if (temp_doi_array.includes(temp_doi)) {
 			    // if this doi is already in another row...
                 const r1 = temp_doi_array.indexOf(temp_doi) + 1;
@@ -1208,16 +1189,13 @@ Basic procedure:
 // 			    console.log( 'found a duplicate doi ['+temp_doi+'] in rows '+r1+', '+r2+': ' + r1_text)
                 if (decide_whether_to_combine_rows(r1_text, r2 - r1) == true) {
                 	foof++; 
-                	console.warn('duplicate reference removed '+r1_text)
-                } else {
-                	console.warn( 'decided not to')
                 }
 			} else {
 			    temp_doi_array.push(temp_doi);
 			}			
         }
         if (foof > 0) {
-            console.log( '-E-removed ['+foof+'] duplicate references--');
+//             console.log( '-E-removed ['+foof+'] duplicate references--');
         }
 	}
 
@@ -1294,9 +1272,9 @@ Basic procedure:
                 }
             }
         }
-        if (foof > 0) {
-            console.log('-C-removed ['+foof+'] duplicate rows--');
-        }
+//         if (foof > 0) {
+//             console.log('-C-removed ['+foof+'] duplicate rows--');
+//         }
 	}
 	
 	
@@ -1306,7 +1284,7 @@ Basic procedure:
 	
 	function remove_row(input_string) {
 		// remove a row that is no longer needed
-		console.log('removing '+input_string)
+// 		console.log('removing '+input_string)
 		
         if (text_obj[input_string].removed) {
             // if it's already removed, don't remove it. 
@@ -1321,7 +1299,7 @@ Basic procedure:
                 var row_to_remove = document.getElementById(input_string).rowIndex;
                 document.getElementById("article_table").deleteRow(row_to_remove);
                 
-                console.log( 'setting removed = true for: '+input_string)
+//                 console.log( 'setting removed = true for: '+input_string)
 
 				text_obj[input_string].search_status = 'done';				
                 text_obj[input_string].removed = true; // I think I did this rather than deleting it because get URL might be looking for it later. 
@@ -1455,9 +1433,9 @@ Basic procedure:
             if (otherRow_doi == this_row_doi) {
                 // if they have the same doi
                 shouldCombine = true;
-                console.log( 'same doi')
-                console.log( input_string)
-                console.log( otherRow_input_string)
+//                 console.log( 'same doi')
+//                 console.log( input_string)
+//                 console.log( otherRow_input_string)
             } else if (text_obj[otherRow_input_string].search_status == "searching") {
                 // if it's still searching for the other row, return. it'll try again with that row later. 
                 return false; 
@@ -1469,7 +1447,7 @@ Basic procedure:
                 return false;
             }
         } catch(err) {
-            console.log( "*error palm frond for "+otherRow_input_string)
+            console.error( "*error palm frond for "+otherRow_input_string)
             console.log( err);
         }
 
@@ -1483,11 +1461,6 @@ Basic procedure:
             if (input_string !== bestcombo) {
                 shouldCombine = true;
                 shouldChangeUserInput = true;
-            } else {
-            	console.warn('combo but no user input change')
-                console.log( input_string)
-                console.log( otherRow_input_string)
-				console.log( shouldCombine)
             }
             
             if (shouldCombine) {
@@ -1554,16 +1527,17 @@ Basic procedure:
 			}
         
             change_elementIDs(from_string, to_string);
-        
+        	
             // create a new version of the input obj (with a new array index), but then copy the old one into it. I think I did this because get url is going to be expecting to return info to this thingy
-			console.warn('changing from '+from_string)
-			console.warn('changing to '+to_string)
+// 			console.warn('changing from '+from_string)
+// 			console.warn('changing to '+to_string)
             text_obj[to_string] = new Text_object(to_string, "","","",-1); // not giving it a doi means it won't add 1 to numRows withDOIsTotal
             text_obj[to_string] = Object.assign({}, text_obj[from_string]);
             text_obj[to_string].user_input = to_string;
             // update reference obj (i.e., from obj)
             reference_obj[text_obj[to_string].doi].user_input = to_string;
             text_obj[to_string].update_input('');
+            text_obj[from_string].removed = true // dfd new, is this ok? 
 
             update_progress();
         }
@@ -1713,7 +1687,6 @@ Basic procedure:
 					if (a > 0) {
 						// if the position of the previous author in the string is greater than the position of this author (starting the search from after this author) then they're out of order
  						if (previous_author_name_position >= userString.indexOf(database_obj.last_names[a], previous_author_name_position + 1)) {
-							console.warn( 'out of order: '+database_obj.last_names[a-1]+' '+database_obj.last_names[a])
 							good_author_order = false;
 						}
 					}
@@ -1959,7 +1932,7 @@ Basic procedure:
                     // And btw, here's why I don't want to just disappear: it's possible that the same line appearing twice is correct. (by contrast, disappearing a duplicate doi is fine.) 
                 }
                 text_obj[urlSuffix[i]] = new Text_object(urlSuffix[i], tempDOI, tempDOItype, tempURL, i); // if there's no doi, or the doi is new, use it. 
-                console.log( 'new text obj '+urlSuffix[i])
+//                 console.log( 'new text obj '+urlSuffix[i])
                 if (tempDOI.length > 0) {
                     tempDOIsFoundSoFar.push(tempDOI);
                 }
@@ -1969,8 +1942,6 @@ Basic procedure:
 	}
 	
 	function build_article_table() {
-		// Build article table
-		console.log( 'build_article_table')
 		var s = '';
 		
 		articleTableText = "<table id='article_table'>";
@@ -2179,6 +2150,8 @@ Basic procedure:
 	}
 	
 	function finish() {
+		var text_obj_count = 0
+		
         if (current_mode == 'completely done') {
             console.log( '*error called finish() when already completely done [returning]')
             return;
@@ -2186,13 +2159,6 @@ Basic procedure:
         
         current_mode = 'completely done'
         
-		for (let key in text_obj) { 
-			if (text_obj[key].removed) {
-				console.log('removed: ' + text_obj[key].user_input)
-			} else {
-				console.log('included: ' + text_obj[key].user_input)                    
-			}
-		}
 
 
         var c = 0;
@@ -2210,6 +2176,16 @@ Basic procedure:
 			}
 		}
 		w = w + m; // collapse w and m into one value for anything that's not right
+		
+		// figure out how many objects (not removed) there are in text_obj and make sure it's the same as in the table (below)
+		for (let key in text_obj) { 
+			if (text_obj[key].removed == false) {
+				text_obj_count++
+			}
+		}
+		if (text_obj_count != (c+m+w)) {
+			console.error('mismatched counts: text_obj ('+text_obj_count+') != article table count ('+(c+m+w)+')')
+		}
         
 // 		document.getElementById('progressText').innerHTML = 'Done. ' + rows_total + " entries processed in " +  Math.floor((Date.now() - startTime)/1000) + " seconds."
 		document.getElementById('progressText').style = "display: none"
@@ -2241,7 +2217,13 @@ Basic procedure:
 	
 	function show_simple_output() {
 		// this puts the output in a user-friendly table (this is instead of using article_table)
-		console.log( 'show_simple_output')
+		
+		if (current_mode != 'completely done') {
+			// without this, you can make it add each item to the table, so they can watch the progress. 
+			// but since i'm not showing that table anyway, what's the point?
+			return
+		}
+		
 		var i, showingUnknown = 0;
 		var t = ''; // for the table 
         let initial_scroll_top = 0;
@@ -2256,73 +2238,72 @@ Basic procedure:
 			document.getElementById('simple_table').style = "display: flex; overflow-y: scroll;"
 			document.getElementById('simple_table').style.height = (innerHeight-300)+'px';
 		}
-// dfd
+
 		if (current_mode == 'completely done') {
 			t = '<tr>'
 			t +=  "<th style='line-height: 2' onclick='sortTable(0, "+'"simple_table","letters","desc"'+")' title='Click to Sort'>Sort By Status ▾</th>";
 			t +=  "<th style='line-height: 2' onclick='sortTable(1, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort Alphabetical ▾</th>";
 			t += '</tr>'
+		}
 		
-			// loop through all of the items twice, first doing unknown ones and then doing known ones
-			for (showingUnknown = 0; showingUnknown <= 1; showingUnknown++) {
-				for (let key in text_obj) { // this loops through all of text_obj
-					var t_o = text_obj[key];
-					if (t_o.removed || t_o.combine_status == 'not done') {
-						// if this item has been removed, or it's combine status doesn't equal done, then skip it
-						continue;
-					}
-
-					if ((showingUnknown == 0) == (t_o.match_status != 'unknown')) {
-						// Doing this means it shows all of the unknown stuff at the top of the table when it's being added to the table. 
-						// How it works: showingUnknown = 0 means we are showing the unknown ones. if it's true and 
-						// match_status doesn't equal "unknown", or vice versa, then continue. Continue means skip the rest of the loop and advance to i + 1
-						continue;
-					}
-					t += '<tr>'
-					t += '<td style="vertical-align: top; text-align: center; min-width: 18ex">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
-// console.log('showingUnknown='+ showingUnknown+" key="+key+" match_status="+t_o.match_status)
-					// left column
-					if (t_o.match_status == 'unknown' && current_mode != 'completely done') { // unknown
-						t += '<div style="border-right:0px solid; border-right-color: white; color: greywolf">searching...</div>'
-					} else if (t_o.match_status == 'correct') { // correct
-// 									console.log( t_o)
-						t += '<div style="border-right:0px solid; border-right-color: lawngreen; font-size: 1.5em; color: lawngreen;">'
-						t += '✔'
-						t += '</div>'
-					} else if (t_o.match_status == 'wrong' || (t_o.match_status == 'unknown' && current_mode == 'completely done')) { // wrong
-// 					console.log(t_o)
-						t += '<div style="border-right:0px solid; border-right-color: red; font-size: 1.5em; color: red;">'
-						t += '✘'
-						t += '</div>'
-					} else { // maybe
-						t += '<div style="border-right:0px solid; border-right-color: orange;">'
-						var button_value = 'show user input'
-						if (t_o.output == t_o.user_input) {
-							button_value = 'show search result'
-						}
-						t += '<div style="color: orange"><p>'+t_o.score+'% match </p>'
-						t += '</div>'
-						t += '\
-								<select style="border-color: orange" onchange="text_obj[\''+t_o.user_input+'\'].switch_output(this.value);">\
-								  <option value="fixed">show search result</option>\
-								  <option value="input">show user input</option>\
-								  <option value="difs">show differences</option>\
-								</select>'
-						t += '<br><br>'
-						t += '</div>'
-					}
-					t += '</div></td>'
-		
-					// right column
-					if (t_o.match_status == 'unknown'  && current_mode != 'completely done') {
-						t += '<td></td>';
-					} else {
-	// 					temp_json = reference_obj[t_o.doi].json
-	// 					console.log( temp_json)
-						t += '<td style="vertical-align: top"><p id = "'+t_o.user_input+'_simple_text" style="margin-left: 5ex; text-indent:-5ex; line-height: 2; margin-bottom: 0; margin-top: 0">'+t_o.output+'</p></td>'; // note: this formatting works well with the clipboard (to paste into word, etc.). It doesn't work if you use a div for some reason.
-					}
-					t += '</tr>'
+		// loop through all of the items twice, first doing unknown ones and then doing known ones
+		for (showingUnknown = 0; showingUnknown <= 1; showingUnknown++) {
+			for (let key in text_obj) { // this loops through all of text_obj
+				var t_o = text_obj[key];
+				if (t_o.removed || t_o.combine_status == 'not done') {
+					// if this item has been removed, or it's combine status doesn't equal done, then skip it
+					continue;
 				}
+
+				if ((showingUnknown == 0) == (t_o.match_status != 'unknown')) {
+					// Doing this means it shows all of the unknown stuff at the top of the table when it's being added to the table. 
+					// How it works: showingUnknown = 0 means we are showing the unknown ones. if it's true and 
+					// match_status doesn't equal "unknown", or vice versa, then continue. Continue means skip the rest of the loop and advance to i + 1
+					continue;
+				}
+				t += '<tr>'
+				t += '<td style="vertical-align: top; text-align: center; min-width: 18ex">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
+				// left column
+				if (t_o.match_status == 'unknown' && current_mode != 'completely done') { // unknown
+					t += '<div style="border-right:0px solid; border-right-color: white; color: greywolf">searching...</div>'
+				} else if (t_o.match_status == 'correct') { // correct
+// 									console.log( t_o)
+					t += '<div style="border-right:0px solid; border-right-color: lawngreen; font-size: 1.5em; color: lawngreen;">'
+					t += '✔'
+					t += '</div>'
+				} else if (t_o.match_status == 'wrong' || (t_o.match_status == 'unknown' && current_mode == 'completely done')) { // wrong
+// 					console.log(t_o)
+					t += '<div style="border-right:0px solid; border-right-color: red; font-size: 1.5em; color: red;">'
+					t += '✘'
+					t += '</div>'
+				} else { // maybe
+					t += '<div style="border-right:0px solid; border-right-color: orange;">'
+					var button_value = 'show user input'
+					if (t_o.output == t_o.user_input) {
+						button_value = 'show search result'
+					}
+					t += '<div style="color: orange"><p>'+t_o.score+'% match </p>'
+					t += '</div>'
+					t += '\
+							<select style="border-color: orange" onchange="text_obj[\''+t_o.user_input+'\'].switch_output(this.value);">\
+							  <option value="fixed">show search result</option>\
+							  <option value="input">show user input</option>\
+							  <option value="difs">show differences</option>\
+							</select>'
+					t += '<br><br>'
+					t += '</div>'
+				}
+				t += '</div></td>'
+	
+				// right column
+				if (t_o.match_status == 'unknown'  && current_mode != 'completely done') {
+					t += '<td></td>';
+				} else {
+// 					temp_json = reference_obj[t_o.doi].json
+// 					console.log( temp_json)
+					t += '<td style="vertical-align: top"><p id = "'+t_o.user_input+'_simple_text" style="margin-left: 5ex; text-indent:-5ex; line-height: 2; margin-bottom: 0; margin-top: 0">'+t_o.output+'</p></td>'; // note: this formatting works well with the clipboard (to paste into word, etc.). It doesn't work if you use a div for some reason.
+				}
+				t += '</tr>'
 			}
 		}
 		
