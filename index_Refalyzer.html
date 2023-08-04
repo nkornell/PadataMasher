@@ -1306,9 +1306,11 @@ Basic procedure:
 	
 	function remove_row(input_string) {
 		// remove a row that is no longer needed
+		console.log('removing '+input_string)
 		
         if (text_obj[input_string].removed) {
             // if it's already removed, don't remove it. 
+            console.warn('already removed '+input_string)
             return;
         } else {
             try {
@@ -1650,7 +1652,7 @@ Basic procedure:
 //             } else if (userURL !='' && text_obj[userString].url_status == "good") {
 					// if there's a good url
 // 				temp_score = 83; // dfd this is totally wrong but good for testing     
-					// dfd make scoring work for urls -- right now, the problem is that just a URL is never going to match with a URL plus info found in the database. so i don't know what to do here.
+					// make scoring work for urls -- right now, the problem is that just a URL is never going to match with a URL plus info found in the database. so i don't know what to do here.
 					// but maybe I should just return zero and not even try to score URLs because that thing only works x times a day anyway. 
             } else {
                 // if there is not a valid doi or url in the user input, remove the doi or url from the database string for the sake of comparison. 
@@ -1953,6 +1955,7 @@ Basic procedure:
 	
 	function build_article_table() {
 		// Build article table
+		console.log( 'build_article_table')
 		var s = '';
 		
 		articleTableText = "<table id='article_table'>";
@@ -2214,7 +2217,7 @@ Basic procedure:
 	
 	function show_simple_output() {
 		// this puts the output in a user-friendly table (this is instead of using article_table)
-
+		console.log( 'show_simple_output')
 		var i, showingUnknown = 0;
 		var t = ''; // for the table 
         let initial_scroll_top = 0;
@@ -2229,72 +2232,73 @@ Basic procedure:
 			document.getElementById('simple_table').style = "display: flex; overflow-y: scroll;"
 			document.getElementById('simple_table').style.height = (innerHeight-300)+'px';
 		}
-
+// dfd
 		if (current_mode == 'completely done') {
 			t = '<tr>'
 			t +=  "<th style='line-height: 2' onclick='sortTable(0, "+'"simple_table","letters","desc"'+")' title='Click to Sort'>Sort By Status ▾</th>";
 			t +=  "<th style='line-height: 2' onclick='sortTable(1, "+'"simple_table","letters"'+")' title='Click to Sort'>Sort Alphabetical ▾</th>";
 			t += '</tr>'
-		}
-
-		// loop through all of the items twice, first doing unknown ones and then doing known ones
-		for (showingUnknown = 0; showingUnknown <= 1; showingUnknown++) {
-			for (let key in text_obj) { // this loops through all of text_obj
-				var t_o = text_obj[key];
-				if (t_o.removed || t_o.combine_status == 'not done') {
-					// if this item has been removed, or it's combine status doesn't equal done, then skip it
-				    continue;
-				}
-
-				if ((showingUnknown == 0) == (t_o.match_status != 'unknown')) {
-					// Doing this means it shows all of the unknown stuff at the top of the table when it's being added to the table. 
-					// How it works: showingUnknown = 0 means we are showing the unknown ones. if it's true and 
-					// match_status doesn't equal "unknown", or vice versa, then continue. Continue means skip the rest of the loop and advance to i + 1
-					continue;
-				}
-				
-				t += '<tr>'
-				t += '<td style="vertical-align: top; text-align: center; min-width: 18ex">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
-
-				// left column
-				if (t_o.match_status == 'unknown' && current_mode != 'completely done') { // unknown
-					t += '<div style="border-right:0px solid; border-right-color: white; color: greywolf">searching...</div>'
-				} else if (t_o.match_status == 'correct') { // correct
-					t += '<div style="border-right:0px solid; border-right-color: lawngreen; font-size: 1.5em; color: lawngreen;">'
-					t += '✔'
-					t += '</div>'
-				} else if (t_o.match_status == 'wrong' || (t_o.match_status == 'unknown' && current_mode == 'completely done')) { // wrong
-					t += '<div style="border-right:0px solid; border-right-color: red; font-size: 1.5em; color: red;">'
-					t += '✘'
-					t += '</div>'
-				} else { // maybe
-					t += '<div style="border-right:0px solid; border-right-color: orange;">'
-					var button_value = 'show user input'
-					if (t_o.output == t_o.user_input) {
-						button_value = 'show search result'
-					}
-					t += '<div style="color: orange"><p>'+t_o.score+'% match </p>'
-					t += '</div>'
-                	t += '\
-							<select style="border-color: orange" onchange="text_obj[\''+t_o.user_input+'\'].switch_output(this.value);">\
-							  <option value="fixed">show search result</option>\
-							  <option value="input">show user input</option>\
-							  <option value="difs">show differences</option>\
-							</select>'
-					t += '<br><br>'
-					t += '</div>'
-				}
-				t += '</div></td>'
 		
-				// right column
-				if (t_o.match_status == 'unknown'  && current_mode != 'completely done') {
-					t += '<td></td>';
-				} else {
-// 					temp_json = reference_obj[t_o.doi].json
-// 					console.log( temp_json)
-					t += '<td style="vertical-align: top"><p id = "'+t_o.user_input+'_simple_text" style="margin-left: 5ex; text-indent:-5ex; line-height: 2; margin-bottom: 0; margin-top: 0">'+t_o.output+'</p></td>'; // note: this formatting works well with the clipboard (to paste into word, etc.). It doesn't work if you use a div for some reason.
+			// loop through all of the items twice, first doing unknown ones and then doing known ones
+			for (showingUnknown = 0; showingUnknown <= 1; showingUnknown++) {
+				for (let key in text_obj) { // this loops through all of text_obj
+					var t_o = text_obj[key];
+					if (t_o.removed || t_o.combine_status == 'not done') {
+						// if this item has been removed, or it's combine status doesn't equal done, then skip it
+						continue;
+					}
+
+					if ((showingUnknown == 0) == (t_o.match_status != 'unknown')) {
+						// Doing this means it shows all of the unknown stuff at the top of the table when it's being added to the table. 
+						// How it works: showingUnknown = 0 means we are showing the unknown ones. if it's true and 
+						// match_status doesn't equal "unknown", or vice versa, then continue. Continue means skip the rest of the loop and advance to i + 1
+						continue;
+					}
+					t += '<tr>'
+					t += '<td style="vertical-align: top; text-align: center; min-width: 18ex">' //' -webkit-user-select: none; -ms-user-select: none; user-select: none; ">'
+// console.log('showingUnknown='+ showingUnknown+" key="+key+" match_status="+t_o.match_status)
+					// left column
+					if (t_o.match_status == 'unknown' && current_mode != 'completely done') { // unknown
+						t += '<div style="border-right:0px solid; border-right-color: white; color: greywolf">searching...</div>'
+					} else if (t_o.match_status == 'correct') { // correct
+// 									console.log( t_o)
+						t += '<div style="border-right:0px solid; border-right-color: lawngreen; font-size: 1.5em; color: lawngreen;">'
+						t += '✔'
+						t += '</div>'
+					} else if (t_o.match_status == 'wrong' || (t_o.match_status == 'unknown' && current_mode == 'completely done')) { // wrong
+// 					console.log(t_o)
+						t += '<div style="border-right:0px solid; border-right-color: red; font-size: 1.5em; color: red;">'
+						t += '✘'
+						t += '</div>'
+					} else { // maybe
+						t += '<div style="border-right:0px solid; border-right-color: orange;">'
+						var button_value = 'show user input'
+						if (t_o.output == t_o.user_input) {
+							button_value = 'show search result'
+						}
+						t += '<div style="color: orange"><p>'+t_o.score+'% match </p>'
+						t += '</div>'
+						t += '\
+								<select style="border-color: orange" onchange="text_obj[\''+t_o.user_input+'\'].switch_output(this.value);">\
+								  <option value="fixed">show search result</option>\
+								  <option value="input">show user input</option>\
+								  <option value="difs">show differences</option>\
+								</select>'
+						t += '<br><br>'
+						t += '</div>'
+					}
+					t += '</div></td>'
+		
+					// right column
+					if (t_o.match_status == 'unknown'  && current_mode != 'completely done') {
+						t += '<td></td>';
+					} else {
+	// 					temp_json = reference_obj[t_o.doi].json
+	// 					console.log( temp_json)
+						t += '<td style="vertical-align: top"><p id = "'+t_o.user_input+'_simple_text" style="margin-left: 5ex; text-indent:-5ex; line-height: 2; margin-bottom: 0; margin-top: 0">'+t_o.output+'</p></td>'; // note: this formatting works well with the clipboard (to paste into word, etc.). It doesn't work if you use a div for some reason.
+					}
+					t += '</tr>'
 				}
-				t += '</tr>'
 			}
 		}
 		
