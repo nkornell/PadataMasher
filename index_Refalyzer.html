@@ -46,7 +46,7 @@ To do:
 <!-- author stuff-->
 <!--
 Find second-order authors
-- if possible, maybe find all co-authors by checking the database. (i.e.,, is there a way to ask for coauthors using crossref? or maybe orcid or something? 
+- if possible, maybe find all co-authors by checking the database. (i.e., is there a way to ask for coauthors using crossref? or maybe orcid or something? 
 - this tells you the papers cited by this paper. Looking at them would make it easy to get second-order citation information although that would be a lot of doi calls 
     this could be useful in two ways. first, to figure out co-authors if 2 fails. Second, to figure out who's getting cited in this area of research. 
 
@@ -853,12 +853,19 @@ Basic procedure:
 //	and one for secondary citations.
 
 
-	function Author_object(input_familyname, input_firstname) {
+	function Author_object(input_familyname, input_firstname, input_type) {
 		// this creates instances of an author object, which is how I keep track of authors. 
 		this.name = input_familyname + ", " + input_firstname;
-		this.citation_count = 1;
 		this.coauthors = [];
 		this.checked = false;
+		this.type = input_type;
+		this.citation_count = 0;
+		
+		if (this.type == 'primary') {
+			get_coauthors(this, input_firstname, input_familyname)
+	// 		console.log( 'this: '+this.coauthors)
+		}
+		
 		
 		var firstName_array = input_firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
 		this.name_apa = input_familyname + ", " + first_letters(firstName_array);
@@ -872,6 +879,90 @@ Basic procedure:
 			return temp.substring(0, temp.length-2); // removes the final ";"
 		};
 	}
+
+	async function get_coauthors(obj, first, last) {
+    	// this function isn't done 
+    	
+    	// The idea was to get authors from the database so a user could dig deeper on a specific person. 
+    	// This tells me what they've published, and published article records have the co-authors listed. 
+    	// By the way, if I do develop this, what if it also used ORCID? It has an API.
+
+	    var i = 0, j = 0;
+	    var temp_coauthor_name_array = [];
+	    var coauthor_array = []
+	    var cc = []
+	    var temp_not_using = []
+	    var input_name_no_comma = first + " " + last;
+	    var input_name_comma = last + ", " + first
+
+	    console.log( 'starting author search: '+input_name_no_comma)
+	    // dfd i don't even know what it's doing, but consider adding filter=has-orcid:true
+        var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=120&query.author='+input_name_no_comma.replaceAll(' ', '+'); 
+        // dfd above I set rows to a specific number but there has to be a better way(?). I just want all. But maybe it returns forever with decreasingly good search matches?
+        
+// my attempts at using the orcid api. fyi, my orcid id: 0000-0002-8394-663X
+//      stringToSend = 'https://pub.orcid.org/v3.0/search/?q=family-name:Kornell+AND+given-names:Nate' // returns orcid ID
+//      stringToSend = 'https://pub.orcid.org/v3.0/search/?q=digital-object-ids:10.1027/1618-3169/a000409' // returns thousands
+// 		stringToSend = 'https://pub.orcid.org/v3.0/search/?q=doi-self:10.1027/1618-3169/a000409' // returns none
+// 		stringToSend = 'https://api.orcid.org/v3.0/0000-0002-8394-663X/record/0000-0002-8394-663X' // returns error
+		
+        var myJSON = await $.getJSON(encodeURI(stringToSend));
+
+//         console.log(  JSON.stringify(myJSON))
+//         console.log(myJSON)
+//         return
+
+        for (i = 0; i < myJSON.message.items.length; i++) {
+            temp_obj = myJSON.message.items[i];
+            if (temp_obj.type == "journal-article" || temp_obj.type == "book-chapter" || temp_obj.type == "book") {
+		        temp_coauthor_name_array = []
+// 				try{
+				for (j = 0; j < temp_obj.author.length; j++) {
+					if (temp_obj.author[j].given != undefined && temp_obj.author[j].family != undefined) {
+						// if this author's record has both names, use it
+						temp_obj.author[j].given = temp_obj.author[j].given.replaceAll('. ',' ').replaceAll('.',' ').trim() // get rid of periods in first name
+						temp_coauthor_name_array.push(temp_obj.author[j].family + ", " + temp_obj.author[j].given)
+					}
+				}
+// 				} catch(err) {
+// 					console.log( err)
+// 					console.log( "sometimes they're missing part of their name")
+// 					console.log( temp_obj)
+// 				}
+
+				
+				if (temp_coauthor_name_array.indexOf(input_name_comma) > -1) {
+					// if this author's name is in the author list that was returned
+					for (j = 0; j < temp_coauthor_name_array.length; j++) {
+						if (author_obj[temp_coauthor_name_array[j]] === undefined) {
+							// if the author doesn't have an object, create it  as secondary
+							temp_names_split = temp_coauthor_name_array[j].split(", ");
+							author_obj[temp_coauthor_name_array[j]] = new Author_object(temp_names_split[0].trim(), temp_names_split[1].trim(), 'secondary');
+						} 
+						if (coauthor_array.indexOf(author_obj[temp_coauthor_name_array[j]]) == -1) { // 
+							// check if this coauthor is an object and if not, make it one. Then  push the object into the array
+							coauthor_array.push(author_obj[temp_coauthor_name_array[j]])
+						}
+					}
+// 					console.log( '[good] '+temp_obj.title)
+                } else {
+//                 	console.log( '[author not found] '+temp_obj.title)
+                }
+			} else {
+				temp_not_using.push('['+temp_obj.type+'] '+ temp_obj.title) // this is so I can observe other types that could be good
+			}
+    	    // once you have the author json, the plan was to use parse json for authors to turn the json into a string
+        }
+//         console.log( temp_not_using)
+//         console.log('length='+coauthor_array.length)
+
+//         console.log( coauthor_array)
+
+        for (i = 0; i < coauthor_array.length; i++) {
+			obj.coauthors.push(coauthor_array[i])
+	    }
+
+    }
 
 
 	async function getAllUrls(doi_or_url_type_to_handle) {
@@ -1123,35 +1214,6 @@ Basic procedure:
 
 		return "good"
 	}
-
-// 	async function get_author(input_string) {
-//     	// this function isn't done and it doesn't get called. 
-//     	
-//     	// The idea was to get authors from the database so a user could dig deeper on a specific person. 
-//     	// By the way, if I do develop this, what if it also used ORCID? I wonder if it has an API.
-// 
-// 	    var i = 0, j = 0;
-// 	    var temp_name = '';
-// 	    var temp_name_array = [];
-// 	    
-// 	    console.log( 'starting author search')
-//         var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&query.author='+input_string.replaceAll(' ', '+');
-//         console.log( stringToSend)
-//         var myJSON = await $.getJSON(encodeURI(stringToSend));
-// 
-//         console.log( 'author='+input_string)
-//         
-//         for (i = 0; i < 20; i++) {
-//             temp_obj = myJSON.message.items[i];
-//             temp_name_array.push('[' + temp_obj.type + '] ' + temp_obj.title[0])
-//             for (j = 0; j < temp_obj.author.length; j++) {
-//                 temp_name = temp_obj.author[j].given + ' ' + temp_obj.author[j].family;
-//                 temp_name_array.push(temp_name)
-//     	    // once you have the author json, the plan was to use parse json for authors to turn the json into a string
-//             }
-//         }
-//         console.log(temp_name_array)
-//     }
 
 	
 	function remove_duplicate_references() {
@@ -1762,7 +1824,7 @@ Basic procedure:
         return foof;
 	}
 	
-	function parse_JSON_for_authors(input_json) { // give this a second parameter, type of article (primary or secondary), if you're looking at secondary authors
+	function parse_JSON_for_authors(input_json) { // in the future, give this a second parameter, type of article (primary or secondary), if you're looking at secondary authors
 		var temp_firstname = '';
 		var tempAuthor_full = "";
 		var temp_list_of_co_authors_from_this_article = [];
@@ -1779,10 +1841,12 @@ Basic procedure:
 					
 						// keep track of how many times this author has appeared for the table of authors
 						if (author_obj[tempAuthor_full] === undefined) {
-							author_obj[tempAuthor_full] = new Author_object(input_json.author[a].family, temp_firstname);
-						} else {
-							author_obj[tempAuthor_full].citation_count++;
+							author_obj[tempAuthor_full] = new Author_object(input_json.author[a].family, temp_firstname, 'primary');
+							// dfd if it's defined but listed as secondary change it to primary and make citation count = 1
+						} else if (author_obj[tempAuthor_full].type != 'primary'){
+							author_obj[tempAuthor_full].type = 'primary'
 						}
+						author_obj[tempAuthor_full].citation_count++;
 						temp_list_of_co_authors_from_this_article.push(tempAuthor_full);
 					}
 				}
@@ -1820,6 +1884,85 @@ Basic procedure:
 		}
 	}
 	
+	function authorCheckBoxPress(whichOne) {
+		// this is called when a checkbox is pressed
+		var i = 0;
+		const nameString = whichOne.id;
+		author_obj[nameString].checked = whichOne.checked; // set this author's status (i.e., checked or not) to the status of the checkbox
+		
+		// for this author and their coauthors, compute their status 
+		computeStatus(nameString);
+		for (i = 0; i < author_obj[nameString].coauthors.length; i++) {
+			computeStatus(author_obj[nameString].coauthors[i].name);
+		}
+	}
+	
+	function computeStatus(nameString) {
+		// this figures out whether an author should be highlighted (i.e., whether they or their coauthors are checked)
+		var i = 0;
+				
+		if (author_obj[nameString].checked == true) {
+			// if this author is checked, turn them red
+			document.getElementById('name_' + nameString).style.color = 'red';
+		} else {
+			// if this author has a co-author that is checked, turn them red and return
+			for (i = 0; i < author_obj[nameString].coauthors.length; i++) {
+				if (author_obj[nameString].coauthors[i].checked) {
+					document.getElementById('name_' + nameString).style.color = 'red';
+					return;
+				}
+			}
+			// otherwise, turn them black		
+			document.getElementById('name_' + nameString).style.color = 'black';
+		}
+	}
+
+	
+    function build_author_table() {
+		// Figure out the authors and build a table with all of them in it. This happens after all the articles are parsed.
+// 		console.log( 'calling build author table')
+
+		var i = 0;
+		
+		if (author_obj.length == 0) {
+			// parse authors
+			var rows_total = document.getElementById('article_table').rows.length - 1;
+			for (i = 1; i <= rows_total; i++) { // start at 1 to skip header row
+				try {
+					temp_row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
+					temp_DOI = text_obj[temp_row_text].doi;
+					parse_JSON_for_authors(reference_obj[temp_DOI].json)
+				} catch(err) {
+	// 				console.log( 'could not parse author: ' + temp_row_text)
+				}
+			}
+		}
+
+		// build table
+        var authorTableText = "";
+        // create the html table 
+        authorTableText = "<table><tr>";
+        authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes","desc"'+")' title='Click to Sort'>Highlight <br>co-authors</th>";
+        authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Author</th>";
+        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Citations</th>";
+        authorTableText += "<th onclick='sortTable(3, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
+        authorTableText += "</tr>";
+
+        for (var key in author_obj) {
+//         	if (author_obj[key].type == "primary") {
+				authorTableText += "<tr>";
+				authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
+				authorTableText += "<td><div id='name_" + author_obj[key].name + "'>" + author_obj[key].name + "</td>";
+				authorTableText += "<td>" + author_obj[key].citation_count + "</td>";
+				authorTableText +=  "<td>" + author_obj[key].all_coauthors_string() + "</td>";
+				authorTableText += "</tr>";
+// 			}
+        }
+
+        authorTableText += "</table>"
+        document.getElementById('authorTable').innerHTML = authorTableText;		
+        sortTable(1, "authorTable", "letters");
+    }
 	function parse_user_input() {
 		var inputText = document.getElementById("myText").value;
 		localStorage.setItem('nates_previous_input',inputText)
@@ -1971,82 +2114,6 @@ Basic procedure:
 
 	}
 
-	function authorCheckBoxPress(whichOne) {
-		// this is called when a checkbox is pressed
-		var i = 0;
-		const nameString = whichOne.id;
-		author_obj[nameString].checked = whichOne.checked; // set this author's status (i.e., checked or not) to the status of the checkbox
-		
-		// for this author and their coauthors, compute their status 
-		computeStatus(nameString);
-		for (i = 0; i < author_obj[nameString].coauthors.length; i++) {
-			computeStatus(author_obj[nameString].coauthors[i].name);
-		}
-	}
-	
-	function computeStatus(nameString) {
-		// this figures out whether an author should be highlighted (i.e., whether they or their coauthors are checked)
-		var i = 0;
-				
-		if (author_obj[nameString].checked == true) {
-			// if this author is checked, turn them red
-			document.getElementById('name_' + nameString).style.color = 'red';
-		} else {
-			// if this author has a co-author that is checked, turn them red and return
-			for (i = 0; i < author_obj[nameString].coauthors.length; i++) {
-				if (author_obj[nameString].coauthors[i].checked) {
-					document.getElementById('name_' + nameString).style.color = 'red';
-					return;
-				}
-			}
-			// otherwise, turn them black		
-			document.getElementById('name_' + nameString).style.color = 'black';
-		}
-	}
-
-	
-    function build_author_table() {
-		// Figure out the authors and build a table with all of them in it. This happens after all the articles are parsed.
-// 		console.log( 'calling build author table')
-
-		var i = 0;
-		author_obj = [];
-
-        // parse authors
-        var rows_total = document.getElementById('article_table').rows.length - 1;
-		for (i = 1; i <= rows_total; i++) { // start at 1 to skip header row
-			try {
-				temp_row_text = document.getElementById("article_table").rows[i].cells[0].textContent;
-				temp_DOI = text_obj[temp_row_text].doi;
-				parse_JSON_for_authors(reference_obj[temp_DOI].json)
-			} catch(err) {
-// 				console.log( 'could not parse author: ' + temp_row_text)
-			}
-		}
-
-		// build table
-        var authorTableText = "";
-        // create the html table 
-        authorTableText = "<table><tr>";
-        authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes","desc"'+")' title='Click to Sort'>Highlight <br>co-authors</th>";
-        authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Author</th>";
-        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Citations</th>";
-//         authorTableText += "<th onclick='sortTable(3, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
-        authorTableText += "</tr>";
-
-        for (var key in author_obj) {
-            authorTableText += "<tr>";
-            authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
-            authorTableText += "<td><div id='name_" + author_obj[key].name + "'>" + author_obj[key].name + "</td>";
-            authorTableText += "<td>" + author_obj[key].citation_count + "</td>";
-//             authorTableText +=  "<td>" + author_obj[key].all_coauthors_string() + "</td>";
-            authorTableText += "</tr>";
-        }
-
-        authorTableText += "</table>"
-        document.getElementById('authorTable').innerHTML = authorTableText;		
-        sortTable(1, "authorTable", "letters");
-    }
     
     function show_previous_user_input() {
         document.getElementById("myText").value = localStorage.getItem('nates_previous_input')
@@ -2376,6 +2443,7 @@ Basic procedure:
 			document.getElementById("authorTable").style.display = "block";
 			document.getElementById("authors_button").innerHTML = "hide author analysis ▴"
 			document.getElementById("author_table_instructions").style.display = "inline-block";
+			build_author_table()
 		} else {
 			document.getElementById("authorTable").style.display = "none";
 			document.getElementById("authors_button").innerHTML = "show author analysis ▾"
@@ -2505,6 +2573,7 @@ project.org/package=metaBMA.
 	<button onclick="localStorage.clear()" id="clear_storage_button">clear local storage</button> 
 </div>
  -->
+ 
 
 <div class='wideBoxWithMargin' id = 'inputTextBox'>
 	<textarea id="myText" name="inputTextArea" style='width: 100%; '>
