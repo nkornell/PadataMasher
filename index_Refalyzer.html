@@ -908,15 +908,10 @@ Basic procedure:
 		
         var myJSON = await $.getJSON(encodeURI(stringToSend));
 
-//         console.log(  JSON.stringify(myJSON))
-//         console.log(myJSON)
-//         return
-
         for (i = 0; i < myJSON.message.items.length; i++) {
             temp_obj = myJSON.message.items[i];
             if (temp_obj.type == "journal-article" || temp_obj.type == "book-chapter" || temp_obj.type == "book") {
 		        temp_coauthor_name_array = []
-// 				try{
 				for (j = 0; j < temp_obj.author.length; j++) {
 					if (temp_obj.author[j].given != undefined && temp_obj.author[j].family != undefined) {
 						// if this author's record has both names, use it
@@ -924,24 +919,18 @@ Basic procedure:
 						temp_coauthor_name_array.push(temp_obj.author[j].family + ", " + temp_obj.author[j].given)
 					}
 				}
-// 				} catch(err) {
-// 					console.log( err)
-// 					console.log( "sometimes they're missing part of their name")
-// 					console.log( temp_obj)
-// 				}
-
 				
-				if (temp_coauthor_name_array.indexOf(input_name_comma) > -1) {
-					// if this author's name is in the author list that was returned
-					for (j = 0; j < temp_coauthor_name_array.length; j++) {
+				if (temp_coauthor_name_array.indexOf(input_name_comma) > -1) { // if this author's name is in the author list that was returned
+					for (j = 0; j < temp_coauthor_name_array.length; j++) { // for all the coauthors that were found
 						if (author_obj[temp_coauthor_name_array[j]] === undefined) {
 							// if the author doesn't have an object, create it  as secondary
 							temp_names_split = temp_coauthor_name_array[j].split(", ");
 							author_obj[temp_coauthor_name_array[j]] = new Author_object(temp_names_split[0].trim(), temp_names_split[1].trim(), 'secondary');
 						} 
-						if (coauthor_array.indexOf(author_obj[temp_coauthor_name_array[j]]) == -1) { // 
-							// check if this coauthor is an object and if not, make it one. Then  push the object into the array
-							coauthor_array.push(author_obj[temp_coauthor_name_array[j]])
+						if (coauthor_array.indexOf(author_obj[temp_coauthor_name_array[j]]) == -1) { // if this coauthor isn't already in the list 
+							if (author_obj[temp_coauthor_name_array[j]] != obj) { // and if this coauthor isn't the actual author we're working on
+								coauthor_array.push(author_obj[temp_coauthor_name_array[j]]) // Push this coauthor object into the array
+							}
 						}
 					}
 // 					console.log( '[good] '+temp_obj.title)
@@ -959,7 +948,11 @@ Basic procedure:
 //         console.log( coauthor_array)
 
         for (i = 0; i < coauthor_array.length; i++) {
-			obj.coauthors.push(coauthor_array[i])
+			obj.coauthors.push(coauthor_array[i]) // add the coauthor to the primary author
+			
+			if (coauthor_array[i].coauthors.indexOf(obj) == -1) { // if the primary author isn't already a coauthor of this coauthor
+				coauthor_array[i].coauthors.push(obj) // add the primary author to the coauthor
+			}
 	    }
 
     }
@@ -1842,8 +1835,8 @@ Basic procedure:
 						// keep track of how many times this author has appeared for the table of authors
 						if (author_obj[tempAuthor_full] === undefined) {
 							author_obj[tempAuthor_full] = new Author_object(input_json.author[a].family, temp_firstname, 'primary');
-							// dfd if it's defined but listed as secondary change it to primary and make citation count = 1
 						} else if (author_obj[tempAuthor_full].type != 'primary'){
+							// dfd if it exists but it's listed as secondary, change it to primary
 							author_obj[tempAuthor_full].type = 'primary'
 						}
 						author_obj[tempAuthor_full].citation_count++;
@@ -1864,7 +1857,12 @@ Basic procedure:
 //         return author_input_obj.family + ", " + temp_firstname;  
 // 	}
 
+	function remove_special_chrs_for_div(instr) {
+		return instr.replace(/'/g, "-"); // the apostrophe (') isn't allowed in div ids. so get rid of it. 
+	}
+	
 	function connect_coauthors(list_of_coauthors) {
+		// you give this an array and it connects them. 
 		var i = 0;
 		var j = 0;
 		
@@ -1877,6 +1875,7 @@ Basic procedure:
 		for (i = 0; i < list_of_coauthors.length + 1; i++) {			
 			for (j = i + 1; j < list_of_coauthors.length; j++) {
 				if (author_obj[list_of_coauthors[i]].coauthors.includes(author_obj[list_of_coauthors[j]]) === false) { // if they aren't already connected
+				dfd the same co-author is getting added multiple time still. maybe this is part ofthe reason why?
 					author_obj[list_of_coauthors[i]].coauthors.push(author_obj[list_of_coauthors[j]]);
 					author_obj[list_of_coauthors[j]].coauthors.push(author_obj[list_of_coauthors[i]]);
 				}
@@ -1900,20 +1899,25 @@ Basic procedure:
 	function computeStatus(nameString) {
 		// this figures out whether an author should be highlighted (i.e., whether they or their coauthors are checked)
 		var i = 0;
-				
-		if (author_obj[nameString].checked == true) {
-			// if this author is checked, turn them red
-			document.getElementById('name_' + nameString).style.color = 'red';
-		} else {
-			// if this author has a co-author that is checked, turn them red and return
-			for (i = 0; i < author_obj[nameString].coauthors.length; i++) {
-				if (author_obj[nameString].coauthors[i].checked) {
-					document.getElementById('name_' + nameString).style.color = 'red';
-					return;
+		
+		try {
+			if (author_obj[nameString].checked == true) {
+				// if this author is checked, turn them red
+				document.getElementById('name_' + remove_special_chrs_for_div(nameString)).style.color = 'red';
+			} else {
+				// if this author has a co-author that is checked, turn them red and return
+				for (i = 0; i < author_obj[nameString].coauthors.length; i++) {
+					if (author_obj[nameString].coauthors[i].checked) {
+						document.getElementById('name_' + remove_special_chrs_for_div(nameString)).style.color = 'red';
+						return;
+					}
 				}
+				// otherwise, turn them black		
+				document.getElementById('name_' + remove_special_chrs_for_div(nameString)).style.color = 'black';
 			}
-			// otherwise, turn them black		
-			document.getElementById('name_' + nameString).style.color = 'black';
+		} catch(err) {
+			console.error( 'error in computeStatus for: '+nameString)
+			console.error(err)
 		}
 	}
 
@@ -1952,7 +1956,7 @@ Basic procedure:
 //         	if (author_obj[key].type == "primary") {
 				authorTableText += "<tr>";
 				authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
-				authorTableText += "<td><div id='name_" + author_obj[key].name + "'>" + author_obj[key].name + "</td>";
+				authorTableText += "<td><div id='name_" + remove_special_chrs_for_div(author_obj[key].name) + "'>" + author_obj[key].name + "</td>";
 				authorTableText += "<td>" + author_obj[key].citation_count + "</td>";
 				authorTableText +=  "<td>" + author_obj[key].all_coauthors_string() + "</td>";
 				authorTableText += "</tr>";
@@ -1961,8 +1965,9 @@ Basic procedure:
 
         authorTableText += "</table>"
         document.getElementById('authorTable').innerHTML = authorTableText;		
-        sortTable(1, "authorTable", "letters");
+//         sortTable(1, "authorTable", "letters");
     }
+    
 	function parse_user_input() {
 		var inputText = document.getElementById("myText").value;
 		localStorage.setItem('nates_previous_input',inputText)
