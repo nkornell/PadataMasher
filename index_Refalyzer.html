@@ -860,11 +860,13 @@ Basic procedure:
 		this.checked = false;
 		this.type = input_type;
 		this.citation_count = 0;
+		this.affiliation = [];
+		this.orcid = ''
 		
 		if (this.type == 'primary') {
 			get_coauthors(this, input_firstname, input_familyname)
 		}
-		
+
 		var firstName_array = input_firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
 		this.name_apa = input_familyname + ", " + first_letters(firstName_array);
 
@@ -880,7 +882,29 @@ Basic procedure:
 		};
 	}
 
-	async function get_coauthors(obj, first, last) {
+	async function get_orcid_info(author_obj, orcid_obj) {
+		// this gets the info that crossref has about an orcid person, which is just a list of articles in the doi database. 
+		// and some people don't register so it's not that great. this thing works but the citation counts are wrong.
+		// i should be adding this stuff anytime i find an article
+		var i = 0;
+		var referenced_by_count = 0;
+		
+		if (orcid_obj == undefined || author_obj.orcid.length > 0) {
+			return;
+		}
+		author_obj.orcid = orcid_obj;
+
+		const stringToSend = 'http://api.crossref.org/works?filter=orcid:'+author_obj.orcid
+        var myJSON = await $.getJSON(encodeURI(stringToSend));
+        for (i = 0; i < myJSON.message.items.length; i++) {
+			referenced_by_count += myJSON.message.items[i]['is-referenced-by-count']
+		}
+		console.log(author_obj.name + ' ' + referenced_by_count) // dfd work on this!
+		
+		// nate orcid: 0000-0002-8394-663X
+	}
+	
+	async function get_coauthors(input_obj, first, last) {
     	// this function isn't done 
     	
     	// The idea was to get authors from the database so a user could dig deeper on a specific person. 
@@ -894,12 +918,18 @@ Basic procedure:
 	    var temp_not_using = []
 	    var input_name_no_comma = first + " " + last;
 	    var input_name_comma = last + ", " + first
-
+		var referenced_by_count = 0;
+		
 // 	    console.log( 'starting author search: '+input_name_no_comma)
-	    // dfd i don't even know what it's doing, but consider adding filter=has-orcid:true or other filters? is there one for having this author in the author list?
-        var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=90&query.author='+input_name_no_comma.replaceAll(' ', '+'); 
-        // dfd above I set rows to a specific number but there has to be a better way(?). I just want all. But maybe it returns forever with decreasingly good search matches?
-        
+	    // dfd should I add other filters? is there one for having this author in the author list? and should I allow type:report or type:dissertation?
+        // dfd I set rows to a specific number but there has to be a better way(?). I just want all. maybe page through until you're finding nothing good? maybe it returns forever with decreasingly good search matches?
+	    const temp_filters = '&filter=type:journal-article,type:book-chapter,type:book,type:monograph,type:proceedings-article' // dfd add in monographs etc?
+        var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com'+temp_filters+'&rows=90&query.author='+input_name_no_comma.replaceAll(' ', '+'); 
+
+// tried to use a facet, didn't get it to work
+// 		const megatemp = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=3&query.author=nate+kornell&facet=affiliation:5'       
+//         console.log(await $.getJSON(encodeURI(megatemp)))
+
 
 // my attempts at using the orcid api. fyi, my orcid id: 0000-0002-8394-663X
 //      stringToSend = 'https://pub.orcid.org/v3.0/search/?q=family-name:Kornell+AND+given-names:Nate' // returns orcid ID
@@ -908,50 +938,61 @@ Basic procedure:
 // 		stringToSend = 'https://api.orcid.org/v3.0/0000-0002-8394-663X/record/0000-0002-8394-663X' // returns error
 		
         var myJSON = await $.getJSON(encodeURI(stringToSend));
-
+//     	console.log( myJSON)
         for (i = 0; i < myJSON.message.items.length; i++) {
-            temp_obj = myJSON.message.items[i];
-            if (temp_obj.type == "journal-article" || temp_obj.type == "book-chapter" || temp_obj.type == "book") {
-            
-            	// put the coauthors into temp_coauthor_name_array
-		        temp_coauthor_name_array = []
-				for (j = 0; j < temp_obj.author.length; j++) {
-					if (temp_obj.author[j].given != undefined && temp_obj.author[j].family != undefined) {
-						// if this author's record has both names, use it
-						temp_obj.author[j].given = temp_obj.author[j].given.replaceAll('. ',' ').replaceAll('.',' ').trim() // get rid of periods in first name
-						temp_coauthor_name_array.push(temp_obj.author[j].family + ", " + temp_obj.author[j].given)
-					}
+			referenced_by_count += myJSON.message.items[i]['is-referenced-by-count']
+            temp_json_refs = myJSON.message.items[i];
+			// put the coauthors into temp_coauthor_name_array
+			temp_coauthor_name_array = []
+			for (j = 0; j < temp_json_refs.author.length; j++) {
+				if (temp_json_refs.author[j].given != undefined && temp_json_refs.author[j].family != undefined) {
+					// if this author's record has both names, use it
+					temp_json_refs.author[j].given = temp_json_refs.author[j].given.replaceAll('. ',' ').replaceAll('.',' ').trim() // get rid of periods in first name
+					temp_coauthor_name_array.push(temp_json_refs.author[j].family + ", " + temp_json_refs.author[j].given)						
 				}
-				
-				// add the stuff from temp_coauthor_name_array into the actual author objects. 
-				if (temp_coauthor_name_array.indexOf(input_name_comma) > -1) { // if this author's name is in the author list that was returned (i.e., they really are an author on this publication)
-					for (j = 0; j < temp_coauthor_name_array.length; j++) { // for all the coauthors that were found
-						if (author_obj[temp_coauthor_name_array[j]] === undefined) {
-							// if the coauthor doesn't have an object, create it as secondary
-							temp_names_split = temp_coauthor_name_array[j].split(", ");
-							author_obj[temp_coauthor_name_array[j]] = new Author_object(temp_names_split[0].trim(), temp_names_split[1].trim(), 'secondary');
-						} 
-						if (coauthor_array.indexOf(author_obj[temp_coauthor_name_array[j]]) == -1) { // if this coauthor isn't already in the list we're making
-							if (author_obj[temp_coauthor_name_array[j]] != obj) { // and if this coauthor isn't the actual author we're working on
-								coauthor_array.push(author_obj[temp_coauthor_name_array[j]]) // Push this coauthor object into the array
-							}
+			}
+			
+			// add the stuff from temp_coauthor_name_array into the actual author objects. 
+			if (temp_coauthor_name_array.indexOf(input_name_comma) > -1) { // if this author's name is in the author list that was returned (i.e., they really are an author on this publication)
+				for (j = 0; j < temp_coauthor_name_array.length; j++) { // for all the coauthors that were found
+					if (author_obj[temp_coauthor_name_array[j]] === undefined) {
+						// if the coauthor doesn't have an object, create it as secondary
+						temp_names_split = temp_coauthor_name_array[j].split(", ");
+// 							dfd below, isntead send the json. then, in the object, see if it has an orcid id or whatever
+						author_obj[temp_coauthor_name_array[j]] = new Author_object(temp_names_split[0].trim(), temp_names_split[1].trim(), 'secondary'); 
+					} 
+					if (temp_json_refs.author[j].affiliation.length > 0) {
+						var temp_af = temp_json_refs.author[j].affiliation[0].name;
+						if (author_obj[temp_coauthor_name_array[j]].affiliation.indexOf(temp_af) == -1) {
+// 							console.log(temp_af + ' ' + temp_json_refs.author[j].family)
+							author_obj[temp_coauthor_name_array[j]].affiliation.push(temp_af) 
 						}
 					}
-                } else {
-                }
-			} else {
-				temp_not_using.push('['+temp_obj.type+'] '+ temp_obj.title) // this is so I can observe other types that could be good
+					if (temp_json_refs.author[j].ORCID != undefined) {
+// 						author_obj[temp_coauthor_name_array[j]].orcid = temp_json_refs.author[j].ORCID
+						get_orcid_info(author_obj[temp_coauthor_name_array[j]], temp_json_refs.author[j].ORCID)
+// 						console.log( temp_json_refs.author[j].given+' '+temp_json_refs.author[j].family+ ' ' +temp_json_refs.author[j].ORCID)
+						//  http://api.crossref.org/works?filter=orcid:0000-0002-8394-663X
+ 						// if I use the above to get ORCID, then I can find works with that orcid id using the next line
+					}
+
+					if (coauthor_array.indexOf(author_obj[temp_coauthor_name_array[j]]) == -1) { // if this coauthor isn't already in the list we're making
+						if (author_obj[temp_coauthor_name_array[j]] != input_obj) { // and if this coauthor isn't the actual author we're working on
+							coauthor_array.push(author_obj[temp_coauthor_name_array[j]]) // Push this coauthor object into the array
+						}
+					}
+				}
 			}
         }
-//         console.log( temp_not_using)
+//         console.warn( temp_not_using)
 //         console.log('length='+coauthor_array.length)
 
 //         console.log( coauthor_array)
 
 		// add coauthors to the primary author
         for (i = 0; i < coauthor_array.length; i++) {
-			if (obj.coauthors.indexOf(coauthor_array[i]) == -1) { // if this coauthor isn't already in this author's list 
-				obj.coauthors.push(coauthor_array[i]) // add the coauthor to the primary author
+			if (input_obj.coauthors.indexOf(coauthor_array[i]) == -1) { // if this coauthor isn't already in this author's list 
+				input_obj.coauthors.push(coauthor_array[i]) // add the coauthor to the primary author
 // 			} else {
 // 				console.log('not adding '+coauthor_array[i].name_apa)
 			}
@@ -959,11 +1000,12 @@ Basic procedure:
 		
 		// add the primary author to the coauthors
         for (i = 0; i < coauthor_array.length; i++) {
-			if (coauthor_array[i].coauthors.indexOf(obj) == -1) { // if the primary author isn't already a coauthor of this coauthor
-				coauthor_array[i].coauthors.push(obj) // add the primary author to the coauthor
+			if (coauthor_array[i].coauthors.indexOf(input_obj) == -1) { // if the primary author isn't already a coauthor of this coauthor
+				coauthor_array[i].coauthors.push(input_obj) // add the primary author to the coauthor
 				// dfd note: it's connecting each with the primary author, and vice versa, but it's not connecting them to each other
 			}
 	    }
+	console.log( input_obj.name + ' ' + referenced_by_count)
 
     }
 
@@ -1959,9 +2001,10 @@ Basic procedure:
         authorTableText = "<table><tr>";
         authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes","desc"'+")' title='Click to Sort'>Highlight <br>co-authors</th>";
         authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Author</th>";
-        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Citations</th>";
-        authorTableText += "<th onclick='sortTable(3, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Num Co-Authors</th>";
-        authorTableText += "<th onclick='sortTable(4, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
+        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","letters"'+")' title='Click to Sort'>Info</th>";        
+        authorTableText += "<th onclick='sortTable(3, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Citations</th>";
+        authorTableText += "<th onclick='sortTable(4, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Num Co-Authors</th>";
+        authorTableText += "<th onclick='sortTable(5, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
         authorTableText += "</tr>";
 
         for (var key in author_obj) {
@@ -1969,6 +2012,7 @@ Basic procedure:
 				authorTableText += "<tr>";
 				authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
 				authorTableText += "<td><div id='name_" + remove_special_chrs_for_div(author_obj[key].name) + "'>" + author_obj[key].name + "</td>";
+				authorTableText += "<td>" + author_obj[key].orcid + ' ' + author_obj[key].affiliation.join('; ') + "</td>";
 				authorTableText += "<td>" + author_obj[key].citation_count + "</td>";
 				authorTableText += "<td>" + author_obj[key].coauthors.length + "</td>";
 				authorTableText += "<td>" + author_obj[key].all_coauthors_string() + "</td>";
