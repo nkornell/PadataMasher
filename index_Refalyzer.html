@@ -863,6 +863,7 @@ Basic procedure:
 		this.citation_count_all = 0;
 		this.affiliation = [];
 		this.orcid = ''
+		this.dois = []
 		
 		if (this.type == 'primary') {
 			get_coauthors(this, input_firstname, input_familyname)
@@ -929,22 +930,12 @@ Basic procedure:
 	    const temp_filters = '&filter=type:journal-article,type:book-chapter,type:book,type:monograph,type:proceedings-article'
         var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com'+temp_filters+'&rows=150&query.author='+input_name_no_comma.replaceAll(' ', '+'); 
 
-// tried to use a facet, didn't get it to work
-// 		const megatemp = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=3&query.author=nate+kornell&facet=affiliation:5'       
-//         console.log(await $.getJSON(encodeURI(megatemp)))
-
-
-// my attempts at using the orcid api. fyi, my orcid id: 0000-0002-8394-663X
-//      stringToSend = 'https://pub.orcid.org/v3.0/search/?q=family-name:Kornell+AND+given-names:Nate' // returns orcid ID
-//      stringToSend = 'https://pub.orcid.org/v3.0/search/?q=digital-object-ids:10.1027/1618-3169/a000409' // returns thousands
-// 		stringToSend = 'https://pub.orcid.org/v3.0/search/?q=doi-self:10.1027/1618-3169/a000409' // returns none
-// 		stringToSend = 'https://api.orcid.org/v3.0/0000-0002-8394-663X/record/0000-0002-8394-663X' // returns error
 		
         var myJSON = await $.getJSON(encodeURI(stringToSend));
 //     	console.log( myJSON)
         for (i = 0; i < myJSON.message.items.length; i++) {
-			referenced_by_count += myJSON.message.items[i]['is-referenced-by-count']
-            temp_json_refs = myJSON.message.items[i];
+            temp_json_refs = myJSON.message.items[i]; 	
+
 			// put the coauthors into temp_coauthor_name_array
 			temp_coauthor_name_array = []
 			for (j = 0; j < temp_json_refs.author.length; j++) {
@@ -957,6 +948,11 @@ Basic procedure:
 			
 			// add the stuff from temp_coauthor_name_array into the actual author objects. 
 			if (temp_coauthor_name_array.indexOf(input_name_comma) > -1) { // if this author's name is in the author list that was returned (i.e., they really are an author on this publication)
+				referenced_by_count += temp_json_refs['is-referenced-by-count']
+				if (input_obj.dois.indexOf(temp_json_refs.DOI) > -1) {
+					console.warn( 'rep: ' + temp_json_refs.DOI)
+				}
+				input_obj.dois.push(temp_json_refs.DOI)
 				for (j = 0; j < temp_coauthor_name_array.length; j++) { // for all the coauthors that were found
 					if (author_obj[temp_coauthor_name_array[j]] === undefined) {
 						// if the coauthor doesn't have an object, create it as secondary
@@ -988,11 +984,6 @@ Basic procedure:
 				}
 			}
         }
-//         console.warn( temp_not_using)
-//         console.log('length='+coauthor_array.length)
-
-//         console.log( coauthor_array)
-
 		// add coauthors to the primary author
         for (i = 0; i < coauthor_array.length; i++) {
 			if (input_obj.coauthors.indexOf(coauthor_array[i]) == -1) { // if this coauthor isn't already in this author's list 
@@ -1013,6 +1004,18 @@ Basic procedure:
 	input_obj.citation_count_all = referenced_by_count
 
     }
+    
+    
+// tried to use a facet, didn't get it to work
+// 		const megatemp = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=3&query.author=nate+kornell&facet=affiliation:5'       
+//         console.log(await $.getJSON(encodeURI(megatemp)))
+
+
+// my attempts at using the orcid api. fyi, my orcid id: 0000-0002-8394-663X
+//      stringToSend = 'https://pub.orcid.org/v3.0/search/?q=family-name:Kornell+AND+given-names:Nate' // returns orcid ID
+//      stringToSend = 'https://pub.orcid.org/v3.0/search/?q=digital-object-ids:10.1027/1618-3169/a000409' // returns thousands
+// 		stringToSend = 'https://pub.orcid.org/v3.0/search/?q=doi-self:10.1027/1618-3169/a000409' // returns none
+// 		stringToSend = 'https://api.orcid.org/v3.0/0000-0002-8394-663X/record/0000-0002-8394-663X' // returns error
 
 
 	async function getAllUrls(doi_or_url_type_to_handle) {
@@ -1894,7 +1897,7 @@ Basic procedure:
 							author_obj[tempAuthor_full] = new Author_object(input_json.author[a].family, temp_firstname, 'primary');
 						} else if (author_obj[tempAuthor_full].type != 'primary'){
 							// if it exists but it's listed as secondary, change it to primary
-							author_obj[tempAuthor_full].type = 'primary' // dfd in this case, get_coauthors still needs to be called.
+							author_obj[tempAuthor_full].type = 'primary' // dfd in this case, get coauthors still needs to be called.
 						}
 						author_obj[tempAuthor_full].citation_count_pasted_refs++;
 						temp_list_of_co_authors_from_this_article.push(tempAuthor_full);
@@ -1955,6 +1958,10 @@ Basic procedure:
 	function computeStatus(nameString) {
 		// this figures out whether an author should be highlighted (i.e., whether they or their coauthors are checked)
 		var i = 0;
+
+// 		if (typeof(document.getElementById('name_' + remove_special_chrs_for_div(nameString)) == 'undefined' || document.getElementById('name_' + remove_special_chrs_for_div(nameString)) == null)) {
+// 			return;
+// 		}
 		
 		try {
 			if (author_obj[nameString].checked == true) {
@@ -1998,7 +2005,7 @@ Basic procedure:
 			}
 		}
 
-        // dfd add a sortable column for whether they're selected or not. and maybe one for number of coauthors found. and maybe for are they cited in this article, if we're showing primary and secondary. 
+        // dfd add a sortable column for whether they're selected or not. 
         
 		// build table
         var authorTableText = "";
@@ -2022,7 +2029,7 @@ Basic procedure:
 				authorTableText += "<td>" + author_obj[key].citation_count_pasted_refs + "</td>";
 				authorTableText += "<td>" + author_obj[key].citation_count_all + "</td>";
 				authorTableText += "<td>" + author_obj[key].coauthors.length + "</td>";
-				authorTableText += "<td>" + author_obj[key].all_coauthors_string() + "</td>";
+				authorTableText += "<td>" + author_obj[key].all_coauthors_string().slice(0, 100) + "</td>";
 				authorTableText += "</tr>";
 // 			}
         }
