@@ -923,6 +923,7 @@ Basic procedure:
 		
 // 	    console.log( 'starting author search: '+input_name_no_comma)
 
+
 	    // dfd 
 	    // should I add other filters? is there one for having this author in the author list? and should I allow type:report or type:dissertation?
         // I set rows to a specific number but there has to be a better way(?). I just want all. maybe page through until you're finding nothing good? maybe it returns forever with decreasingly good search matches?
@@ -934,25 +935,27 @@ Basic procedure:
         var myJSON = await $.getJSON(encodeURI(stringToSend));
 //     	console.log( myJSON)
         for (i = 0; i < myJSON.message.items.length; i++) {
-            temp_json_refs = myJSON.message.items[i]; 	
+            temp_json_ref = myJSON.message.items[i]; 	
 
 			// put the coauthors into temp_coauthor_name_array
 			temp_coauthor_name_array = []
-			for (j = 0; j < temp_json_refs.author.length; j++) {
-				if (temp_json_refs.author[j].given != undefined && temp_json_refs.author[j].family != undefined) {
+			for (j = 0; j < temp_json_ref.author.length; j++) {
+				if (temp_json_ref.author[j].given != undefined && temp_json_ref.author[j].family != undefined) {
 					// if this author's record has both names, use it
-					temp_json_refs.author[j].given = temp_json_refs.author[j].given.replaceAll('. ',' ').replaceAll('.',' ').trim() // get rid of periods in first name
-					temp_coauthor_name_array.push(temp_json_refs.author[j].family + ", " + temp_json_refs.author[j].given)						
+					temp_json_ref.author[j].given = temp_json_ref.author[j].given.replaceAll('. ',' ').replaceAll('.',' ').trim() // get rid of periods in first name
+					temp_coauthor_name_array.push(temp_json_ref.author[j].family + ", " + temp_json_ref.author[j].given)						
 				}
 			}
-			
+
 			// add the stuff from temp_coauthor_name_array into the actual author objects. 
 			if (temp_coauthor_name_array.indexOf(input_name_comma) > -1) { // if this author's name is in the author list that was returned (i.e., they really are an author on this publication)
-				referenced_by_count += temp_json_refs['is-referenced-by-count']
-				if (input_obj.dois.indexOf(temp_json_refs.DOI) > -1) {
-					console.warn( 'rep: ' + temp_json_refs.DOI)
+				referenced_by_count += temp_json_ref['is-referenced-by-count']
+
+				if (input_obj.dois.indexOf(temp_json_ref.DOI) > -1) {
+					console.warn( 'rep: ' + temp_json_ref.DOI)
 				}
-				input_obj.dois.push(temp_json_refs.DOI)
+				input_obj.dois.push(temp_json_ref.DOI)
+
 				for (j = 0; j < temp_coauthor_name_array.length; j++) { // for all the coauthors that were found
 					if (author_obj[temp_coauthor_name_array[j]] === undefined) {
 						// if the coauthor doesn't have an object, create it as secondary
@@ -960,20 +963,21 @@ Basic procedure:
 // 						dfd below, isntead send the json. then, in the object, see if it has an orcid id or whatever
 						author_obj[temp_coauthor_name_array[j]] = new Author_object(temp_names_split[0].trim(), temp_names_split[1].trim(), 'secondary'); 
 					} 
-					if (temp_json_refs.author[j].affiliation.length > 0) {
-						var temp_af = temp_json_refs.author[j].affiliation[0].name;
+					if (temp_json_ref.author[j].affiliation.length > 0) {
+						var temp_af = temp_json_ref.author[j].affiliation[0].name;
 						if (author_obj[temp_coauthor_name_array[j]].affiliation.indexOf(temp_af) == -1) {
-// 							console.log(temp_af + ' ' + temp_json_refs.author[j].family)
+// 							console.log(temp_af + ' ' + temp_json_ref.author[j].family)
 							author_obj[temp_coauthor_name_array[j]].affiliation.push(temp_af) 
 						}
 					}
-					if (temp_json_refs.author[j].ORCID != undefined) {
-						if (author_obj[temp_coauthor_name_array[j]].orcid != '' && author_obj[temp_coauthor_name_array[j]].orcid != temp_json_refs.author[j].ORCID) {
-							console.warn('two orcid ids found: ' +author_obj[temp_coauthor_name_array[j]].orcid + ' ' +temp_json_refs.author[j].ORCID + ' for ' + temp_json_refs.author[j].given+' '+temp_json_refs.author[j].family)
+
+					if (temp_json_ref.author[j].ORCID != undefined) {
+						if (author_obj[temp_coauthor_name_array[j]].orcid != '' && author_obj[temp_coauthor_name_array[j]].orcid != temp_json_ref.author[j].ORCID) {
+							console.warn('two orcid ids found: ' +author_obj[temp_coauthor_name_array[j]].orcid + ' ' +temp_json_ref.author[j].ORCID + ' for ' + temp_json_ref.author[j].given+' '+temp_json_ref.author[j].family)
 						}
-						author_obj[temp_coauthor_name_array[j]].orcid = temp_json_refs.author[j].ORCID
-// 						get_orcid_info(author_obj[temp_coauthor_name_array[j]], temp_json_refs.author[j].ORCID)
-// 						console.log( temp_json_refs.author[j].given+' '+temp_json_refs.author[j].family+ ' ' +temp_json_refs.author[j].ORCID)
+						author_obj[temp_coauthor_name_array[j]].orcid = temp_json_ref.author[j].ORCID
+// 						get_orcid_info(author_obj[temp_coauthor_name_array[j]], temp_json_ref.author[j].ORCID)
+// 						console.log( temp_json_ref.author[j].given+' '+temp_json_ref.author[j].family+ ' ' +temp_json_ref.author[j].ORCID)
 					}
 
 					if (coauthor_array.indexOf(author_obj[temp_coauthor_name_array[j]]) == -1) { // if this coauthor isn't already in the list we're making
