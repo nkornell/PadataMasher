@@ -5,6 +5,7 @@ it's weird how it kind of shows guesses and unchanged mixed together. (mabuye ha
 relatedly, sometimes the user wrote too much but it still thinks it's right. I could make the program differentiate between 'my answer is wrong' and 'your input was wrong'
 Check whether it's categorizing well. Am I getting false alarms by adding the bonus points?
 make a button to load everything in memory? 
+the URL thing should probably be turned off
 
 // I could have an option to "try again" after they edit. 
 // and then also, maybe the ability to promote something to the good section? 
@@ -38,24 +39,18 @@ To do:
 
 -->
 
-<!-- 
 
+<!-- author stuff-->
+<!-- 
+Author table
+dfd 
+- have it store authors in local storage (at least for the session but not forever)
+- warn when there are multiple orcid ids
+- Look for cases where it's the same author but the name is different (e.g., Bjork, E. L. and Bjork, 
+Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring case
  -->
 
 
-<!-- author stuff-->
-<!--
-Find second-order authors
-- if possible, maybe find all co-authors by checking the database. (i.e., is there a way to ask for coauthors using crossref? or maybe orcid or something? 
-- this tells you the papers cited by this paper. Looking at them would make it easy to get second-order citation information although that would be a lot of doi calls 
-    this could be useful in two ways. first, to figure out co-authors if 2 fails. Second, to figure out who's getting cited in this area of research. 
-
-
-Author table
-- Look for cases where it's the same author but the name is different (e.g., Bjork, E. L. and Bjork, 
-Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring case
-
--->
 
 
 <!-- stuff to test-->
@@ -865,6 +860,8 @@ Basic procedure:
 		this.orcid = ''
 		this.dois = []
 		
+// 		console.log('New author: ' + this.name)
+		
 		if (this.type == 'primary') {
 			get_coauthors(this, input_firstname, input_familyname)
 		}
@@ -925,8 +922,9 @@ Basic procedure:
 
 
 	    // dfd 
+	    // maybe page through until you're finding nothing good? maybe it returns forever with decreasingly good search matches? I set rows to a specific number but there has to be a better way(?). I just want all. 
 	    // should I add other filters? is there one for having this author in the author list? and should I allow type:report or type:dissertation?
-        // I set rows to a specific number but there has to be a better way(?). I just want all. maybe page through until you're finding nothing good? maybe it returns forever with decreasingly good search matches?
+        // 
         
 	    const temp_filters = '&filter=type:journal-article,type:book-chapter,type:book,type:monograph,type:proceedings-article'
         var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com'+temp_filters+'&rows=150&query.author='+input_name_no_comma.replaceAll(' ', '+'); 
@@ -952,21 +950,20 @@ Basic procedure:
 				referenced_by_count += temp_json_ref['is-referenced-by-count']
 
 				if (input_obj.dois.indexOf(temp_json_ref.DOI) > -1) {
-					console.warn( 'rep: ' + temp_json_ref.DOI)
+					console.warn('get coauthors is working on the same doi for a second time (it should not): ' + temp_json_ref.DOI) // if this happens, change the code so the loop continues here
 				}
-				input_obj.dois.push(temp_json_ref.DOI)
+				
+				input_obj.dois.push(temp_json_ref.DOI) // add this doi to this author's list of dois. this appears to not be happening much. 
 
 				for (j = 0; j < temp_coauthor_name_array.length; j++) { // for all the coauthors that were found
 					if (author_obj[temp_coauthor_name_array[j]] === undefined) {
 						// if the coauthor doesn't have an object, create it as secondary
 						temp_names_split = temp_coauthor_name_array[j].split(", ");
-// 						dfd below, isntead send the json. then, in the object, see if it has an orcid id or whatever
-						author_obj[temp_coauthor_name_array[j]] = new Author_object(temp_names_split[0].trim(), temp_names_split[1].trim(), 'secondary'); 
+						author_obj[temp_coauthor_name_array[j]] = new Author_object(temp_names_split[0].trim(), temp_names_split[1].trim(), 'secondary'); // in the future, i could change it so instead the parameter is the json. then, in the author object, see if it has an orcid id or whatever
 					} 
 					if (temp_json_ref.author[j].affiliation.length > 0) {
 						var temp_af = temp_json_ref.author[j].affiliation[0].name;
 						if (author_obj[temp_coauthor_name_array[j]].affiliation.indexOf(temp_af) == -1) {
-// 							console.log(temp_af + ' ' + temp_json_ref.author[j].family)
 							author_obj[temp_coauthor_name_array[j]].affiliation.push(temp_af) 
 						}
 					}
@@ -1891,17 +1888,19 @@ Basic procedure:
 			if (input_json.author == null || typeof input_json.author === 'undefined') { // if crossref didn't find it, ignore it 
 // 				console.log('no authors found ' + input_json.DOI);
 			} else {
+				
 				for (a = 0; a < input_json.author.length; a++) {
 					if (input_json.author[a].family !== undefined && input_json.author[a].family !== null) {
 						temp_firstname = input_json.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim();
 						tempAuthor_full = input_json.author[a].family + ", " + temp_firstname;
 					
 						// keep track of how many times this author has appeared for the table of authors
-						if (author_obj[tempAuthor_full] === undefined) {
+						if (author_obj[tempAuthor_full] == undefined) {
 							author_obj[tempAuthor_full] = new Author_object(input_json.author[a].family, temp_firstname, 'primary');
-						} else if (author_obj[tempAuthor_full].type != 'primary'){
+						} else if (author_obj[tempAuthor_full].type != 'primary') {
 							// if it exists but it's listed as secondary, change it to primary
-							author_obj[tempAuthor_full].type = 'primary' // dfd in this case, get coauthors still needs to be called.
+							author_obj[tempAuthor_full].type = 'primary'
+							console.warn( 'changed type to primary for : '+tempAuthor_full) // in this case, get coauthors still needs to be called. but first let's see if this ever happens
 						}
 						author_obj[tempAuthor_full].citation_count_pasted_refs++;
 						temp_list_of_co_authors_from_this_article.push(tempAuthor_full);
@@ -1909,10 +1908,6 @@ Basic procedure:
 				}
 
 // 				connect_coauthors(temp_list_of_co_authors_from_this_article); 
-				// dfd if i don't call this, does it still get everyone? maybe go back to calling it just to check if it finds anything good. 
-				// and maybe call it to connect the various coauthors to each other in the primary thing
-				
-				// dfd hide all the non-primary authors in the table?
 			}
 		} catch(err) {
 			console.log( '*error in parse_JSON_for_authors');
@@ -1921,6 +1916,9 @@ Basic procedure:
 	
 
 // 	function connect_coauthors(list_of_coauthors) {
+				// this isn't being called. but should it? maybe go back to calling it just to check if it finds anything good. 
+				// and maybe call it to connect the various secondary coauthors to each other in the primary thing
+
 // 		// you give this an array and it connects them. 
 // 		var i = 0;
 // 		var j = 0;
@@ -1963,9 +1961,9 @@ Basic procedure:
 		// this figures out whether an author should be highlighted (i.e., whether they or their coauthors are checked)
 		var i = 0;
 
-// 		if (typeof(document.getElementById('name_' + remove_special_chrs_for_div(nameString)) == 'undefined' || document.getElementById('name_' + remove_special_chrs_for_div(nameString)) == null)) {
-// 			return;
-// 		}
+		if (typeof(document.getElementById('name_' + remove_special_chrs_for_div(nameString))) == 'undefined' || document.getElementById('name_' + remove_special_chrs_for_div(nameString)) == null) {
+			return;
+		}
 		
 		try {
 			if (author_obj[nameString].checked == true) {
@@ -1991,11 +1989,13 @@ Basic procedure:
 	
     function build_author_table() {
 		// Figure out the authors and build a table with all of them in it. This happens after all the articles are parsed.
-// 		console.log( 'calling build author table')
+		// However, it doesn't wait for all authors to be parsed... should it? or maybe give a warning if they aren't? 
 
 		var i = 0;
+		var temp_info = ''
 		
-		if (author_obj.length == 0) {
+		if (Object.keys(author_obj).length == 0) {
+			// this should only happen once
 			// parse authors
 			var rows_total = document.getElementById('article_table').rows.length - 1;
 			for (i = 1; i <= rows_total; i++) { // start at 1 to skip header row
@@ -2009,33 +2009,42 @@ Basic procedure:
 			}
 		}
 
-        // dfd add a sortable column for whether they're selected or not. 
-        
+		// in the future, add a sortable column for whether they're selected or not?
+
 		// build table
         var authorTableText = "";
         // create the html table 
         authorTableText = "<table><tr>";
         authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes","desc"'+")' title='Click to Sort'>Highlight <br>co-authors</th>";
         authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Author</th>";
-        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","letters"'+")' title='Click to Sort'>Info</th>";        
-        authorTableText += "<th onclick='sortTable(3, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>All Citations</th>";
+        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","letters"'+")' title='Click to Sort'>Info</th>"; // dfd affiliation: sux
+        authorTableText += "<th onclick='sortTable(3, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Pubs<br>found</th>";
         authorTableText += "<th onclick='sortTable(4, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Citations</th>";
-        authorTableText += "<th onclick='sortTable(5, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Num Co-Authors</th>";
-        authorTableText += "<th onclick='sortTable(6, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
+        authorTableText += "<th onclick='sortTable(5, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>All Citations</th>";
+        authorTableText += "<th onclick='sortTable(6, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Num Co-Authors</th>";
+        authorTableText += "<th onclick='sortTable(7, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
         authorTableText += "</tr>";
 
         for (var key in author_obj) {
-//         	if (author_obj[key].type == "primary") {
+        	if (author_obj[key].type == "primary") {
+				if (author_obj[key].orcid == '') {
+					temp_info = '<i>no orcid id found</i><br><br>'
+				} else {
+					temp_info = author_obj[key].orcid + '<br><br>' 
+				}
+				temp_info += author_obj[key].affiliation.join(';<br> ').slice(0, 100)
+
 				authorTableText += "<tr>";
 				authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
 				authorTableText += "<td><div id='name_" + remove_special_chrs_for_div(author_obj[key].name) + "'>" + author_obj[key].name + "</td>";
-				authorTableText += "<td>" + author_obj[key].orcid + ' <br><br>' + author_obj[key].affiliation.join(';<br> ').slice(0, 100) + "</td>";
+				authorTableText += "<td>" + temp_info + "</td>";
+				authorTableText += "<td>" + author_obj[key].dois.length + "</td>";
 				authorTableText += "<td>" + author_obj[key].citation_count_pasted_refs + "</td>";
 				authorTableText += "<td>" + author_obj[key].citation_count_all + "</td>";
 				authorTableText += "<td>" + author_obj[key].coauthors.length + "</td>";
 				authorTableText += "<td>" + author_obj[key].all_coauthors_string().slice(0, 100) + "</td>";
 				authorTableText += "</tr>";
-// 			}
+			}
         }
 
         authorTableText += "</table>"
