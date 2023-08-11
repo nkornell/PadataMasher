@@ -210,6 +210,7 @@ Basic procedure:
     var good_match_threshold = 80;
     var current_mode = '';
     let dmp = new diff_match_patch();
+    var authors_to_get = 0;
 	let Cite = require('citation-js');
 	
 	
@@ -863,6 +864,7 @@ Basic procedure:
 // 		console.log('New author: ' + this.name)
 		
 		if (this.type == 'primary') {
+			authors_to_get++;
 			get_coauthors(this, input_firstname, input_familyname)
 		}
 
@@ -932,6 +934,7 @@ Basic procedure:
 		
         var myJSON = await $.getJSON(encodeURI(stringToSend));
 //     	console.log( myJSON)
+		
         for (i = 0; i < myJSON.message.items.length; i++) {
             temp_json_ref = myJSON.message.items[i]; 	
 
@@ -1001,8 +1004,15 @@ Basic procedure:
 				// dfd note: it's connecting each with the primary author, and vice versa, but it's not connecting them to each other
 			}
 	    }
-	console.log( input_obj.name + ' ' + referenced_by_count)
-	input_obj.citation_count_all = referenced_by_count
+	    
+		console.log( input_obj.name + ' ' + referenced_by_count)
+// 		console.log('authors_to_get='+authors_to_get+'-1')
+		authors_to_get--;
+		if (authors_to_get == 0) {
+			console.log( '--done getting authors--')
+		}
+
+		input_obj.citation_count_all = referenced_by_count
 
     }
     
