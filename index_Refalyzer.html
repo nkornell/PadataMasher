@@ -1,11 +1,11 @@
 <!-- 
 // dfd
+the URL thing should probably be turned off
 if you edit the boxes after running it, and then copy, it won't copy what you type in. 
 it's weird how it kind of shows guesses and unchanged mixed together. (mabuye have a button for "show all unchanged" or "show all guesses")
 relatedly, sometimes the user wrote too much but it still thinks it's right. I could make the program differentiate between 'my answer is wrong' and 'your input was wrong'
 Check whether it's categorizing well. Am I getting false alarms by adding the bonus points?
 make a button to load everything in memory? 
-the URL thing should probably be turned off
 
 // I could have an option to "try again" after they edit. 
 // and then also, maybe the ability to promote something to the good section? 
@@ -1009,7 +1009,9 @@ Basic procedure:
 // 		console.log('authors_to_get='+authors_to_get+'-1')
 		authors_to_get--;
 		if (authors_to_get == 0) {
+			authors_to_get = -1;
 			console.log( '--done getting authors--')
+			// dfd have it redraw the table at this point? And maybe it should show a message saying "not done" until authors_to_get == -1. 
 		}
 
 		input_obj.citation_count_all = referenced_by_count
@@ -2027,10 +2029,10 @@ Basic procedure:
         authorTableText = "<table><tr>";
         authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes","desc"'+")' title='Click to Sort'>Highlight <br>co-authors</th>";
         authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Author</th>";
-        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","letters"'+")' title='Click to Sort'>Info</th>"; // dfd affiliation: sux
+        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","letters"'+")' title='Click to Sort'>Info</th>"; // dfd affiliation: sux. make it keep track of most recent affiliation and only show that? 
         authorTableText += "<th onclick='sortTable(3, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Pubs<br>found</th>";
-        authorTableText += "<th onclick='sortTable(4, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Citations</th>";
-        authorTableText += "<th onclick='sortTable(5, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>All Citations</th>";
+        authorTableText += "<th onclick='sortTable(4, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Cited above</th>";
+        authorTableText += "<th onclick='sortTable(5, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Cited all time</th>";
         authorTableText += "<th onclick='sortTable(6, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Num Co-Authors</th>";
         authorTableText += "<th onclick='sortTable(7, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
         authorTableText += "</tr>";
