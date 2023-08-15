@@ -5,11 +5,10 @@ if you edit the boxes after running it, and then copy, it won't copy what you ty
 it's weird how it kind of shows guesses and unchanged mixed together. (mabuye have a button for "show all unchanged" or "show all guesses")
 relatedly, sometimes the user wrote too much but it still thinks it's right. I could make the program differentiate between 'my answer is wrong' and 'your input was wrong'
 Check whether it's categorizing well. Am I getting false alarms by adding the bonus points?
-make a button to load everything in memory? 
+for dbugging, make a button to load everything that's in memory into the input field? 
 
 // I could have an option to "try again" after they edit. 
 // and then also, maybe the ability to promote something to the good section? 
-// and buttons to copy good and copy all in alphabetical order? 
 
 To do: 
 
@@ -44,7 +43,6 @@ To do:
 <!-- 
 Author table
 dfd 
-- have it store authors in local storage (at least for the session but not forever)
 - warn when there are multiple orcid ids
 - Look for cases where it's the same author but the name is different (e.g., Bjork, E. L. and Bjork, 
 Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring case
@@ -858,6 +856,7 @@ Basic procedure:
 		this.citation_count_pasted_refs = 0;
 		this.citation_count_all = 0;
 		this.affiliation = [];
+		this.most_recent_affiliation = ''
 		this.orcid = ''
 		this.dois = []
 		
@@ -934,7 +933,26 @@ Basic procedure:
 		
         var myJSON = await $.getJSON(encodeURI(stringToSend));
 //     	console.log( myJSON)
-		
+
+// This works, sort of. It stores the author data locally so we don't have to fetch it from crossref every time. The problem is, there's so much data that 
+// it exceeds the storage capacity after like 3 authors are stored (at least, when you fetch 150 records per author).
+//
+// An alternative solution might be to store the author info that's extracted by the author object, rather than the raw json. But that would 
+// require some work to do, so I'm not going to right now. (Basically, I think, I'd store stuff in sessionStorage after the author_obj is complete. The
+// tricky thing would be to then integrate that with the whole importing thing below. It would seem easy, because you basically just set this new author
+// equal to what's stored. But I have a feeling there would be problems, for example, if a new coauthor exists in this run that wasn't around for the last one.)
+// 		try {
+// 			var temp_local = sessionStorage.getItem('author\t'+input_name_no_comma) // get the local storage. note this is using session storage, so it'll reset every time you close the window
+// 			if (temp_local != null) {
+// 				console.log( 'got author local already '+input_name_no_comma+', length='+temp_local.length)
+// 				console.log( temp_local.slice(0,2000))
+// 			} else {
+// 				sessionStorage.setItem('author\t'+input_name_no_comma, JSON.stringify(myJSON.message)); // store the json output for this author in the local browser storage
+// 			}
+// 	    } catch(err) {
+// 			console.error( err)
+// 	    }
+// 
         for (i = 0; i < myJSON.message.items.length; i++) {
             temp_json_ref = myJSON.message.items[i]; 	
 
@@ -965,6 +983,20 @@ Basic procedure:
 						author_obj[temp_coauthor_name_array[j]] = new Author_object(temp_names_split[0].trim(), temp_names_split[1].trim(), 'secondary'); // in the future, i could change it so instead the parameter is the json. then, in the author object, see if it has an orcid id or whatever
 					} 
 					if (temp_json_ref.author[j].affiliation.length > 0) {
+
+// dfd it's getting affiliations for everyone. just do it for the primary authors.
+if (temp_json_ref.issued != undefined && temp_json_ref.issued != null) {
+	console.log( temp_json_ref.issued["date-parts"][0][0] )
+} else if (temp_json_ref.date !== undefined && temp_json_ref.date !== null) {
+	var pub_date = new Date(temp_json_ref.date);
+	console.log( pub_date.getFullYear())
+	
+}
+// console.log( temp_json_ref)
+// var pub_date = new Date(temp_json_ref.date);
+// var year = pub_date.getFullYear();
+// 			console.log( 'year: ' + year)
+// 						most_recent_affiliation = 
 						var temp_af = temp_json_ref.author[j].affiliation[0].name;
 						if (author_obj[temp_coauthor_name_array[j]].affiliation.indexOf(temp_af) == -1) {
 							author_obj[temp_coauthor_name_array[j]].affiliation.push(temp_af) 
@@ -1001,20 +1033,20 @@ Basic procedure:
         for (i = 0; i < coauthor_array.length; i++) {
 			if (coauthor_array[i].coauthors.indexOf(input_obj) == -1) { // if the primary author isn't already a coauthor of this coauthor
 				coauthor_array[i].coauthors.push(input_obj) // add the primary author to the coauthor
-				// dfd note: it's connecting each with the primary author, and vice versa, but it's not connecting them to each other
+				// note: it's connecting each coauthor with the primary author, and vice versa, but it's not connecting coauthors to each other. which i think is fine.
 			}
 	    }
 	    
 		console.log( input_obj.name + ' ' + referenced_by_count)
-// 		console.log('authors_to_get='+authors_to_get+'-1')
+		input_obj.citation_count_all = referenced_by_count
+
 		authors_to_get--;
 		if (authors_to_get == 0) {
 			authors_to_get = -1;
 			console.log( '--done getting authors--')
-			// dfd have it redraw the table at this point? And maybe it should show a message saying "not done" until authors_to_get == -1. 
+			build_author_table(); // not that the authors are all done, draw the table one last time
 		}
 
-		input_obj.citation_count_all = referenced_by_count
 
     }
     
@@ -2000,8 +2032,13 @@ Basic procedure:
 
 	
     function build_author_table() {
-		// Figure out the authors and build a table with all of them in it. This happens after all the articles are parsed.
-		// However, it doesn't wait for all authors to be parsed... should it? or maybe give a warning if they aren't? 
+		// This draws the table with the authors. 
+		// The first time it's called, which happens after all the articles are parsed, it also parses the authors (which sends info requests to crossref).
+		
+		// This gets called multiple times, including before all the crossref info is received. But it does get called once the author crossref stuff
+		// is done being parsed. 
+
+		// for later: maybe it should show a message saying "not done" until authors_to_get == -1. 
 
 		var i = 0;
 		var temp_info = ''
@@ -2016,7 +2053,7 @@ Basic procedure:
 					temp_DOI = text_obj[temp_row_text].doi;
 					parse_JSON_for_authors(reference_obj[temp_DOI].json)
 				} catch(err) {
-	// 				console.log( 'could not parse author: ' + temp_row_text)
+					console.log( 'could not parse author: ' + temp_row_text)
 				}
 			}
 		}
