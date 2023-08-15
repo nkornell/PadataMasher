@@ -43,7 +43,6 @@ To do:
 <!-- 
 Author table
 dfd 
-- warn when there are multiple orcid ids
 - Look for cases where it's the same author but the name is different (e.g., Bjork, E. L. and Bjork, 
 Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring case
  -->
@@ -857,6 +856,8 @@ Basic procedure:
 		this.citation_count_all = 0;
 		this.affiliation = [];
 		this.most_recent_affiliation = ''
+		this.most_recent_year = 0
+		this.oldest_year = 3000
 		this.orcid = ''
 		this.dois = []
 		
@@ -918,6 +919,7 @@ Basic procedure:
 	    var input_name_no_comma = first + " " + last;
 	    var input_name_comma = last + ", " + first
 		var referenced_by_count = 0;
+		var year_temp = 0;
 		
 // 	    console.log( 'starting author search: '+input_name_no_comma)
 
@@ -932,16 +934,24 @@ Basic procedure:
 
 		
         var myJSON = await $.getJSON(encodeURI(stringToSend));
-//     	console.log( myJSON)
 
 // This works, sort of. It stores the author data locally so we don't have to fetch it from crossref every time. The problem is, there's so much data that 
 // it exceeds the storage capacity after like 3 authors are stored (at least, when you fetch 150 records per author).
 //
-// An alternative solution might be to store the author info that's extracted by the author object, rather than the raw json. But that would 
-// require some work to do, so I'm not going to right now. (Basically, I think, I'd store stuff in sessionStorage after the author_obj is complete. The
-// tricky thing would be to then integrate that with the whole importing thing below. It would seem easy, because you basically just set this new author
-// equal to what's stored. But I have a feeling there would be problems, for example, if a new coauthor exists in this run that wasn't around for the last one.)
+// An alternative solution might be to store just the essential parts of the JSON, (i.e., authors, doi, etc)
+// basically just the stuff that's used. I started on doing that by deleting stuff (below) but adding 
+// the important stuff to a blank object would probably be smarter. It's not hard to do, I don't think. 
 // 		try {
+// 			console.log( myJSON.message)
+// 			console.log( ' json length before removing data='+JSON.stringify(myJSON).length)
+// 			for (i = 0; i < myJSON.message.items.length; i++) {
+// 				delete myJSON.message.items[i].reference;
+// 				delete myJSON.message.items[i].abstract;
+// 				delete myJSON.message.items[i].link;
+// 			
+// 			}
+// 			console.log( ' json length after='+JSON.stringify(myJSON).length)
+
 // 			var temp_local = sessionStorage.getItem('author\t'+input_name_no_comma) // get the local storage. note this is using session storage, so it'll reset every time you close the window
 // 			if (temp_local != null) {
 // 				console.log( 'got author local already '+input_name_no_comma+', length='+temp_local.length)
@@ -976,6 +986,14 @@ Basic procedure:
 				
 				input_obj.dois.push(temp_json_ref.DOI) // add this doi to this author's list of dois. this appears to not be happening much. 
 
+				// figure out the year of this publication (for use with affiliation)
+				if (temp_json_ref.issued != undefined && temp_json_ref.issued != null) {
+					year_temp = temp_json_ref.issued["date-parts"][0][0]
+				} else if (temp_json_ref.date !== undefined && temp_json_ref.date !== null) {
+					var pub_date = new Date(temp_json_ref.date);
+					year_temp = pub_date.getFullYear()
+				}
+
 				for (j = 0; j < temp_coauthor_name_array.length; j++) { // for all the coauthors that were found
 					if (author_obj[temp_coauthor_name_array[j]] === undefined) {
 						// if the coauthor doesn't have an object, create it as secondary
@@ -983,33 +1001,28 @@ Basic procedure:
 						author_obj[temp_coauthor_name_array[j]] = new Author_object(temp_names_split[0].trim(), temp_names_split[1].trim(), 'secondary'); // in the future, i could change it so instead the parameter is the json. then, in the author object, see if it has an orcid id or whatever
 					} 
 					if (temp_json_ref.author[j].affiliation.length > 0) {
-
-// dfd it's getting affiliations for everyone. just do it for the primary authors.
-if (temp_json_ref.issued != undefined && temp_json_ref.issued != null) {
-	console.log( temp_json_ref.issued["date-parts"][0][0] )
-} else if (temp_json_ref.date !== undefined && temp_json_ref.date !== null) {
-	var pub_date = new Date(temp_json_ref.date);
-	console.log( pub_date.getFullYear())
-	
-}
-// console.log( temp_json_ref)
-// var pub_date = new Date(temp_json_ref.date);
-// var year = pub_date.getFullYear();
-// 			console.log( 'year: ' + year)
-// 						most_recent_affiliation = 
+						// add the affiliation (both as an array with all of them, and the most recent one)
 						var temp_af = temp_json_ref.author[j].affiliation[0].name;
+						// if it's not already in the array, add it to the array
 						if (author_obj[temp_coauthor_name_array[j]].affiliation.indexOf(temp_af) == -1) {
 							author_obj[temp_coauthor_name_array[j]].affiliation.push(temp_af) 
+						}
+						if (year_temp > author_obj[temp_coauthor_name_array[j]].most_recent_year) {
+							// if it's more recent than the most recent, record it as most recent
+							author_obj[temp_coauthor_name_array[j]].most_recent_year = year_temp
+							author_obj[temp_coauthor_name_array[j]].most_recent_affiliation = temp_af
+						}
+						if (year_temp < author_obj[temp_coauthor_name_array[j]].oldest_year) {
+							author_obj[temp_coauthor_name_array[j]].oldest_year = year_temp
 						}
 					}
 
 					if (temp_json_ref.author[j].ORCID != undefined) {
 						if (author_obj[temp_coauthor_name_array[j]].orcid != '' && author_obj[temp_coauthor_name_array[j]].orcid != temp_json_ref.author[j].ORCID) {
+							// dfd put something in the table to warn about two orcid ids being found
 							console.warn('two orcid ids found: ' +author_obj[temp_coauthor_name_array[j]].orcid + ' ' +temp_json_ref.author[j].ORCID + ' for ' + temp_json_ref.author[j].given+' '+temp_json_ref.author[j].family)
 						}
 						author_obj[temp_coauthor_name_array[j]].orcid = temp_json_ref.author[j].ORCID
-// 						get_orcid_info(author_obj[temp_coauthor_name_array[j]], temp_json_ref.author[j].ORCID)
-// 						console.log( temp_json_ref.author[j].given+' '+temp_json_ref.author[j].family+ ' ' +temp_json_ref.author[j].ORCID)
 					}
 
 					if (coauthor_array.indexOf(author_obj[temp_coauthor_name_array[j]]) == -1) { // if this coauthor isn't already in the list we're making
@@ -1020,12 +1033,11 @@ if (temp_json_ref.issued != undefined && temp_json_ref.issued != null) {
 				}
 			}
         }
+        
 		// add coauthors to the primary author
         for (i = 0; i < coauthor_array.length; i++) {
 			if (input_obj.coauthors.indexOf(coauthor_array[i]) == -1) { // if this coauthor isn't already in this author's list 
 				input_obj.coauthors.push(coauthor_array[i]) // add the coauthor to the primary author
-// 			} else {
-// 				console.log('not adding '+coauthor_array[i].name_apa)
 			}
 		}
 		
@@ -2066,12 +2078,12 @@ if (temp_json_ref.issued != undefined && temp_json_ref.issued != null) {
         authorTableText = "<table><tr>";
         authorTableText += "<th onclick='sortTable(0, "+'"authorTable","checkboxes","desc"'+")' title='Click to Sort'>Highlight <br>co-authors</th>";
         authorTableText += "<th onclick='sortTable(1, "+'"authorTable","letters"'+")' title='Click to Sort'>Author</th>";
-        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","letters"'+")' title='Click to Sort'>Info</th>"; // dfd affiliation: sux. make it keep track of most recent affiliation and only show that? 
+        authorTableText += "<th onclick='sortTable(2, "+'"authorTable","letters"'+")' title='Click to Sort'>Info</th>";
         authorTableText += "<th onclick='sortTable(3, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Pubs<br>found</th>";
         authorTableText += "<th onclick='sortTable(4, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Cited above</th>";
         authorTableText += "<th onclick='sortTable(5, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Cited all time</th>";
         authorTableText += "<th onclick='sortTable(6, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Num Co-Authors</th>";
-        authorTableText += "<th onclick='sortTable(7, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
+//         authorTableText += "<th onclick='sortTable(7, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
         authorTableText += "</tr>";
 
         for (var key in author_obj) {
@@ -2081,7 +2093,10 @@ if (temp_json_ref.issued != undefined && temp_json_ref.issued != null) {
 				} else {
 					temp_info = author_obj[key].orcid + '<br><br>' 
 				}
-				temp_info += author_obj[key].affiliation.join(';<br> ').slice(0, 100)
+				temp_info += author_obj[key].most_recent_affiliation + '<br><br>'
+				temp_info += 'Earliest pub found: '+ author_obj[key].oldest_year
+				
+// 				temp_info += author_obj[key].affiliation.join(';<br> ').slice(0, 100)
 
 				authorTableText += "<tr>";
 				authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
@@ -2091,7 +2106,7 @@ if (temp_json_ref.issued != undefined && temp_json_ref.issued != null) {
 				authorTableText += "<td>" + author_obj[key].citation_count_pasted_refs + "</td>";
 				authorTableText += "<td>" + author_obj[key].citation_count_all + "</td>";
 				authorTableText += "<td>" + author_obj[key].coauthors.length + "</td>";
-				authorTableText += "<td>" + author_obj[key].all_coauthors_string().slice(0, 100) + "</td>";
+// 				authorTableText += "<td>" + author_obj[key].all_coauthors_string().slice(0, 100) + "</td>";
 				authorTableText += "</tr>";
 			}
         }
