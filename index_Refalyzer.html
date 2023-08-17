@@ -766,7 +766,7 @@ Basic procedure:
 // Interventions for mental health professionals (pp. 11–26). American Psychological Association.
 // https://doi.org/10.1037/0000157-002
 
- 	function get_apa_from_json(input_ref) {
+ 	function get_apa_from_json(input_ref) { // for later: make the parameter the json itself?
  		// Use json to create a properly formatted reference. 
  		input_json = input_ref.json
         // https://apastyle.apa.org/instructional-aids/reference-examples.pdf
@@ -903,6 +903,23 @@ Basic procedure:
 // 		
 // 		// nate orcid: 0000-0002-8394-663X
 // 	}
+
+//  	async function replication_impact_index() {
+// 		// This does not work. The idea was to get articles cited by a given article. 
+// 		// Then I could make graphs like I was doing with replications (e.g., 3 lines 
+// 		// for a, b, and both)
+// 		// But I heard back from Crossref (Shayn on 8/17/23). Getting cited articles is 
+// 		// available to some, but not to the public (i.e., not to me).
+// 		
+// 		const stringToSend = 'https://api.crossref.org/works?rows=10&filter=relation.object:is-referenced-by,type:journal-article&query.bibliographic=10.1177/0956797611407929'
+//         var myJSON = await $.getJSON(encodeURI(stringToSend));
+// 		console.log(myJSON.message) // apa
+//         for (i = 0; i < myJSON.message.items.length; i++) {
+// 			console.log(myJSON.message.items[i].author[0].family)
+// 		}
+// 	}
+		
+
  	
 	async function get_coauthors(input_obj, first, last) {
     	// this function isn't done 
@@ -1206,6 +1223,7 @@ Basic procedure:
 					text_obj[input_string].update_input('done')
 					return;
                 }
+
                 
 
                 stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
@@ -2378,8 +2396,6 @@ Basic procedure:
         }
         
         current_mode = 'completely done'
-        
-
 
         var c = 0;
         var m = 0;
