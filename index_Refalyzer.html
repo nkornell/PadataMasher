@@ -1000,8 +1000,8 @@ Basic procedure:
 				if (input_obj.dois.indexOf(temp_json_ref.DOI) == -1) {
 					input_obj.dois.push(temp_json_ref.DOI) // add this doi to this author's list of dois.				
 				} else {
-					console.warn('get coauthors is working on the same doi for a second time (I think this is ok, it just means that it is being processed as a reference for a primary author for the first time): ' + temp_json_ref.DOI) 
-					continue;
+					//this is fine if it happens, it just means we're working on a primary's article but it's already been processed. 
+// 					console.warn('get coauthors is working on the same doi for a second time: ' + temp_json_ref.DOI) 
 				}
 				
 
@@ -1036,10 +1036,10 @@ Basic procedure:
 						}
 					}
 
-// add this doi to this coauthor's list
-	if (author_obj[temp_coauthor_name_array[j]].dois.indexOf(temp_json_ref.DOI) == -1) {
-		author_obj[temp_coauthor_name_array[j]].dois.push(temp_json_ref.DOI)
-	}
+					// add this doi to this coauthor's list
+					if (author_obj[temp_coauthor_name_array[j]].dois.indexOf(temp_json_ref.DOI) == -1) {
+						author_obj[temp_coauthor_name_array[j]].dois.push(temp_json_ref.DOI)
+					}
 				
 					if (temp_json_ref.author[j].ORCID != undefined) {
 						if (author_obj[temp_coauthor_name_array[j]].orcid != '' && author_obj[temp_coauthor_name_array[j]].orcid != temp_json_ref.author[j].ORCID) {
