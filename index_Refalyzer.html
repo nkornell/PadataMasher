@@ -997,11 +997,13 @@ Basic procedure:
 			if (temp_coauthor_name_array.indexOf(input_name_comma) > -1) { // if this author's name is in the author list that was returned (i.e., they really are an author on this publication)
 				referenced_by_count += temp_json_ref['is-referenced-by-count']
 
-				if (input_obj.dois.indexOf(temp_json_ref.DOI) > -1) {
-					console.warn('get coauthors is working on the same doi for a second time (it should not): ' + temp_json_ref.DOI) // if this happens, change the code so the loop continues here
+				if (input_obj.dois.indexOf(temp_json_ref.DOI) == -1) {
+					input_obj.dois.push(temp_json_ref.DOI) // add this doi to this author's list of dois.				
+				} else {
+					console.warn('get coauthors is working on the same doi for a second time (I think this is ok, it just means that it is being processed as a reference for a primary author for the first time): ' + temp_json_ref.DOI) 
+					continue;
 				}
 				
-				input_obj.dois.push(temp_json_ref.DOI) // add this doi to this author's list of dois. this appears to not be happening much. 
 
 				// figure out the year of this publication (for use with affiliation)
 				if (temp_json_ref.issued != undefined && temp_json_ref.issued != null) {
@@ -1034,6 +1036,11 @@ Basic procedure:
 						}
 					}
 
+// add this doi to this coauthor's list
+	if (author_obj[temp_coauthor_name_array[j]].dois.indexOf(temp_json_ref.DOI) == -1) {
+		author_obj[temp_coauthor_name_array[j]].dois.push(temp_json_ref.DOI)
+	}
+				
 					if (temp_json_ref.author[j].ORCID != undefined) {
 						if (author_obj[temp_coauthor_name_array[j]].orcid != '' && author_obj[temp_coauthor_name_array[j]].orcid != temp_json_ref.author[j].ORCID) {
 							// dfd put something in the table to warn about two orcid ids being found
@@ -2105,14 +2112,15 @@ Basic procedure:
         authorTableText += "</tr>";
 
         for (var key in author_obj) {
-        	if (author_obj[key].type == "primary") {
+//         	if (author_obj[key].type == "primary") {
 				if (author_obj[key].orcid == '') {
 					temp_info = '<i>no orcid id found</i><br><br>'
 				} else {
 					temp_info = author_obj[key].orcid + '<br><br>' 
 				}
 				temp_info += author_obj[key].most_recent_affiliation + '<br><br>'
-				temp_info += 'Earliest pub found: '+ author_obj[key].oldest_year
+				temp_info += 'Earliest pub found: '+ author_obj[key].oldest_year+'<br>'
+// 				temp_info += author_obj[key].dois.join('<br>')
 				
 // 				temp_info += author_obj[key].affiliation.join(';<br> ').slice(0, 100)
 
@@ -2126,7 +2134,7 @@ Basic procedure:
 				authorTableText += "<td>" + author_obj[key].coauthors.length + "</td>";
 // 				authorTableText += "<td>" + author_obj[key].all_coauthors_string().slice(0, 100) + "</td>";
 				authorTableText += "</tr>";
-			}
+// 			}
         }
 
         authorTableText += "</table>"
