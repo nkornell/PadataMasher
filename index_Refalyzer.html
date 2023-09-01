@@ -1,5 +1,5 @@
 <!-- 
-// dfd
+// dfd to do:
 the URL thing should probably be turned off
 if you edit the boxes after running it, and then copy, it won't copy what you type in. 
 it's weird how it kind of shows guesses and unchanged mixed together. (mabuye have a button for "show all unchanged" or "show all guesses")
@@ -14,21 +14,6 @@ To do:
 
 - When it gets a non-doi reference, maybe have it look at the first 2 or 3 that are returned, and see if they have a matching year, author, etc? 
 
-- when it gts a reference json (for any reference), have it return notes about what it got wrong or is missing
--   Like, if there are no authors, year, or title, flag it. Regardless of format. 
--   And if it's a known format (journal article), if there are no page numbers, for example, in the JSON. 
--   This means figuring out the elements (e.g., date) for both the json and the input. 
-- 
--   And maybe even fix the errors?? like if eds are missing, use the user input to insert them?
--   do this by having it return an object, and have the object include, like, .apa (so the user could type something like, returnthing(x).apa)
-
-
-- this returns a crazy reference that's way too long. It returns fragment but it should probably return wrong. So maybe part of the right/wrong score should be
-- based on total length? (Is it already?)
-- Learning and Motivation: Advances in Research and Theory, vol. 54, ed. BH Ross, pp. 103–40. San Diego, CA: Elsevier
-
-
-- It would speed things up to not wait for all of the lines to come in before trying to combine. Maybe if an obj is correct it should try to combine right away?
 
 
 - With two non-user-doi rows, it's possible that neither doi it finds is right. In this case, maybe it could find the right doi if they were combined and then sent
@@ -62,15 +47,6 @@ Memory, and Cognition, 43, 680–693.
 -->
 
 <!-- 
-Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning 
-
-(JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL 
-
-effect”. Memory, 26, 771–783. 
-
-https://doi.org/10.3758/s13421-013-0307-8
-
-Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL 
  -->
  
 <!-- 
@@ -938,13 +914,10 @@ Basic procedure:
 		var referenced_by_count = 0;
 		var year_temp = 0;
 		
-// 	    console.log( 'starting author search: '+input_name_no_comma)
-
 
 	    // dfd 
 	    // maybe page through until you're finding nothing good? maybe it returns forever with decreasingly good search matches? I set rows to a specific number but there has to be a better way(?). I just want all. 
 	    // should I add other filters? is there one for having this author in the author list? and should I allow type:report or type:dissertation?
-        // 
         
 	    const temp_filters = '&filter=type:journal-article,type:book-chapter,type:book,type:monograph,type:proceedings-article'
         var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com'+temp_filters+'&rows=150&query.author='+input_name_no_comma.replaceAll(' ', '+'); 
@@ -1972,7 +1945,9 @@ Basic procedure:
 				
 				for (a = 0; a < input_json.author.length; a++) {
 					if (input_json.author[a].family !== undefined && input_json.author[a].family !== null) {
-						temp_firstname = input_json.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim();
+						if (input_json.author[a].given !== undefined && input_json.author[a].given !== null) {
+							temp_firstname = input_json.author[a].given.replaceAll('. ',' ').replaceAll('.',' ').trim();
+						}
 						tempAuthor_full = input_json.author[a].family + ", " + temp_firstname;
 					
 						// keep track of how many times this author has appeared for the table of authors
@@ -1991,7 +1966,8 @@ Basic procedure:
 // 				connect_coauthors(temp_list_of_co_authors_from_this_article); 
 			}
 		} catch(err) {
-			console.log( '*error in parse_JSON_for_authors');
+			console.error( 'in parse_JSON_for_authors: ')
+			console.error( err);
 		}
 	}
 	
