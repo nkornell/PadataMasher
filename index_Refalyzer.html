@@ -1,25 +1,19 @@
 <!-- 
 // dfd to do:
-the URL thing should probably be turned off
+The URL thing should probably be turned off
 if you edit the boxes after running it, and then copy, it won't copy what you type in. 
-it's weird how it kind of shows guesses and unchanged mixed together. (mabuye have a button for "show all unchanged" or "show all guesses")
-relatedly, sometimes the user wrote too much but it still thinks it's right. I could make the program differentiate between 'my answer is wrong' and 'your input was wrong'
+It's weird how it kind of shows guesses and unchanged mixed together. (mabuye have a button for "show all unchanged" or "show all guesses")
+Relatedly, sometimes the user wrote too much but it still thinks it's right. I could make the program differentiate between 'my answer is wrong' and 'your input was wrong'
 Check whether it's categorizing well. Am I getting false alarms by adding the bonus points?
-for dbugging, make a button to load everything that's in memory into the input field? 
+For debugging, make a button to load everything that's in memory into the input field? 
 
-// I could have an option to "try again" after they edit. 
-// and then also, maybe the ability to promote something to the good section? 
+I could have an option to "try again" after they edit. and then also, maybe the ability to promote something to the good section? 
 
 To do: 
 
 - When it gets a non-doi reference, maybe have it look at the first 2 or 3 that are returned, and see if they have a matching year, author, etc? 
 
-
-
-- With two non-user-doi rows, it's possible that neither doi it finds is right. In this case, maybe it could find the right doi if they were combined and then sent
-- to the server, but as of now the program doesn't check the database for the combo. 
-
-- Just looking at the output, it seems like maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
+- Look at the detailed output again. Maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
 
 -->
 
@@ -35,90 +29,29 @@ Elizabeth Ligon). Combine them. Also, check if they're the same when ignoring ca
 
 
 
-<!-- stuff to test-->
-<!--
-This makes it decide the other doi will be better, and therefore return, during decide to combine
-
-metacognitive judgments. Journal of 
-Experimental Psychology: Learning, frank
-Memory, and Cognition, 43, 680–693. 
-
-
--->
+<!-- knwon issues-->
 
 <!-- 
- -->
- 
-<!-- 
+The crossref doi database is wrong(?!) about this one. It doesn't include the 2nd author, Cockman. 
+Mendely also gets this wrong. But Google Scholar gets it right. 
 Hicks, J. L., & Cockman, D. W. (2003). The effect of general knowledge on source memory
-
 and decision processes. Journal of Memory and Language, 48, 489–501.
-
 https://doi.org/10.1016/S0749-596X(02)00537-5
-
-
  -->
 
-
 <!-- 
+This causes an error and isn't found.
 Heck, D. W., Gronau, F. Q., & Wagenmakers &, E.-J. (2019). metaBMA: Bayesian Model
-
 Averaging for Random and Fixed Effects Meta-Analysis. https://CRAN.R-project.org/package=metaBMA.
-
-Henkel, L. A., Johnson, M. K., & De Leonardis, D. M. (1998). Aging and source monitoring:
-
-Cognitive processes and neuropsychological correlates. Journal of Experimental
-
-Psychology: General, 127, 251–268. https://doi.org/10.1037/0096-3445.127.3.251 Hicks, J. L., & Cockman, D. W. (2003). The effect of general knowledge on source memory
-
-and decision processes. Journal of Memory and Language, 48, 489–501.
-
-https://doi.org/10.1016/S0749-596X(02)00537-5
  -->
 
 <!--
-~~
-this causes ABCABC to get messed up. I think basically, if there's only dois plus duplicates, it's a problem. 
-
-Bui, Y., Pyc, M. A., & Bailey, H. (2018). When people’s judgments of learning (JOLs) are extremely accurate at predicting subsequent recall: the “Displaced-JOL effect”. Memory, 26, 771–783. https://doi.org/10.1080/09658211.2017.1406523
-
-DELAYED JUDGMENTS IN SOURCE MONITORING 53
-
-
-DELAYED JUDGMENTS IN SOURCE MONITORING 54
-~~~
-
-When you do this one of the lines ('remembered?...') gets deleted from user input
-Besken, M., & Mulligan, N. W. (2013). Easily perceived, easily 
-remembered? Perceptual interference produces a double dissociation 
-between metamemory and memory performance. Memory & Cognition, 41, 
-897–903. 
-
-~~~
-
-test this and see if it still causes an error. having the same reference appear twice (with or without doi) causes a breakdown where some references aren't found at all
-
-Importance of the kind of cue for judgments of learning (JOL) and the delayed-JOL effect.
-
-Psychological Science, 18, 159-163. https://doi.org/10.1111/j.1467-8721.2009.01628.x 
-
-Meiser, T., Sattler, C., & Von Hecker, U. (2007). Metacognitive inferences in source memory
-
-judgements: The role of perceived differences in item recognition. Quarterly Journal of
-
-Experimental Psychology, 60, 1015–1040. https://doi.org/10.1080/17470210600875215 Metcalfe, J. (2009). Metacognitive judgments and control of study. Current Directions in
-
-Psychological Science, 18, 159-163. https://doi.org/10.1111/j.1467-8721.2009.01628.x 
-
-~~~
-if there are duplicate lines but they're good, it gets rid of both. maybe it should keep one. to do this, I could
-have it run the duplicate line array through the database and see if anything good comes out
+if there are duplicate lines, even if they're good, it gets rid of both. maybe it should keep one. 
+to do this, I could have it run the duplicate line array through the database and see if anything good comes out
 
 aDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgments of learning (JOL) and the delayed-JOL effect. Memory & Cognition, 20(4), 374–380.
 aklsdkjf
 bDunlosky, J., & Nelson, T. O. (1992). Importance of the kind of cue for judgments of learning (JOL) and the delayed-JOL effect. Memory & Cognition, 20(4), 374–380.
-~~~
-
  -->
 
 <!--
@@ -1164,6 +1097,7 @@ Basic procedure:
                 // if the string contains a url but no doi
                 // use an api get the json of the webpage it links to. this is for news articles and stuff. 
                 // unfortunately it only allows you to do 50(?) calls a day. 
+                console.log( 'using microlink for: '+inputURL)
                 stringToSend = 'https://api.microlink.io/?url='+inputURL 
                 myJSON = await $.getJSON(stringToSend);
                 text_obj[input_string].url_status = url_status_checker(myJSON, inputURL)
@@ -1194,8 +1128,6 @@ Basic procedure:
 					text_obj[input_string].update_input('done')
 					return;
                 }
-
-                
 
                 stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
                 myJSON = await $.getJSON(encodeURI(stringToSend));
@@ -2394,8 +2326,8 @@ Basic procedure:
 				text_obj_count++
 			}
 		}
-		if (text_obj_count != (c+m+w)) {
-			console.error('mismatched counts: text_obj ('+text_obj_count+') != article table count ('+(c+m+w)+')')
+		if (text_obj_count != (c+w)) {
+			console.error('mismatched counts: text_obj ('+text_obj_count+') != article table count ('+(c+w)+')')
 		}
         
 // 		document.getElementById('progressText').innerHTML = 'Done. ' + rows_total + " entries processed in " +  Math.floor((Date.now() - startTime)/1000) + " seconds."
