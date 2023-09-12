@@ -11,6 +11,8 @@ I could have an option to "try again" after they edit. and then also, maybe the 
 
 To do: 
 
+- Sometimes the database is wrong. Maybe (somehow?) flag cases where the user should consider trusting their own input.
+
 - When it gets a non-doi reference, maybe have it look at the first 2 or 3 that are returned, and see if they have a matching year, author, etc? 
 
 - Look at the detailed output again. Maybe some of the ones marked wrong are actually right. Should they be marked probable instead? 
@@ -821,9 +823,8 @@ Basic procedure:
 		
 
  	
-	async function get_coauthors(input_obj, first, last) {
-    	// this function isn't done 
-    	
+	async function get_coauthors(input_obj, first, last) {  	
+		// dfd: comments! 
     	// The idea was to get authors from the database so a user could dig deeper on a specific person. 
     	// This tells me what they've published, and published article records have the co-authors listed. 
     	// By the way, if I do develop this, what if it also used ORCID? It has an API.
@@ -849,10 +850,9 @@ Basic procedure:
 		
         var myJSON = await $.getJSON(encodeURI(stringToSend));
 
-// This works, sort of. It stores the author data locally so we don't have to fetch it from crossref every time. The problem is, there's so much data that 
+// This commented stuff works, sort of. It stores the author data locally so we don't have to fetch it from crossref every time. The problem is, there's so much data that 
 // it exceeds the storage capacity after like 3 authors are stored (at least, when you fetch 150 records per author).
-//
-// An alternative solution might be to store just the essential parts of the JSON, (i.e., authors, doi, etc)
+// If I improve this, I might store just the essential parts of the JSON, (i.e., authors, doi, etc)
 // basically just the stuff that's used. I started on doing that by deleting stuff (below) but adding 
 // the important stuff to a blank object would probably be smarter. It's not hard to do, I don't think. 
 // 		try {
@@ -2012,13 +2012,17 @@ Basic procedure:
 
         for (var key in author_obj) {
 //         	if (author_obj[key].type == "primary") {
-				if (author_obj[key].orcid == '') {
-					temp_info = '<i>no orcid id found</i><br><br>'
-				} else {
-					temp_info = author_obj[key].orcid + '<br><br>' 
+				temp_info = ''
+				if (author_obj[key].most_recent_affiliation != '') {
+					temp_info += author_obj[key].most_recent_affiliation + '<br><br>'
 				}
-				temp_info += author_obj[key].most_recent_affiliation + '<br><br>'
-				temp_info += 'Earliest pub found: '+ author_obj[key].oldest_year+'<br>'
+				if (author_obj[key].orcid != '') {
+// 					(e.g., http://orcid.org/0000-0002-2299-9834)
+					temp_info += 'orcid id: <a href='+author_obj[key].orcid+' target="_blank">'+author_obj[key].orcid.replace('http://orcid.org/','')+'</a>' + '<br>' 
+				}
+				if (author_obj[key].oldest_year != 3000) {
+					temp_info += 'Earliest pub found: '+ author_obj[key].oldest_year+'<br>'
+				}
 // 				temp_info += author_obj[key].dois.join('<br>')
 				
 // 				temp_info += author_obj[key].affiliation.join(';<br> ').slice(0, 100)
@@ -2472,9 +2476,11 @@ Basic procedure:
         document.getElementById('output_correct_box').style = "overflow-y: scroll; height: 20em; margin-bottom: 10px;" 
         document.getElementById('output_correct_box').innerHTML = out; 
 
-        document.getElementById('wrong_box_big').style = "display: inline-block;  width: 99%;  background-color: #fcc"
-        document.getElementById('output_wrong_box').style = "overflow-y: scroll; height: 20em; margin-bottom: 10px;" 
-        document.getElementById('output_wrong_box').innerHTML = out_wrong;
+		if (out_wrong != '') { // if theres' something to show
+			document.getElementById('wrong_box_big').style = "display: inline-block;  width: 99%;  background-color: #fcc" // dfd don't show this if there's none
+			document.getElementById('output_wrong_box').style = "overflow-y: scroll; height: 20em; margin-bottom: 10px;" 
+			document.getElementById('output_wrong_box').innerHTML = out_wrong;
+        }
 	
 	}
 	
@@ -2498,6 +2504,7 @@ Basic procedure:
 	}
 
 	function show_or_hide_everything(input) {
+		// dfd at some point, get rid of this and put everything in the 'show details' section
 	    var d = ''
 	    
 	    if (input != "hide") {
