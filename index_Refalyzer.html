@@ -844,7 +844,9 @@ Basic procedure:
 		var local_json = ''
 		
         
-
+// dfd: Could I use this to figure out what's getting cited most--including what's getting cited a lot that isn't in the list!?!?
+// in other words, a recommender for stuff you should be citing.
+// I think I'd just need to count how many times a given doi appears. But where would I be looking? The reference sections of the pasted articles? 
 		
 		// get json either locally or from the api
 		try {
@@ -860,6 +862,7 @@ Basic procedure:
 				// related: maybe remove dois that don't include this author from the json before storing it locally?
 				const temp_filters = '&filter=type:journal-article,type:book-chapter,type:book,type:monograph,type:proceedings-article' // only get these types of entries
 				const temp_select = '&select=DOI,author,issued,is-referenced-by-count' // only request this information from the entries that are returned
+				// dfd should i use select elsewhere, to save bandwidth?
 				const stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com'+temp_filters+'&rows=150&query.author='+input_name_no_comma.replaceAll(' ', '+')+temp_select; 
 				myJSON = await $.getJSON(encodeURI(stringToSend));
 				sessionStorage.setItem('author\t'+input_name_no_comma, JSON.stringify(myJSON)); // store the json output for this author in the local browser storage
