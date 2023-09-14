@@ -750,6 +750,8 @@ Basic procedure:
 
 	function Author_object(input_familyname, input_firstname, input_type) {
 		// this creates instances of an author object, which is how I keep track of authors. 
+		this.first = input_firstname;
+		this.last = input_familyname;
 		this.name = input_familyname + ", " + input_firstname;
 		this.coauthors = [];
 		this.checked = false;
@@ -767,7 +769,7 @@ Basic procedure:
 		
 		if (this.type == 'primary') {
 			authors_to_get++;
-			get_coauthors(this, input_firstname, input_familyname)
+			get_coauthors(this)
 		}
 
 		var firstName_array = input_firstname.replaceAll('. ',' ').replaceAll('.',' ').trim().split(" "); //array of first names with the periods replaced by spaces (which is only necessary for things like "T.O." as a first name)
@@ -823,63 +825,53 @@ Basic procedure:
 		
 
  	
-	async function get_coauthors(input_obj, first, last) {  	
-		// dfd: comments! 
-    	// The idea was to get authors from the database so a user could dig deeper on a specific person. 
-    	// This tells me what they've published, and published article records have the co-authors listed. 
-    	// By the way, if I do develop this, what if it also used ORCID? It has an API.
+	async function get_coauthors(input_obj) {  	
+		// This gets more info about each primary author (i.e., authors cited in the pasted text).
+		// In addition to finding their co-authors, it also figures out how often they've been cited, their affiliation, etc. 
+		// Basically, it uses crossref to get x dois that are related to the author. Those dois tell us the coauthors, this persons affiliation, etc. 
+    	// By the way, what if it also used ORCID? It has an API.
 
 	    var i = 0, j = 0;
 	    var temp_coauthor_name_array = [];
 	    var coauthor_array = []
 	    var cc = []
 	    var temp_not_using = []
-	    var input_name_no_comma = first + " " + last;
-	    var input_name_comma = last + ", " + first
+	    var input_name_no_comma = input_obj.first + " " + input_obj.last;
+	    var input_name_comma = input_obj.last + ", " + input_obj.first
 		var referenced_by_count = 0;
 		var year_temp = 0;
+		var myJSON = ''
+		var local_json = ''
 		
-
-	    // dfd 
-	    // maybe page through until you're finding nothing good? maybe it returns forever with decreasingly good search matches? I set rows to a specific number but there has to be a better way(?). I just want all. 
-	    // should I add other filters? is there one for having this author in the author list? and should I allow type:report or type:dissertation?
         
-	    const temp_filters = '&filter=type:journal-article,type:book-chapter,type:book,type:monograph,type:proceedings-article'
-        var stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com'+temp_filters+'&rows=150&query.author='+input_name_no_comma.replaceAll(' ', '+'); 
 
 		
-        var myJSON = await $.getJSON(encodeURI(stringToSend));
+		// get json either locally or from the api
+		try {
+			local_json = sessionStorage.getItem('author\t'+input_name_no_comma) // get the local storage. note this is using session storage, so it'll reset every time you close the window
+			if (local_json != null && local_json != undefined) {
+				// if the json is stored locally in session storage (which expires btw), get it
+	 			myJSON = JSON.parse(local_json);
+			} else {
+				// if the json isn't in storage, get it from the api
 
-// This commented stuff works, sort of. It stores the author data locally so we don't have to fetch it from crossref every time. The problem is, there's so much data that 
-// it exceeds the storage capacity after like 3 authors are stored (at least, when you fetch 150 records per author).
-// If I improve this, I might store just the essential parts of the JSON, (i.e., authors, doi, etc)
-// basically just the stuff that's used. I started on doing that by deleting stuff (below) but adding 
-// the important stuff to a blank object would probably be smarter. It's not hard to do, I don't think. 
-// 		try {
-// 			console.log( myJSON.message)
-// 			console.log( ' json length before removing data='+JSON.stringify(myJSON).length)
-// 			for (i = 0; i < myJSON.message.items.length; i++) {
-// 				delete myJSON.message.items[i].reference;
-// 				delete myJSON.message.items[i].abstract;
-// 				delete myJSON.message.items[i].link;
-// 			
-// 			}
-// 			console.log( ' json length after='+JSON.stringify(myJSON).length)
+				// dfd : I set rows to a specific number but there has to be a better way(?). I just want all. maybe page through until you're finding nothing good? maybe it returns forever with decreasingly good search matches? 
+				// also: should I add other filters? is there one for having this author in the author list? and should I allow type:report or type:dissertation?
+				// related: maybe remove dois that don't include this author from the json before storing it locally?
+				const temp_filters = '&filter=type:journal-article,type:book-chapter,type:book,type:monograph,type:proceedings-article' // only get these types of entries
+				const temp_select = '&select=DOI,author,issued,is-referenced-by-count' // only request this information from the entries that are returned
+				const stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com'+temp_filters+'&rows=150&query.author='+input_name_no_comma.replaceAll(' ', '+')+temp_select; 
+				myJSON = await $.getJSON(encodeURI(stringToSend));
+				sessionStorage.setItem('author\t'+input_name_no_comma, JSON.stringify(myJSON)); // store the json output for this author in the local browser storage
+			}
+	    } catch(err) {
+			console.error( err)
+	    }
 
-// 			var temp_local = sessionStorage.getItem('author\t'+input_name_no_comma) // get the local storage. note this is using session storage, so it'll reset every time you close the window
-// 			if (temp_local != null) {
-// 				console.log( 'got author local already '+input_name_no_comma+', length='+temp_local.length)
-// 				console.log( temp_local.slice(0,2000))
-// 			} else {
-// 				sessionStorage.setItem('author\t'+input_name_no_comma, JSON.stringify(myJSON.message)); // store the json output for this author in the local browser storage
-// 			}
-// 	    } catch(err) {
-// 			console.error( err)
-// 	    }
-// 
+
         for (i = 0; i < myJSON.message.items.length; i++) {
             temp_json_ref = myJSON.message.items[i]; 	
-
+			
 			// put the coauthors into temp_coauthor_name_array
 			temp_coauthor_name_array = []
 			for (j = 0; j < temp_json_ref.author.length; j++) {
@@ -887,6 +879,8 @@ Basic procedure:
 					// if this author's record has both names, use it
 					temp_json_ref.author[j].given = temp_json_ref.author[j].given.replaceAll('. ',' ').replaceAll('.',' ').trim() // get rid of periods in first name
 					temp_coauthor_name_array.push(temp_json_ref.author[j].family + ", " + temp_json_ref.author[j].given)						
+// 				} else {
+// 					console.warn('author names not found for '+input_name_no_comma)
 				}
 			}
 
@@ -906,6 +900,7 @@ Basic procedure:
 				if (temp_json_ref.issued != undefined && temp_json_ref.issued != null) {
 					year_temp = temp_json_ref.issued["date-parts"][0][0]
 				} else if (temp_json_ref.date !== undefined && temp_json_ref.date !== null) {
+					console.warn ('Using .date')
 					var pub_date = new Date(temp_json_ref.date);
 					year_temp = pub_date.getFullYear()
 				}
@@ -976,11 +971,9 @@ Basic procedure:
 		authors_to_get--;
 		if (authors_to_get == 0) {
 			authors_to_get = -1;
-			console.log( '--done getting authors--')
-			build_author_table(); // not that the authors are all done, draw the table one last time
+			console.log( '--done getting authors--') // dfd this is happening before it's done getting authors!!
+			build_author_table(); // now that the authors are all done, draw the table one last time
 		}
-
-
     }
     
     
@@ -1879,13 +1872,13 @@ Basic procedure:
 						} else if (author_obj[tempAuthor_full].type != 'primary') {
 							// if it exists but it's listed as secondary, change it to primary
 							author_obj[tempAuthor_full].type = 'primary'
-							console.warn( 'changed type to primary for : '+tempAuthor_full) // in this case, get coauthors still needs to be called. but first let's see if this ever happens
+// 							console.warn( 'changed type to primary for : '+tempAuthor_full) // in this case, get coauthors still needs to be called. but first let's see if this ever happens
+							get_coauthors(author_obj[tempAuthor_full]) // primary authors need this to be called. it's not called when the author is created if they are secondary.
 						}
 						author_obj[tempAuthor_full].citation_count_pasted_refs++;
 						temp_list_of_co_authors_from_this_article.push(tempAuthor_full);
 					}
 				}
-
 // 				connect_coauthors(temp_list_of_co_authors_from_this_article); 
 			}
 		} catch(err) {
@@ -2356,7 +2349,8 @@ Basic procedure:
 		
 // 		document.getElementById("authors_button").style.display = "inline-block";
 		document.getElementById("copy_button").style.display = "inline-block";
-		document.getElementById("clear_storage_button").style.display = "none";
+		document.getElementById("clear_local_storage_button").style.display = "none";
+		document.getElementById("clear_session_storage_button").style.display = "none";
 		
 		console.log( '---------finish----------')
 		console.log( '')
@@ -2481,17 +2475,8 @@ Basic procedure:
 			document.getElementById('output_wrong_box').style = "overflow-y: scroll; height: 20em; margin-bottom: 10px;" 
 			document.getElementById('output_wrong_box').innerHTML = out_wrong;
         }
-	
 	}
 	
-// 	function show_or_hide_burgerBox() {
-// 	    var s = "none"
-// 	    if (document.getElementById("burgerBox").style.display == "none") {
-// 	    	s = "inline-block"
-// 	    }
-// 		document.getElementById("burgerBox").style.display = s
-// 	}
-
 	function show_or_hide_help() {
 		if (document.getElementById("help").style.display === "none") {
 			document.getElementById("help").style.display = "block";
@@ -2638,7 +2623,8 @@ project.org/package=metaBMA.
 		<p><b>Privacy</b>
 		<p>This program keeps your data private. Your data are never uploaded, stored, or modified. 
 		<p><b>Advanced</b> (not recommended)
-		<p><button style="display: inline-block; cursor: pointer" onclick="localStorage.clear()" id="clear_storage_button">Clear local storage </button> 
+		<p><button style="display: inline-block; cursor: pointer" onclick="localStorage.clear()" id="clear_local_storage_button">Clear local storage </button> 
+		<p><button style="display: inline-block; cursor: pointer" onclick="sessionStorage.clear()" id="clear_session_storage_button">Clear session storage </button> 
 		<button style="display: inline-block; cursor: pointer" onclick="show_or_hide_everything()" id="show_everything_button" >Show/hide everything</button> 
 
 		</p>
@@ -2649,13 +2635,6 @@ project.org/package=metaBMA.
 		<p style="margin: 25px">Paste a list of references below. This will fix errors and return citations in APA format. It's easy, private, and free. </p>
 	</div>
 
-
-<!-- 
-<div class='wideBoxWithMargin' id='burgerBox' style = "display: none">
-	<button onclick="show_or_hide_everything()" id="show_everything_button" >show/hide everything</button>
-	<button onclick="localStorage.clear()" id="clear_storage_button">clear local storage</button> 
-</div>
- -->
  
 
 <div class='wideBoxWithMargin' id = 'inputTextBox'>
