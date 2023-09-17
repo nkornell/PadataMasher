@@ -111,8 +111,6 @@ Basic procedure:
     let dmp = new diff_match_patch();
     var authors_to_get = 0;
 	let Cite = require('citation-js');
-	var reference_section_dois = []
-	var reference_sections_found = 0;
 	
 	
     function extract_url(input) {
@@ -579,15 +577,14 @@ Basic procedure:
 		}
 	}
 	
-	function Reference_object(input_userInput, input_json, input_apa) {	 
-		var temp_index = 0
-		   
+	function Reference_object(input_userInput, input_json, input_apa) {	    
         try {
             this.user_input = input_userInput;
             this.json = input_json;
             this.doi = this.json.DOI;
             this.last_names = []
             this.year = ''
+            
         
 // 			Figure out authors, year, and title.
             if (input_json.author !== undefined && input_json.author !== null) {
@@ -646,28 +643,6 @@ Basic procedure:
 			
 
 
-			// new thing
-//             console.log( input_json)
-			if (input_json.reference != undefined && input_json.reference != null) {
-				reference_sections_found++;
-				for (i = 0; i < input_json.reference.length; i++) {
-					if (input_json.reference[i].DOI != undefined && input_json.reference[i].DOI != null) {
-// 						console.log(typeof input_json.reference[i].DOI)
-						temp_index = reference_section_dois.findIndex(obj => obj.doi === input_json.reference[i].DOI)
-						if (temp_index > -1) {
-// 						if (reference_section_dois.some(obj => obj.doi === input_json.reference[i].DOI)) {
-// 							console.log( 'same')
-							reference_section_dois[temp_index].count++
-						} else {
-							reference_section_dois.push({"doi": input_json.reference[i].DOI, count: 1})
-// 							console.log(typeof input_json.reference[i].DOI)
-// 							console.log( typeof reference_section_dois[reference_section_dois.length-1].doi)
-// 							console.log( reference_section_dois[reference_section_dois.length-1])
-						}
-					}
-				}
-			}
-            
 
     	} catch(err) {
     	    console.error ('error in new reference obj')
@@ -787,7 +762,7 @@ Basic procedure:
 		this.most_recent_affiliation = ''
 		this.most_recent_year = 0
 		this.oldest_year = 3000
-		this.orcid = []
+		this.orcid = ''
 		this.dois = []
 		
 // 		console.log('New author: ' + this.name)
@@ -868,6 +843,11 @@ Basic procedure:
 		var myJSON = ''
 		var local_json = ''
 		
+        
+// dfd: Could I use this to figure out what's getting cited most--including what's getting cited a lot that isn't in the list!?!?
+// in other words, a recommender for stuff you should be citing.
+// I think I'd just need to count how many times a given doi appears. But where would I be looking? The reference sections of the pasted articles? 
+		
 		// get json either locally or from the api
 		try {
 			local_json = sessionStorage.getItem('author\t'+input_name_no_comma) // get the local storage. note this is using session storage, so it'll reset every time you close the window
@@ -882,13 +862,10 @@ Basic procedure:
 				// related: maybe remove dois that don't include this author from the json before storing it locally?
 				const temp_filters = '&filter=type:journal-article,type:book-chapter,type:book,type:monograph,type:proceedings-article' // only get these types of entries
 				const temp_select = '&select=DOI,author,issued,is-referenced-by-count' // only request this information from the entries that are returned
+				// dfd should i use select elsewhere, to save bandwidth?
 				const stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com'+temp_filters+'&rows=150&query.author='+input_name_no_comma.replaceAll(' ', '+')+temp_select; 
 				myJSON = await $.getJSON(encodeURI(stringToSend));
-				try {
-					sessionStorage.setItem('author\t'+input_name_no_comma, JSON.stringify(myJSON)); // store the json output for this author in the local browser storage
-				} catch(err) {
-					console.warn("session storage full")
-				}
+				sessionStorage.setItem('author\t'+input_name_no_comma, JSON.stringify(myJSON)); // store the json output for this author in the local browser storage
 			}
 	    } catch(err) {
 			console.error( err)
@@ -960,9 +937,11 @@ Basic procedure:
 					}
 				
 					if (temp_json_ref.author[j].ORCID != undefined) {
-						if (author_obj[temp_coauthor_name_array[j]].orcid.indexOf(temp_json_ref.author[j].ORCID) == -1) {
-							author_obj[temp_coauthor_name_array[j]].orcid.push(temp_json_ref.author[j].ORCID)
+						if (author_obj[temp_coauthor_name_array[j]].orcid != '' && author_obj[temp_coauthor_name_array[j]].orcid != temp_json_ref.author[j].ORCID) {
+							// dfd put something in the table to warn about two orcid ids being found
+							console.warn('two orcid ids found: ' +author_obj[temp_coauthor_name_array[j]].orcid + ' ' +temp_json_ref.author[j].ORCID + ' for ' + temp_json_ref.author[j].given+' '+temp_json_ref.author[j].family)
 						}
+						author_obj[temp_coauthor_name_array[j]].orcid = temp_json_ref.author[j].ORCID
 					}
 
 					if (coauthor_array.indexOf(author_obj[temp_coauthor_name_array[j]]) == -1) { // if this coauthor isn't already in the list we're making
@@ -989,12 +968,12 @@ Basic procedure:
 			}
 	    }
 	    
-		console.log(input_obj.name + ' ' + referenced_by_count)
+		console.log( input_obj.name + ' ' + referenced_by_count)
 		input_obj.citation_count_all = referenced_by_count
 
 		authors_to_get--;
-		if (authors_to_get == 0 && current_mode == 'completely done') {
-// 			authors_to_get = -1;
+		if (authors_to_get == 0) {
+			authors_to_get = -1;
 			console.log( '--done getting authors--') // dfd this is happening before it's done getting authors!!
 			build_author_table(); // now that the authors are all done, draw the table one last time
 		}
@@ -1043,34 +1022,6 @@ Basic procedure:
             }
 		}
 	}	
-	
-// 	async function get_data_from_doi(input_doi) {
-//		// This gets data from crossref based on a doi. I was going to use it with the suggested
-// 		references thing. But making a new refernce object messes things up and it just didn't seem worth it. 
-// 		instead, maybe I could have a "use next time" button or something? And that could add it to the 
-// 		local storage thingy that contains all of the stuff to load at the start of the session?
-//		maybe that's not so smart, though. 
-
-// 		var myJSONobj; 
-// 		
-// // 		var local_JSON = localStorage.getItem(input_doi); // if there is a good doi, look for the doi
-// // 		if (local_JSON != null && local_JSON != '') {
-// // 			// if the JSON is in local storage, retrieve it without having to talk to the server
-// // 			myJSONobj = JSON.parse(local_JSON);
-// // 		} else {
-// 			stringToSend = 'https://api.crossref.org/works/'+input_doi+'?mailto=nkornell@gmail.com';
-// 			myJSON = await $.getJSON(encodeURI(stringToSend)); // if there's no doi in the user input, encode in local storage using the search string as the key
-// 			myJSONobj = myJSON.message;
-// // 			localStorage.setItem(input_doi, JSON.stringify(myJSONobj)); // if there's a doi, encode in local storage using the doi as the key
-// // 		}
-// 		
-//             if (myJSONobj.type == "journal-article" || myJSONobj.type == "chapter" || myJSONobj.type == "book-chapter" || myJSONobj.type == "web-page") {
-//                 // if it has a bibliography (because it just got one from cite or one was stored locally) or is a type that my code will deal with (including web-page, which is for when it found a url)
-//                 if (typeof reference_obj[input_doi] === 'undefined') { 
-//                     reference_obj[input_doi] = new Reference_object(null, myJSONobj, ''); 
-//                 }
-//             }
-// 	}
 
 
 	async function getOneURL(input_string) {	
@@ -1176,6 +1127,7 @@ Basic procedure:
 
                 stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
                 myJSON = await $.getJSON(encodeURI(stringToSend));
+//                 console.log( myJSON.message)
                 myJSONobj = myJSON.message.items[0];
                 myJSONobj.url_status = text_obj[input_string].url_status;
                 localStorage.setItem(input_string, JSON.stringify(myJSONobj));
@@ -1836,14 +1788,13 @@ Basic procedure:
 			}			
 		}
 
-// put this back to show info about each article
-// 		console.groupCollapsed( 'scoring '+userString.slice(0,14))
-// 			console.log('user string then database string:')
-// 			console.log( userString)
-// 			console.log( databaseString)
-// 			console.log( 'url status='+text_obj[userString].url_status)
-// 			console.log( 'score='+temp_score+'+'+bonus_score+'='+(temp_score+bonus_score))
-// 		console.groupEnd();
+		console.groupCollapsed( 'scoring '+userString.slice(0,14))
+			console.log('user string then database string:')
+			console.log( userString)
+			console.log( databaseString)
+			console.log( 'url status='+text_obj[userString].url_status)
+			console.log( 'score='+temp_score+'+'+bonus_score+'='+(temp_score+bonus_score))
+		console.groupEnd();
 
 
 		return temp_score + bonus_score;
@@ -2011,48 +1962,6 @@ Basic procedure:
 		}
 	}
 
-	function build_most_cited_table() {
-// 		This builds a table that shows how many times each article in the list
-// 		was cited by articles in the list that the user pasted in. 
-// 		Part of the idea is to identify articles that you aren't citing, but maybe should.
-// 		Note: this is only based on references (so, it looks backward but not forward).	
-		
-        var mostCitedTableText = "";
-        var i = 0;
-        var count = 0;
-        
-		reference_section_dois.sort(function(a, b){return b.count - a.count});
-		
-        // create the html table 
-		mostCitedTableText += "<table><tr>";
-		mostCitedTableText += "<th>Reference</th>";
-        mostCitedTableText += "<th>In your list?</th>";
-        mostCitedTableText += "<th>Times cited by<br>articles in your list</th>";
-        mostCitedTableText += "</tr>";
-
-        for (i = 0; i < reference_section_dois.length; i++) {
-			count++
-			mostCitedTableText += "<tr>";
-			if (reference_obj[reference_section_dois[i].doi] != undefined) {
-				mostCitedTableText += '<td>' + reference_obj[reference_section_dois[i].doi].apa + '</td>';
-				mostCitedTableText += '<td>yes</td>';
-			} else {
-				mostCitedTableText += '<td><p><a href="https://doi.org/' + reference_section_dois[i].doi + '" target="_blank">'+reference_section_dois[i].doi+'</a></p></td>';
-				mostCitedTableText += '<td>no</td>';
-// 				get_data_from_doi(reference_section_dois[i].doi) // the idea was to change it into a reference. But instead I'm just linking to the doi. 
-			}
-			mostCitedTableText += '<td>' + reference_section_dois[i].count + '</td>';
-			mostCitedTableText += "</tr>";
-			if (count > 100) {
-				break;
-			}
-        }
-
-        mostCitedTableText += "</table>"
-		mostCitedTableText += '<p> Showing ' + count + ' references.</p>'
-
-        document.getElementById('mostCitedTable').innerHTML = mostCitedTableText;
-	}
 	
     function build_author_table() {
 		// This draws the table with the authors. 
@@ -2063,18 +1972,11 @@ Basic procedure:
 
 		// for later: maybe it should show a message saying "not done" until authors_to_get == -1. 
 
-		if (document.getElementById("authorTable").style.display === "none") {
-			// this makes it so the search for co-authors doesn't start until the user shows the table for the first time. 
-			// it also means the table is only built when it's visible. 
-			return;
-		}
-
 		var i = 0;
 		var temp_info = ''
 		
 		if (Object.keys(author_obj).length == 0) {
-			// go to the database and get more info about authors
-			// this should only happen once. 
+			// this should only happen once
 			// parse authors
 			var rows_total = document.getElementById('article_table').rows.length - 1;
 			for (i = 1; i <= rows_total; i++) { // start at 1 to skip header row
@@ -2086,7 +1988,6 @@ Basic procedure:
 					console.log( 'could not parse author: ' + temp_row_text)
 				}
 			}
-			console.log( '--author getting done--')
 		}
 
 		// in the future, add a sortable column for whether they're selected or not?
@@ -2111,13 +2012,9 @@ Basic procedure:
 				if (author_obj[key].most_recent_affiliation != '') {
 					temp_info += author_obj[key].most_recent_affiliation + '<br><br>'
 				}
-				if (author_obj[key].orcid.length > 0) {
-					if (author_obj[key].orcid.length > 1) {
-						temp_info += "<strong>Warning:</strong> multiple orcid ids<br>"
-					}
-					for (i = 0; i < author_obj[key].orcid.length; i++) {
-						temp_info += 'orcid id: <a href='+author_obj[key].orcid[i]+' target="_blank">'+author_obj[key].orcid[i].replace('http://orcid.org/','')+'</a>' + '<br>' 
-					}
+				if (author_obj[key].orcid != '') {
+// 					(e.g., http://orcid.org/0000-0002-2299-9834)
+					temp_info += 'orcid id: <a href='+author_obj[key].orcid+' target="_blank">'+author_obj[key].orcid.replace('http://orcid.org/','')+'</a>' + '<br>' 
 				}
 				if (author_obj[key].oldest_year != 3000) {
 					temp_info += 'Earliest pub found: '+ author_obj[key].oldest_year+'<br>'
@@ -2324,11 +2221,13 @@ Basic procedure:
 		console.log( '')
 		console.log( '---------start----------')
 
+        document.getElementById("simpleOutputTable").style.display = "block;"
         document.getElementById("progressAndSummaryBox").style.display = "block"
 		document.getElementById('myBarBackground').style.display = "block"
-		document.getElementById('inputTextBox').style.display = "none"
 
-                		
+        
+        show_or_hide_everything('hide'); 
+        		
         if (document.getElementById('progressText').innerHTML != "Working...&nbsp;") {
             document.getElementById('progressText').innerHTML = "Working...&nbsp;";
 		}
@@ -2442,21 +2341,20 @@ Basic procedure:
 		
 		build_author_table();
 		document.getElementById("refalyzerAuthorsBox").style = "display: block;"
-		document.getElementById("refalyzerMostCitedBox").style = "display: block;"
 		document.getElementById("articleDetailBox").style = "display: block;"
 		
-		build_most_cited_table()
-
+		
 		show_simple_output();
         sortTable(1, "simple_table","letters","asc") // this way it starts out alphabetical
         
+		show_or_hide_everything('hide');
 		show_simple_boxes();
 		
 // 		document.getElementById("authors_button").style.display = "inline-block";
 		document.getElementById("copy_button").style.display = "inline-block";
 		document.getElementById("clear_local_storage_button").style.display = "none";
 		document.getElementById("clear_session_storage_button").style.display = "none";
-						
+		
 		console.log( '---------finish----------')
 		console.log( '')
 	}
@@ -2576,7 +2474,7 @@ Basic procedure:
         document.getElementById('output_correct_box').innerHTML = out; 
 
 		if (out_wrong != '') { // if theres' something to show
-			document.getElementById('wrong_box_big').style = "display: inline-block;  width: 99%;  background-color: #fcc" // don't show this if there's none
+			document.getElementById('wrong_box_big').style = "display: inline-block;  width: 99%;  background-color: #fcc" // dfd don't show this if there's none
 			document.getElementById('output_wrong_box').style = "overflow-y: scroll; height: 20em; margin-bottom: 10px;" 
 			document.getElementById('output_wrong_box').innerHTML = out_wrong;
         }
@@ -2593,6 +2491,24 @@ Basic procedure:
 		}
 	}
 
+	function show_or_hide_everything(input) {
+		// dfd at some point, get rid of this and put everything in the 'show details' section
+	    var d = ''
+	    
+	    if (input != "hide") {
+	        d = "block"
+	    } else {
+            d = "none"	    
+	    }
+        document.getElementById("output_correct_box").style.display = d
+        document.getElementById("output_wrong_box").style.display = d
+        document.getElementById("simpleOutputTable").style.display = d
+        document.getElementById("articleTable").style.display = d
+        document.getElementById("authorTable").style.display = d
+        document.getElementById("inputTextBox").style.display = d
+        document.getElementById("extra_references").style.display = d
+	}
+	
 	function show_or_hide_authors() {
 		if (document.getElementById("authorTable").style.display === "none") {
 			document.getElementById("authorTable").style.display = "block";
@@ -2606,30 +2522,13 @@ Basic procedure:
 		}
 	}
 
-	function show_or_hide_most_cited() {
-		if (document.getElementById("mostCitedTable").style.display === "none") {
-			document.getElementById("mostCitedTable").style.display = "block";
-			document.getElementById("most_cited_button").innerHTML = "hide citation suggestions ▴"
-			document.getElementById("most_cited_table_instructions").style.display = "inline-block";
-		} else {
-			document.getElementById("mostCitedTable").style.display = "none";
-			document.getElementById("most_cited_button").innerHTML = "show citation suggestions ▾"
-			document.getElementById("most_cited_table_instructions").style.display = "none";
-			
-		}	
-	}
-	
 	function show_or_hide_details() {
 		if (document.getElementById("articleTable").style.display === "none") {
 			document.getElementById("articleTable").style.display = "block";
-//     	    document.getElementById("simpleOutputTable").style.display = "block"
-	        document.getElementById("extra_references").style.display = "block"
 			document.getElementById("details_button").innerHTML = "hide details ▴"
 // 			document.getElementById("author_table_instructions").style.display = "inline-block";
 		} else {
 			document.getElementById("articleTable").style.display = "none";
-//     	    document.getElementById("simpleOutputTable").style.display = "block"
-	        document.getElementById("extra_references").style.display = "none"
 			document.getElementById("details_button").innerHTML = "show details ▾"
 // 			document.getElementById("author_table_instructions").style.display = "none";
 		}
@@ -2727,8 +2626,10 @@ project.org/package=metaBMA.
 		<p><b>Privacy</b>
 		<p>This program keeps your data private. Your data are never uploaded, stored, or modified. 
 		<p><b>Advanced</b> (not recommended)
-		<p><button style="display: inline-block; cursor: pointer" onclick="localStorage.clear()" id="clear_local_storage_button">Clear reference storage </button> 
-		<button style="display: inline-block; cursor: pointer" onclick="sessionStorage.clear()" id="clear_session_storage_button">Clear author storage </button> 
+		<p><button style="display: inline-block; cursor: pointer" onclick="localStorage.clear()" id="clear_local_storage_button">Clear local storage </button> 
+		<p><button style="display: inline-block; cursor: pointer" onclick="sessionStorage.clear()" id="clear_session_storage_button">Clear session storage </button> 
+		<button style="display: inline-block; cursor: pointer" onclick="show_or_hide_everything()" id="show_everything_button" >Show/hide everything</button> 
+
 		</p>
 	</div>
 
@@ -2742,6 +2643,12 @@ project.org/package=metaBMA.
 <div class='wideBoxWithMargin' id = 'inputTextBox'>
 	<textarea id="myText" name="inputTextArea" style='width: 100%; '>
 	</textarea>
+</div>
+
+<!-- simple output -->
+<div class='wideBoxWithMargin' id='simpleOutputTable' style="display: none; border: 1px solid grey;" > 
+	<div id="simple_table_div">
+	</div>
 </div>
 
 <!-- progress and summary -->
@@ -2768,6 +2675,7 @@ project.org/package=metaBMA.
 
 <div class='boxAroundTable' id="buffer_for_copying" contenteditable="true" style = "display: none;"></div>
 
+<!-- make one or two new copy buttons. have it show originals instead of best guesses for maybes in the wrong box.  -->
 
 <!-- buttons -->
 <div class='wideBoxWithMargin' id='buttonBox' "> 
@@ -2782,31 +2690,16 @@ project.org/package=metaBMA.
 	<button onclick="show_or_hide_authors()" id="authors_button" >show author analysis ▾</button>
 	<div id="author_table_instructions" style="display: none">Select an author to highlight their co-authors.</div>
 	<p>
-	<div id='authorTable' class='dataTable' style="display: none"></div>
+	<div id='authorTable' class='dataTable'></div>
 </div>
 
-<!--	most cited table 	-->
-<div class='boxAroundTable' id='refalyzerMostCitedBox' style="display: none"> 
-	<p>
-	<button onclick="show_or_hide_most_cited()" id="most_cited_button" >show citation suggestions ▾</button>
-	<div id="most_cited_table_instructions" style="display: none">Find articles you might want to cite (if they are cited a lot by articles in your list).</div>
-	<p>
-	<div id='mostCitedTable' class='dataTable' style="display: none"></div>
-</div>
-
-<!-- 	details else table   -->
+<!-- 	Detailed table 	-->
 <div class='boxAroundTable' id='articleDetailBox' style="display: none">
 	<p>
 	<button onclick="show_or_hide_details()" id="details_button">show details ▾</button>
-	<div id='articleTable' class='dataTable' style="display: none"></div>
+	<div id='articleTable' class='dataTable'></div>
 </div>
-
-	<!-- simple output -->
-	<div class='wideBoxWithMargin' id='simpleOutputTable' style="display: none; border: 1px solid grey;" > 
-		<div id="simple_table_div">
-		</div>
-	</div>
-</div>
+<!-- </div> -->
 
 <!-- empty space at the bottom of the screen -->
 <div id='empty' class='wideBoxWithMargin' style="height: 2em;"> 
@@ -2817,7 +2710,6 @@ project.org/package=metaBMA.
 
 
 <div id="extra_references" style="display: none">
-	<p><strong>Note: The references below are just for debugging, most users can ignore it.</strong></p>
     <p>Lamb, K. N., Jolly, J. L., & Lakin, J. M. (2022). Asset-based decision making to address inequity in gifted education services. Gifted Child Quarterly, 66(2), 113–115. https://doi-org.ezproxy2.williams.edu/10.1177/00169862211042910
     <p>Besken, M. (2016). Picture-perfect is not perfect for metamemory: Testing the perceptual fluency hypothesis with degraded images. Journal of Experimental Psychology: Learning, Memory, and Cognition, 42, 1417–1433. https://doi.org/10.1037/xlm0000246
     <p>Besken, M., & Mulligan, N. W. (2013). Easily perceived, easily remembered? Perceptual interference produces a double dissociation between metamemory and memory performance. Memory & Cognition, 41, 897–903. https://doi.org/10.3758/s13421-013-0307-8
