@@ -899,6 +899,10 @@ Basic procedure:
         for (i = 0; i < myJSON.message.items.length; i++) {
             temp_json_ref = myJSON.message.items[i]; 	
 			
+			
+			// dfd: it's checking whether there are names, and whether this author's name is one of them. 
+			// have it do both together, first, and if anything doesn't pass, remove it from the json. 
+			
 			// put the coauthors into temp_coauthor_name_array
 			temp_coauthor_name_array = []
 			for (j = 0; j < temp_json_ref.author.length; j++) {
