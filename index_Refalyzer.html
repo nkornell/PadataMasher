@@ -646,8 +646,9 @@ Basic procedure:
 			
 
 
-			// new thing
-//             console.log( input_json)
+			// create variable reference_section_dois
+			// basically, if this article has a references section on crossref, go through it and record all of the dois
+			// this is used to generate citation suggestions
 			if (input_json.reference != undefined && input_json.reference != null) {
 				reference_sections_found++;
 				for (i = 0; i < input_json.reference.length; i++) {
@@ -660,9 +661,6 @@ Basic procedure:
 							reference_section_dois[temp_index].count++
 						} else {
 							reference_section_dois.push({"doi": input_json.reference[i].DOI, count: 1})
-// 							console.log(typeof input_json.reference[i].DOI)
-// 							console.log( typeof reference_section_dois[reference_section_dois.length-1].doi)
-// 							console.log( reference_section_dois[reference_section_dois.length-1])
 						}
 					}
 				}
@@ -877,32 +875,58 @@ Basic procedure:
 			} else {
 				// if the json isn't in storage, get it from the api
 
-				// dfd : I set rows to a specific number but there has to be a better way(?). I just want all. maybe page through until you're finding nothing good? maybe it returns forever with decreasingly good search matches? 
+				// dfd : I set rows to a specific number but is there a better way(?) 
+				// Maybe page through (using offsets) until you're finding nothing good? maybe it returns forever with decreasingly good search matches? 
 				// also: should I add other filters? is there one for having this author in the author list? and should I allow type:report or type:dissertation?
 				// related: maybe remove dois that don't include this author from the json before storing it locally?
 				const temp_filters = '&filter=type:journal-article,type:book-chapter,type:book,type:monograph,type:proceedings-article' // only get these types of entries
 				const temp_select = '&select=DOI,author,issued,is-referenced-by-count' // only request this information from the entries that are returned
 				// dfd should i use select elsewhere, to save bandwidth?
-				const stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com'+temp_filters+'&rows=150&query.author='+input_name_no_comma.replaceAll(' ', '+')+temp_select; 
+				const stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com'+temp_filters+'&rows=250&query.author='+input_name_no_comma.replaceAll(' ', '+')+temp_select; 
 				myJSON = await $.getJSON(encodeURI(stringToSend));
-				try {
-					sessionStorage.setItem('author\t'+input_name_no_comma, JSON.stringify(myJSON)); // store the json output for this author in the local browser storage
-				} catch(err) {
-					console.warn("session storage full")
-				}
+				myJSON = myJSON.message.items;
 			}
 	    } catch(err) {
 			console.error( err)
 	    }
 
 
-        for (i = 0; i < myJSON.message.items.length; i++) {
-            temp_json_ref = myJSON.message.items[i]; 	
-			
-			
-			// dfd: it's checking whether there are names, and whether this author's name is one of them. 
-			// have it do both together, first, and if anything doesn't pass, remove it from the json. 
-			
+		// Go through the JSON and clean it up by removing two things:
+		// - references that don't have this author in the author list
+		// - within a reference, authors that don't have a legit name
+        for (i = myJSON.length-1; i >= 0; i--) {
+            temp_json_ref = myJSON[i]; 	
+			temp_coauthor_name_array = []
+			// create a list of all the authors of this article
+			for (j = temp_json_ref.author.length -1; j >= 0 ; j--) {
+				if (temp_json_ref.author[j].given != undefined && temp_json_ref.author[j].family != undefined) {
+					// if this author's record has both names, use it
+					temp_json_ref.author[j].given = temp_json_ref.author[j].given.replaceAll('. ',' ').replaceAll('.',' ').trim() // get rid of periods in first name
+					temp_coauthor_name_array.push(temp_json_ref.author[j].family + ", " + temp_json_ref.author[j].given)						
+				} else {
+					// if this co-author doesn't have a legitimate name, remove this co-author (but not the whole list of coauthors for this ref)
+					temp_json_ref.author.splice(j,1)				
+				}
+			}
+
+			// if this author's name is not in the author list that was returned (i.e., they are not really an author on this publication)
+			if (temp_coauthor_name_array.indexOf(input_name_comma) == -1) { 
+				myJSON.splice(i,1)
+			}
+
+		}	
+
+		// now that the json is cleaned up, save it in session storage (i.e., temporary storage in the browser)
+		try {
+			sessionStorage.setItem('author\t'+input_name_no_comma, JSON.stringify(myJSON)); // store the json output for this author in the local browser storage
+		} catch(err) {
+			console.warn("session storage full")
+		}
+
+
+        for (i = 0; i < myJSON.length; i++) {
+            temp_json_ref = myJSON[i]; 	
+						
 			// put the coauthors into temp_coauthor_name_array
 			temp_coauthor_name_array = []
 			for (j = 0; j < temp_json_ref.author.length; j++) {
@@ -910,13 +934,17 @@ Basic procedure:
 					// if this author's record has both names, use it
 					temp_json_ref.author[j].given = temp_json_ref.author[j].given.replaceAll('. ',' ').replaceAll('.',' ').trim() // get rid of periods in first name
 					temp_coauthor_name_array.push(temp_json_ref.author[j].family + ", " + temp_json_ref.author[j].given)						
-// 				} else {
-// 					console.warn('author names not found for '+input_name_no_comma)
+				} else {
+					// this happens when a list of co-authors has something legitimate in it, but there's at least one coauthor without a good name
+					console.warn('this should be impossible: author names not found for '+j+': '+input_name_no_comma)
 				}
 			}
 
 			// add the stuff from temp_coauthor_name_array into the actual author objects. 
-			if (temp_coauthor_name_array.indexOf(input_name_comma) > -1) { // if this author's name is in the author list that was returned (i.e., they really are an author on this publication)
+			if (temp_coauthor_name_array.indexOf(input_name_comma) == -1) { // if this author's name is not in the author list that was returned (i.e., they really are an author on this publication)
+					console.warn('this should be impossible: larry ')
+			} else {
+
 				referenced_by_count += temp_json_ref['is-referenced-by-count']
 
 				if (input_obj.dois.indexOf(temp_json_ref.DOI) == -1) {
@@ -2122,6 +2150,10 @@ Basic procedure:
 				if (author_obj[key].most_recent_affiliation != '') {
 					temp_info += author_obj[key].most_recent_affiliation + '<br><br>'
 				}
+				if (author_obj[key].dois.length > 200) {
+					temp_info += '<strong>Warning: </strong>This author might have additional publications.<br>'
+				}
+
 				if (author_obj[key].orcid.length > 0) {
 					if (author_obj[key].orcid.length > 1) {
 						temp_info += "<strong>Warning:</strong> multiple orcid ids<br>"
