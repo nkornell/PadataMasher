@@ -583,7 +583,7 @@ function cfCheckBoxPress(whichOne, event) {
 		min = Math.min(currentRow, mostRecentPressedCheckBoxRow);
 		max = Math.max(currentRow, mostRecentPressedCheckBoxRow);
         for(i = min; i <= max; i++) {
-			checkboxOfThisRow(i).checked = setTo; // set all of the betweeners to the most recent boolean
+			checkboxOfThisRow(i,'cfTable').checked = setTo; // set all of the betweeners to the most recent boolean
 		}
 	}
 	mostRecentPressedCheckBoxRow = currentRow;
