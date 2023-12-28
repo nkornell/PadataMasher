@@ -1460,7 +1460,6 @@ Basic procedure:
 	
 	function remove_row(input_string) {
 		// remove a row that is no longer needed
-// 		console.log('removing '+input_string)
 		
         if (text_obj[input_string].removed) {
             // if it's already removed, don't remove it. 
@@ -1475,8 +1474,6 @@ Basic procedure:
                 var row_to_remove = document.getElementById(input_string).rowIndex;
                 document.getElementById("article_table").deleteRow(row_to_remove);
                 
-//                 console.log( 'setting removed = true for: '+input_string)
-
 				text_obj[input_string].search_status = 'done';				
                 text_obj[input_string].removed = true; // I think I did this rather than deleting it because get URL might be looking for it later. 
         
@@ -2058,7 +2055,6 @@ Basic procedure:
 		
         var mostCitedTableText = "";
         var i = 0;
-        var count = 0;
         
 		reference_section_dois.sort(function(a, b){return b.count - a.count});
 		
@@ -2070,28 +2066,63 @@ Basic procedure:
         mostCitedTableText += "</tr>";
 
         for (i = 0; i < reference_section_dois.length; i++) {
-			count++
 			mostCitedTableText += "<tr>";
 			if (reference_obj[reference_section_dois[i].doi] != undefined) {
-				mostCitedTableText += '<td>' + reference_obj[reference_section_dois[i].doi].apa + '</td>';
+				mostCitedTableText += '<td><p style="color: grey">' + reference_obj[reference_section_dois[i].doi].apa + '</td>';
 				mostCitedTableText += '<td>yes</td>';
 			} else {
-				mostCitedTableText += '<td><p><a href="https://doi.org/' + reference_section_dois[i].doi + '" target="_blank">'+reference_section_dois[i].doi+'</a></p></td>';
+				 // the idea was to change it into a reference. But instead I'm just linking to the doi. 
+				mostCitedTableText += '<td><p><div id="most_cited_'+reference_section_dois[i].doi+'"></div>'
+				mostCitedTableText += '<p>link: <a href="https://doi.org/' + reference_section_dois[i].doi + '" target="_blank">'+reference_section_dois[i].doi+'</a></p></td>';
 				mostCitedTableText += '<td>no</td>';
-// 				get_data_from_doi(reference_section_dois[i].doi) // the idea was to change it into a reference. But instead I'm just linking to the doi. 
 			}
 			mostCitedTableText += '<td>' + reference_section_dois[i].count + '</td>';
 			mostCitedTableText += "</tr>";
-			if (count > 100) {
+			if (i > 100) {
 				break;
 			}
         }
 
         mostCitedTableText += "</table>"
-		mostCitedTableText += '<p> Showing ' + count + ' references.</p>'
-
+		mostCitedTableText += '<p> Showing ' + i + ' references.</p>'
+		
         document.getElementById('mostCitedTable').innerHTML = mostCitedTableText;
+        
+        // After the table is built, go find the references. 
+        // (I didn't call this above because if you do, it can't find the div to put the information in.)
+        for (i = 0; i < reference_section_dois.length; i++) {
+        	if (reference_obj[reference_section_dois[i].doi] == undefined) {
+				get_apa_from_doi(reference_section_dois[i].doi)
+				if (i > 100) {
+					break;
+				}
+			}
+		}
 	}
+
+	async function get_apa_from_doi(input_doi) {	
+		// if you hae a doi, this will return the apa reference. 
+		let myJSONobj
+		
+        local_JSON = localStorage.getItem(input_doi); // set this and see if it's null.
+		if (local_JSON != null && local_JSON != '') {
+			myJSONobj = JSON.parse(local_JSON);
+		} else {
+			// if there's no local json, get it from the server
+			stringToSend = 'https://api.crossref.org/works/'+input_doi+'?mailto=nkornell@gmail.com';
+			myJSON = await $.getJSON(encodeURI(stringToSend)); // if there's no doi in the user input, encode in local storage using the search string as the key
+			myJSONobj = myJSON.message;
+			localStorage.setItem(input_doi, JSON.stringify(myJSONobj)); // if there's a doi, encode in local storage using the doi as the key
+		}
+		
+		const stink = new Reference_object("", myJSONobj, ""); // create a temporary reference object just to get apa out of it
+		try {
+			document.getElementById('most_cited_'+input_doi).innerHTML = stink.apa // add the apa to the table
+		} catch(err) {
+			console.log( 'bad '+'most_cited_'+input_doi)
+		}
+	}
+
 	
     function build_author_table() {
 		// This draws the table with the authors. 
