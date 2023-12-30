@@ -653,11 +653,8 @@ Basic procedure:
 				reference_sections_found++;
 				for (i = 0; i < input_json.reference.length; i++) {
 					if (input_json.reference[i].DOI != undefined && input_json.reference[i].DOI != null) {
-// 						console.log(typeof input_json.reference[i].DOI)
 						temp_index = reference_section_dois.findIndex(obj => obj.doi === input_json.reference[i].DOI)
 						if (temp_index > -1) {
-// 						if (reference_section_dois.some(obj => obj.doi === input_json.reference[i].DOI)) {
-// 							console.log( 'same')
 							reference_section_dois[temp_index].count++
 						} else {
 							reference_section_dois.push({"doi": input_json.reference[i].DOI, count: 1})
@@ -665,8 +662,6 @@ Basic procedure:
 					}
 				}
 			}
-            
-
     	} catch(err) {
     	    console.error ('error in new reference obj')
     	    console.log( 'input_userInput='+input_userInput)
@@ -734,7 +729,7 @@ Basic procedure:
                 if (typeof input_json.page != "undefined") {
                     out += ', ' + input_json.page;
                 }
-                out += '. https://doi.org/' + input_json.DOI;
+                out += '. <a href="https://doi.org/' + input_json.DOI + '" target="_blank">https://doi.org/' + input_json.DOI + '</a>';
                 if (out.indexOf('undefined') > -1) {
                     console.log( 'Undefined found in output for '+out)
                 }
@@ -2058,27 +2053,35 @@ Basic procedure:
         
 		reference_section_dois.sort(function(a, b){return b.count - a.count});
 		
+        document.getElementById('most_cited_table_instructions').innerHTML += "This table is based on "+reference_sections_found+" publications in your list that have reference sections available online.";
+		
         // create the html table 
 		mostCitedTableText += "<table><tr>";
 		mostCitedTableText += "<th>Reference</th>";
         mostCitedTableText += "<th>In your list?</th>";
         mostCitedTableText += "<th>Times cited by<br>articles in your list</th>";
         mostCitedTableText += "</tr>";
-
+        
         for (i = 0; i < reference_section_dois.length; i++) {
+        	// reference_section_dois is sorted by count. When this gets to the first one that has a count == 1, stop looking at them.
+        	// This way the table only shows references cited at least 2 times. 
+        	if (reference_section_dois[i].count < 2) {
+        		break
+        	}
+        	
 			mostCitedTableText += "<tr>";
 			if (reference_obj[reference_section_dois[i].doi] != undefined) {
-				mostCitedTableText += '<td><p style="color: grey">' + reference_obj[reference_section_dois[i].doi].apa + '</td>';
-				mostCitedTableText += '<td>yes</td>';
+				mostCitedTableText += '<td style="padding:10px">' + reference_obj[reference_section_dois[i].doi].apa + '</td>';
+				mostCitedTableText += '<td style="background-color:#DDDDDD">yes</td>';
 			} else {
 				 // the idea was to change it into a reference. But instead I'm just linking to the doi. 
-				mostCitedTableText += '<td><p><div id="most_cited_'+reference_section_dois[i].doi+'"></div>'
-				mostCitedTableText += '<p>link: <a href="https://doi.org/' + reference_section_dois[i].doi + '" target="_blank">'+reference_section_dois[i].doi+'</a></p></td>';
+				mostCitedTableText += '<td style="padding:10px"><div id="most_cited_'+reference_section_dois[i].doi+'"></div></td>'
+// 				mostCitedTableText += '<p>link: <a href="https://doi.org/' + reference_section_dois[i].doi + '" target="_blank">'+reference_section_dois[i].doi+'</a></p></td>';
 				mostCitedTableText += '<td>no</td>';
 			}
 			mostCitedTableText += '<td>' + reference_section_dois[i].count + '</td>';
 			mostCitedTableText += "</tr>";
-			if (i > 100) {
+			if (i >= 100) {
 				break;
 			}
         }
@@ -2090,12 +2093,16 @@ Basic procedure:
         
         // After the table is built, go find the references. 
         // (I didn't call this above because if you do, it can't find the div to put the information in.)
+        // To understand what it's doing, see the same code in the loop above. 
         for (i = 0; i < reference_section_dois.length; i++) {
-        	if (reference_obj[reference_section_dois[i].doi] == undefined) {
+        	if (reference_section_dois[i].count < 2) {
+        		break
+        	}
+			if (i >= 100) {
+				break;
+			}
+        	if (reference_obj[reference_section_dois[i].doi] == undefined) { // if it's not in their list...
 				get_apa_from_doi(reference_section_dois[i].doi)
-				if (i > 100) {
-					break;
-				}
 			}
 		}
 	}
@@ -2104,22 +2111,37 @@ Basic procedure:
 		// if you hae a doi, this will return the apa reference. 
 		let myJSONobj
 		
-        local_JSON = localStorage.getItem(input_doi); // set this and see if it's null.
-		if (local_JSON != null && local_JSON != '') {
-			myJSONobj = JSON.parse(local_JSON);
-		} else {
-			// if there's no local json, get it from the server
-			stringToSend = 'https://api.crossref.org/works/'+input_doi+'?mailto=nkornell@gmail.com';
-			myJSON = await $.getJSON(encodeURI(stringToSend)); // if there's no doi in the user input, encode in local storage using the search string as the key
-			myJSONobj = myJSON.message;
-			localStorage.setItem(input_doi, JSON.stringify(myJSONobj)); // if there's a doi, encode in local storage using the doi as the key
-		}
-		
-		const stink = new Reference_object("", myJSONobj, ""); // create a temporary reference object just to get apa out of it
 		try {
-			document.getElementById('most_cited_'+input_doi).innerHTML = stink.apa // add the apa to the table
+
+			local_JSON = localStorage.getItem(input_doi);
+			if (local_JSON != null && local_JSON != '') {
+				// if there's local json, get it
+				myJSONobj = JSON.parse(local_JSON);
+			} else {
+				// if there's no local json, get it from the server
+				stringToSend = 'https://api.crossref.org/works/'+input_doi+'?mailto=nkornell@gmail.com';
+				myJSON = await $.getJSON(encodeURI(stringToSend)); // if there's no doi in the user input, encode in local storage using the search string as the key
+				myJSONobj = myJSON.message;
+
+				localStorage.setItem(input_doi, JSON.stringify(myJSONobj)); // if there's a doi, encode in local storage using the doi as the key
+			}
+
+			const temp = new Reference_object("", myJSONobj, ""); // create a temporary reference object just to get apa out of it
+			if (temp.apa.length > 0) {
+				document.getElementById('most_cited_'+input_doi).innerHTML = temp.apa // add the apa to the table
+			} else {
+				document.getElementById('most_cited_'+input_doi).innerHTML = "<a href='https://doi.org/" + input_doi + "' target='_blank'>https://doi.org/"+input_doi+"</a>" 
+			}
 		} catch(err) {
-			console.log( 'bad '+'most_cited_'+input_doi)
+			if (err.responseText == 'Resource not found.' || err == "Error: Server responded with status code 404") {
+			    //if it tried a doi that is incorrect
+			    document.getElementById('most_cited_'+input_doi).innerHTML = "Error 404 for doi " + input_doi
+				console.log( "could not find DOI " + input_doi)
+			} else {
+// 				document.getElementById('most_cited_'+input_doi).innerHTML = "Other error for doi " + input_doi
+				console.log( 'Other error '+input_doi)		
+				console.log( err)	
+			}
 		}
 	}
 
@@ -2683,11 +2705,11 @@ Basic procedure:
 	function show_or_hide_most_cited() {
 		if (document.getElementById("mostCitedTable").style.display === "none") {
 			document.getElementById("mostCitedTable").style.display = "block";
-			document.getElementById("most_cited_button").innerHTML = "hide citation suggestions ▴"
+			document.getElementById("most_cited_button").innerHTML = "hide articles you might want to cite ▴"
 			document.getElementById("most_cited_table_instructions").style.display = "inline-block";
 		} else {
 			document.getElementById("mostCitedTable").style.display = "none";
-			document.getElementById("most_cited_button").innerHTML = "show citation suggestions ▾"
+			document.getElementById("most_cited_button").innerHTML = "show articles you might want to cite ▾"
 			document.getElementById("most_cited_table_instructions").style.display = "none";
 			
 		}	
@@ -2861,8 +2883,8 @@ project.org/package=metaBMA.
 <!--	most cited table 	-->
 <div class='boxAroundTable' id='refalyzerMostCitedBox' style="display: none"> 
 	<p>
-	<button onclick="show_or_hide_most_cited()" id="most_cited_button" >show citation suggestions ▾</button>
-	<div id="most_cited_table_instructions" style="display: none">Find articles you might want to cite (if they are cited a lot by articles in your list).</div>
+	<button onclick="show_or_hide_most_cited()" id="most_cited_button" >show articles you might want to cite ▾</button>
+	<div id="most_cited_table_instructions" style="display: none"></div>
 	<p>
 	<div id='mostCitedTable' class='dataTable' style="display: none"></div>
 </div>
