@@ -786,6 +786,7 @@ Basic procedure:
 		this.type = input_type;
 		this.citation_count_pasted_refs = 0;
 		this.citation_count_all = 0;
+		this.h_index = 0;
 		this.affiliation = [];
 		this.most_recent_affiliation = ''
 		this.most_recent_year = 0
@@ -867,6 +868,7 @@ Basic procedure:
 	    var input_name_no_comma = input_obj.first + " " + input_obj.last;
 	    var input_name_comma = input_obj.last + ", " + input_obj.first
 		var referenced_by_count = 0;
+		var referenced_by_count_array = [];
 		var year_temp = 0;
 		var myJSON = ''
 		var local_json = ''
@@ -928,7 +930,6 @@ Basic procedure:
 			console.warn("session storage full")
 		}
 
-
         for (i = 0; i < myJSON.length; i++) {
             temp_json_ref = myJSON[i]; 	
 						
@@ -951,6 +952,8 @@ Basic procedure:
 			} else {
 
 				referenced_by_count += temp_json_ref['is-referenced-by-count']
+				referenced_by_count_array.push(temp_json_ref['is-referenced-by-count'])
+				
 
 				if (input_obj.dois.indexOf(temp_json_ref.DOI) == -1) {
 					input_obj.dois.push(temp_json_ref.DOI) // add this doi to this author's list of dois.				
@@ -1027,7 +1030,20 @@ Basic procedure:
 			}
 	    }
 	    
-		console.log(input_obj.name + ' ' + referenced_by_count)
+	    // figure out h-index
+		referenced_by_count_array.sort(function(a, b){return b - a});
+	    var h_index = 0
+	    for (i = 0; i < referenced_by_count_array.length; i++) {
+	    	if (referenced_by_count_array[i] >= (i+1)) {
+// 	    		console.log( referenced_by_count_array[i] + ' >= ' + (i+1))
+				h_index++
+	    	} else {
+	    		break // stop looping once it's no longer greater, because this array is sorted
+	    	}
+	    }
+	    input_obj.h_index = h_index
+	    
+		console.log(input_obj.name + ' ' + referenced_by_count + ' ' + h_index)
 		input_obj.citation_count_all = referenced_by_count
 
 		authors_to_get--;
@@ -2064,13 +2080,14 @@ Basic procedure:
 		reference_section_dois.sort(function(a, b){return b.count - a.count});
 		reference_sections_found_year_array.sort(function(a, b){return b - a});
 		
-        document.getElementById('most_cited_table_instructions').innerHTML += "Your list contains "+reference_sections_found_year_array.length+" publications with reference sections available online.<br>This shows number of citations / number of citation possible given the publication years.";
+        document.getElementById('most_cited_table_instructions').innerHTML += "Your list contains "+reference_sections_found_year_array.length+" publications that have reference sections available online.<p>This shows number of articles in your list that cite a given article, and the number of such citation possible given the publication years.";
 		
         // create the html table 
 		mostCitedTableText += "<table><tr>";
 		mostCitedTableText += "<th>Reference</th>";
         mostCitedTableText += "<th>In your list?</th>";
-        mostCitedTableText += "<th>num citations / num possible</th>";
+        mostCitedTableText += "<th>References above that cite this</th>"
+        mostCitedTableText += "<th>Max num citations possible</th>";
         mostCitedTableText += "</tr>";
         
         for (i = 0; i < reference_section_dois.length; i++) {
@@ -2089,8 +2106,8 @@ Basic procedure:
 				mostCitedTableText += '<td style="padding:10px"><div id="most_cited_'+reference_section_dois[i].doi+'"></div></td>'
 				mostCitedTableText += '<td>no</td>';
 			}
-			mostCitedTableText += '<td>' + reference_section_dois[i].count + ' / '
-			mostCitedTableText += '<div id="possible_citations_'+reference_section_dois[i].doi+'" style="display:inline"></div></td>';
+			mostCitedTableText += '<td>' + reference_section_dois[i].count + '</td>'
+			mostCitedTableText += '<td><div id="possible_citations_'+reference_section_dois[i].doi+'" style="display:inline"></div></td>';
 			mostCitedTableText += "</tr>";
 			if (i >= 100) {
 				break;
@@ -2220,7 +2237,8 @@ Basic procedure:
         authorTableText += "<th onclick='sortTable(3, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Pubs<br>found</th>";
         authorTableText += "<th onclick='sortTable(4, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Cited above</th>";
         authorTableText += "<th onclick='sortTable(5, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Cited all time</th>";
-        authorTableText += "<th onclick='sortTable(6, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Num Co-Authors</th>";
+        authorTableText += "<th onclick='sortTable(6, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>H-index</th>";
+        authorTableText += "<th onclick='sortTable(7, "+'"authorTable","numbers","desc"'+")' title='Click to Sort'>Num Co-Authors</th>";
 //         authorTableText += "<th onclick='sortTable(7, "+'"authorTable","letters"'+")' title='Click to Sort'>Co-Authors</th>";
         authorTableText += "</tr>";
 
@@ -2253,11 +2271,17 @@ Basic procedure:
 				authorTableText += '<td><input type="checkbox" id="'+key+'" onclick="authorCheckBoxPress(this)"></td>';
 				authorTableText += "<td><div id='name_" + remove_special_chrs_for_div(author_obj[key].name) + "'>" + author_obj[key].name + "</td>";
 				authorTableText += "<td>" + temp_info + "</td>";
-				authorTableText += "<td>" + author_obj[key].dois.length + "</td>";
-				authorTableText += "<td>" + author_obj[key].citation_count_pasted_refs + "</td>";
-				authorTableText += "<td>" + author_obj[key].citation_count_all + "</td>";
-				authorTableText += "<td>" + author_obj[key].coauthors.length + "</td>";
-// 				authorTableText += "<td>" + author_obj[key].all_coauthors_string().slice(0, 100) + "</td>";
+				if (author_obj[key].citation_count_pasted_refs > 0) {
+					authorTableText += "<td>" + author_obj[key].dois.length + "</td>";
+					authorTableText += "<td>" + author_obj[key].citation_count_pasted_refs + "</td>";
+					authorTableText += "<td>" + author_obj[key].citation_count_all + "</td>";
+					authorTableText += "<td>" + author_obj[key].h_index + "</td>";
+					authorTableText += "<td>" + author_obj[key].coauthors.length + "</td>";
+	// 				authorTableText += "<td>" + author_obj[key].all_coauthors_string().slice(0, 100) + "</td>";
+				} else {
+					// if it's not a primary author this info isn't accurate so don't include it. 
+					authorTableText += "<td></td><td></td><td></td><td></td><td></td>"
+				}
 				authorTableText += "</tr>";
 // 			}
         }
@@ -2898,15 +2922,6 @@ project.org/package=metaBMA.
 	</p>
 </div>
 
-<!-- 	Author table 	-->
-<div class='boxAroundTable' id='refalyzerAuthorsBox' style="display: none"> 
-	<p>
-	<button onclick="show_or_hide_authors()" id="authors_button" >show author analysis ▾</button>
-	<div id="author_table_instructions" style="display: none">Select an author to highlight their co-authors.</div>
-	<p>
-	<div id='authorTable' class='dataTable' style="display: none"></div>
-</div>
-
 <!--	most cited table 	-->
 <div class='boxAroundTable' id='refalyzerMostCitedBox' style="display: none"> 
 	<p>
@@ -2914,6 +2929,15 @@ project.org/package=metaBMA.
 	<div id="most_cited_table_instructions" style="display: none"></div>
 	<p>
 	<div id='mostCitedTable' class='dataTable' style="display: none"></div>
+</div>
+
+<!-- 	Author table 	-->
+<div class='boxAroundTable' id='refalyzerAuthorsBox' style="display: none"> 
+	<p>
+	<button onclick="show_or_hide_authors()" id="authors_button" >show author analysis ▾</button>
+	<div id="author_table_instructions" style="display: none">Select an author to highlight their co-authors. (Details are only shown for authors in your list.)</div>
+	<p>
+	<div id='authorTable' class='dataTable' style="display: none"></div>
 </div>
 
 <!-- 	details else table   -->
