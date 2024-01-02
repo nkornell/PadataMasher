@@ -112,7 +112,7 @@ Basic procedure:
     var authors_to_get = 0;
 	let Cite = require('citation-js');
 	var reference_section_dois = []
-	var reference_sections_found = 0;
+	var reference_sections_found_year_array = []; // the year of each reference that has a reference section
 	
 	
     function extract_url(input) {
@@ -589,7 +589,7 @@ Basic procedure:
             this.last_names = []
             this.year = ''
         
-// 			Figure out authors, year, and title.
+ 			// Figure out authors.
             if (input_json.author !== undefined && input_json.author !== null) {
 				for (a = 0; a < input_json.author.length; a++) {
 					if (input_json.author[a].family !== undefined && input_json.author[a].family !== null) {
@@ -597,12 +597,8 @@ Basic procedure:
 					}
 				}
 			}
-            if (input_json.issued != undefined && input_json.issued != null) {
-            	this.year = input_json.issued["date-parts"][0][0]
-            } else if (input_json.date !== undefined && input_json.date !== null) {
-				var pub_date = new Date(input_json.date);
-				this.year = pub_date.getFullYear();
-			}
+			// figure out year
+			this.year = year_from_JSON(input_json)
             // figure out title
             if (input_json.title !== undefined && input_json.title !== null) {
                 this.title = input_json.title.toString().trim();
@@ -644,13 +640,18 @@ Basic procedure:
             }
 			this.apa_no_html = this.apa.replace(/(<([^>]+)>)/gi, "");
 			
-
-
+			if (input_userInput == '') { 
+				// If there's no user input then this reference is being created temporarily and
+				// isn't in the user's reference section. So we don't want to include it when making
+				// the reference_section_dois variable. So return. 
+				return;
+			}
+			
 			// create variable reference_section_dois
 			// basically, if this article has a references section on crossref, go through it and record all of the dois
 			// this is used to generate citation suggestions
 			if (input_json.reference != undefined && input_json.reference != null) {
-				reference_sections_found++;
+				reference_sections_found_year_array.push(this.year)
 				for (i = 0; i < input_json.reference.length; i++) {
 					if (input_json.reference[i].DOI != undefined && input_json.reference[i].DOI != null) {
 						temp_index = reference_section_dois.findIndex(obj => obj.doi === input_json.reference[i].DOI)
@@ -668,6 +669,15 @@ Basic procedure:
     	    console.log(err);
     	}
  	} 
+ 	
+ 	function year_from_JSON(input_json) {
+		if (input_json.issued != undefined && input_json.issued != null) {
+			return input_json.issued["date-parts"][0][0]
+		} else if (input_json.date !== undefined && input_json.date !== null) {
+			var pub_date = new Date(input_json.date);
+			return pub_date.getFullYear();
+		}
+ 	}
  	
 // Examples of why returning accurately formatted references won't work.
 // However, Mendeley gets both of these wrong as well, so...
@@ -2052,14 +2062,15 @@ Basic procedure:
         var i = 0;
         
 		reference_section_dois.sort(function(a, b){return b.count - a.count});
+		reference_sections_found_year_array.sort(function(a, b){return b - a});
 		
-        document.getElementById('most_cited_table_instructions').innerHTML += "This table is based on "+reference_sections_found+" publications in your list that have reference sections available online.";
+        document.getElementById('most_cited_table_instructions').innerHTML += "Your list contains "+reference_sections_found_year_array.length+" publications with reference sections available online.<br>This shows number of citations / number of citation possible given the publication years.";
 		
         // create the html table 
 		mostCitedTableText += "<table><tr>";
 		mostCitedTableText += "<th>Reference</th>";
         mostCitedTableText += "<th>In your list?</th>";
-        mostCitedTableText += "<th>Times cited by<br>articles in your list</th>";
+        mostCitedTableText += "<th>num citations / num possible</th>";
         mostCitedTableText += "</tr>";
         
         for (i = 0; i < reference_section_dois.length; i++) {
@@ -2068,7 +2079,7 @@ Basic procedure:
         	if (reference_section_dois[i].count < 2) {
         		break
         	}
-        	
+        	        	
 			mostCitedTableText += "<tr>";
 			if (reference_obj[reference_section_dois[i].doi] != undefined) {
 				mostCitedTableText += '<td style="padding:10px">' + reference_obj[reference_section_dois[i].doi].apa + '</td>';
@@ -2076,10 +2087,10 @@ Basic procedure:
 			} else {
 				 // the idea was to change it into a reference. But instead I'm just linking to the doi. 
 				mostCitedTableText += '<td style="padding:10px"><div id="most_cited_'+reference_section_dois[i].doi+'"></div></td>'
-// 				mostCitedTableText += '<p>link: <a href="https://doi.org/' + reference_section_dois[i].doi + '" target="_blank">'+reference_section_dois[i].doi+'</a></p></td>';
 				mostCitedTableText += '<td>no</td>';
 			}
-			mostCitedTableText += '<td>' + reference_section_dois[i].count + '</td>';
+			mostCitedTableText += '<td>' + reference_section_dois[i].count + ' / '
+			mostCitedTableText += '<div id="possible_citations_'+reference_section_dois[i].doi+'" style="display:inline"></div></td>';
 			mostCitedTableText += "</tr>";
 			if (i >= 100) {
 				break;
@@ -2108,7 +2119,7 @@ Basic procedure:
 	}
 
 	async function get_apa_from_doi(input_doi) {	
-		// if you hae a doi, this will return the apa reference. 
+		// if you hae a doi, this will figure out the apa reference. 
 		let myJSONobj
 		
 		try {
@@ -2126,9 +2137,12 @@ Basic procedure:
 				localStorage.setItem(input_doi, JSON.stringify(myJSONobj)); // if there's a doi, encode in local storage using the doi as the key
 			}
 
-			const temp = new Reference_object("", myJSONobj, ""); // create a temporary reference object just to get apa out of it
-			if (temp.apa.length > 0) {
-				document.getElementById('most_cited_'+input_doi).innerHTML = temp.apa // add the apa to the table
+			const temp_ref = new Reference_object("", myJSONobj, ""); // create a temporary reference object just to get apa out of it
+
+
+			if (temp_ref.apa.length > 0) {
+				document.getElementById('most_cited_'+input_doi).innerHTML = temp_ref.apa // add the apa to the table
+				document.getElementById('possible_citations_'+input_doi).innerHTML = possible_citations(temp_ref.year)
 			} else {
 				document.getElementById('most_cited_'+input_doi).innerHTML = "<a href='https://doi.org/" + input_doi + "' target='_blank'>https://doi.org/"+input_doi+"</a>" 
 			}
@@ -2145,6 +2159,19 @@ Basic procedure:
 		}
 	}
 
+	function possible_citations(year) {
+		// This returns a value: How many of the articles with reference sections could have cited this article? 
+		// In other words, how many citing references came out in the same year or after the year of this (i.e., the input parameter). 
+		var temp = 0
+		for (j = 0; j < reference_sections_found_year_array.length; j++) {
+			if (year <= reference_sections_found_year_array[j]) {
+				// for example, if this article is from 2008, and the reference sections are from 2002, 2012, 2015, and 2020, 
+				// then temp will = 3.
+				temp++
+			}
+		}
+		return temp;
+	}
 	
     function build_author_table() {
 		// This draws the table with the authors. 
