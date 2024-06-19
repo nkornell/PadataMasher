@@ -654,11 +654,11 @@ Basic procedure:
 				reference_sections_found_year_array.push(this.year)
 				for (i = 0; i < input_json.reference.length; i++) {
 					if (input_json.reference[i].DOI != undefined && input_json.reference[i].DOI != null) {
-						temp_index = reference_section_dois.findIndex(obj => obj.doi === input_json.reference[i].DOI)
+						temp_index = reference_section_dois.findIndex(obj => obj.doi === input_json.reference[i].DOI.toLowerCase())
 						if (temp_index > -1) {
 							reference_section_dois[temp_index].count++
 						} else {
-							reference_section_dois.push({"doi": input_json.reference[i].DOI, count: 1})
+							reference_section_dois.push({"doi": input_json.reference[i].DOI.toLowerCase(), count: 1}) 
 						}
 					}
 				}
@@ -889,6 +889,7 @@ Basic procedure:
 				const temp_filters = '&filter=type:journal-article,type:book-chapter,type:book,type:monograph,type:proceedings-article' // only get these types of entries
 				const temp_select = '&select=DOI,author,issued,is-referenced-by-count' // only request this information from the entries that are returned
 				// dfd should i use select elsewhere, to save bandwidth?
+				console.log( 'used crossref in get_coauthors')
 				const stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com'+temp_filters+'&rows=250&query.author='+input_name_no_comma.replaceAll(' ', '+')+temp_select; 
 				myJSON = await $.getJSON(encodeURI(stringToSend));
 				myJSON = myJSON.message.items;
@@ -1234,6 +1235,7 @@ Basic procedure:
 					return;
                 }
 
+				console.log( 'used crossref in getOneURL for ' + temp_search_string)
                 stringToSend = 'https://api.crossref.org/works?mailto=nkornell@gmail.com&rows=1&query.bibliographic=' + temp_search_string.replaceAll(' ', '+');
                 myJSON = await $.getJSON(encodeURI(stringToSend));
                 myJSONobj = myJSON.message.items[0];
@@ -1245,6 +1247,7 @@ Basic procedure:
                 }
             } else {
                 // search using a doi
+				console.log( 'used crossref in getOneURL for ' + inputDOI)
                 stringToSend = 'https://api.crossref.org/works/'+inputDOI+'?mailto=nkornell@gmail.com';
                 myJSON = await $.getJSON(encodeURI(stringToSend)); // if there's no doi in the user input, encode in local storage using the search string as the key
                 myJSONobj = myJSON.message;
@@ -1281,7 +1284,7 @@ Basic procedure:
 			    console.error('Network request failed: '+input_string);
                 text_obj[input_string].update_input('done');     
 			} else {
-			    console.error('in get one url, '+input_string+' returned: ');
+			    console.error('Error in get one url, '+input_string+' returned: ');
 				console.error(err);
 // 				text_obj[input_string].combine_status='done' 
                 text_obj[input_string].update_input('done');            
@@ -2079,8 +2082,8 @@ Basic procedure:
         
 		reference_section_dois.sort(function(a, b){return b.count - a.count});
 		reference_sections_found_year_array.sort(function(a, b){return b - a});
-		
-        document.getElementById('most_cited_table_instructions').innerHTML += "Your list contains "+reference_sections_found_year_array.length+" publications that have reference sections available online.<p>This shows number of articles in your list that cite a given article, and the number of such citation possible given the publication years.";
+				
+        document.getElementById('most_cited_table_instructions').innerHTML += "Your list contains "+reference_sections_found_year_array.length+" publications that have reference sections available online.<p>This shows number of articles in your list that cite a given article, and the number of such citations possible given the publication years.";
 		
         // create the html table 
 		mostCitedTableText += "<table><tr>";
@@ -2096,9 +2099,10 @@ Basic procedure:
         	if (reference_section_dois[i].count < 2) {
         		break
         	}
-        	        	
+        	
 			mostCitedTableText += "<tr>";
 			if (reference_obj[reference_section_dois[i].doi] != undefined) {
+				// if it's in the list the user entered
 				mostCitedTableText += '<td style="padding:10px">' + reference_obj[reference_section_dois[i].doi].apa + '</td>';
 				mostCitedTableText += '<td style="background-color:#DDDDDD">yes</td>';
 			} else {
@@ -2131,12 +2135,14 @@ Basic procedure:
 			}
         	if (reference_obj[reference_section_dois[i].doi] == undefined) { // if it's not in their list...
 				get_apa_from_doi(reference_section_dois[i].doi)
+			} else {
+				document.getElementById('possible_citations_'+reference_section_dois[i].doi).innerHTML = possible_citations(reference_obj[reference_section_dois[i].doi].year)
 			}
 		}
 	}
 
 	async function get_apa_from_doi(input_doi) {	
-		// if you hae a doi, this will figure out the apa reference. 
+		// if you have a doi, this will figure out the apa reference. 
 		let myJSONobj
 		
 		try {
@@ -2147,6 +2153,7 @@ Basic procedure:
 				myJSONobj = JSON.parse(local_JSON);
 			} else {
 				// if there's no local json, get it from the server
+				console.log( 'used crossref in get_apa_from_doi for ' + input_doi)
 				stringToSend = 'https://api.crossref.org/works/'+input_doi+'?mailto=nkornell@gmail.com';
 				myJSON = await $.getJSON(encodeURI(stringToSend)); // if there's no doi in the user input, encode in local storage using the search string as the key
 				myJSONobj = myJSON.message;
