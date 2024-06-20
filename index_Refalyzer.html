@@ -2134,7 +2134,10 @@ Basic procedure:
 				break;
 			}
         	if (reference_obj[reference_section_dois[i].doi] == undefined) { // if it's not in their list...
-				get_apa_from_doi(reference_section_dois[i].doi)
+// 				get_apa_from_doi(reference_section_dois[i].doi) // dfdd this makes it ask crossref for lots of stuff, which causes a 429(?) error of too many requests. 
+//	 			add a button that loads individual rows? 
+				document.getElementById('most_cited_'+reference_section_dois[i].doi).innerHTML = "<a href='https://doi.org/" + reference_section_dois[i].doi + "' target='_blank'>https://doi.org/"+reference_section_dois[i].doi+"</a>" 
+
 			} else {
 				document.getElementById('possible_citations_'+reference_section_dois[i].doi).innerHTML = possible_citations(reference_obj[reference_section_dois[i].doi].year)
 			}
