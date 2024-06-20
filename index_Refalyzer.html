@@ -2079,6 +2079,7 @@ Basic procedure:
 		
         var mostCitedTableText = "";
         var i = 0;
+        var link_to_load_reference = ""
         
 		reference_section_dois.sort(function(a, b){return b.count - a.count});
 		reference_sections_found_year_array.sort(function(a, b){return b - a});
@@ -2134,9 +2135,10 @@ Basic procedure:
 				break;
 			}
         	if (reference_obj[reference_section_dois[i].doi] == undefined) { // if it's not in their list...
-// 				get_apa_from_doi(reference_section_dois[i].doi) // dfdd this makes it ask crossref for lots of stuff, which causes a 429(?) error of too many requests. 
-//	 			add a button that loads individual rows? 
-				document.getElementById('most_cited_'+reference_section_dois[i].doi).innerHTML = "<a href='https://doi.org/" + reference_section_dois[i].doi + "' target='_blank'>https://doi.org/"+reference_section_dois[i].doi+"</a>" 
+				get_apa_from_doi(reference_section_dois[i].doi, false) // dfdd this makes it ask crossref for lots of stuff, which causes a 429 error of too many requests. 
+// dfdd the code below writes over the reference that was found. make the one above and below work together
+				link_to_load_reference = "<a onclick='get_apa_from_doi(reference_section_dois["+i+"].doi, true)' href='javascript:null'>"
+				document.getElementById('most_cited_'+reference_section_dois[i].doi).innerHTML = "<a href='https://doi.org/" + reference_section_dois[i].doi + "' target='_blank'>https://doi.org/"+reference_section_dois[i].doi+"</a> "+link_to_load_reference+"[load]</a>" 
 
 			} else {
 				document.getElementById('possible_citations_'+reference_section_dois[i].doi).innerHTML = possible_citations(reference_obj[reference_section_dois[i].doi].year)
@@ -2144,7 +2146,7 @@ Basic procedure:
 		}
 	}
 
-	async function get_apa_from_doi(input_doi) {	
+	async function get_apa_from_doi(input_doi, check_crossref) {	
 		// if you have a doi, this will figure out the apa reference. 
 		let myJSONobj
 		
@@ -2154,7 +2156,12 @@ Basic procedure:
 			if (local_JSON != null && local_JSON != '') {
 				// if there's local json, get it
 				myJSONobj = JSON.parse(local_JSON);
+				console.log( 'found')
 			} else {
+				if (check_crossref == false) {
+					console.log( 'not found')
+					return;
+				}
 				// if there's no local json, get it from the server
 				console.log( 'used crossref in get_apa_from_doi for ' + input_doi)
 				stringToSend = 'https://api.crossref.org/works/'+input_doi+'?mailto=nkornell@gmail.com';
