@@ -1,5 +1,6 @@
 <!-- 
 // dfd to do:
+When you try to look at authors it goes to the server too much and fails. 
 The URL thing should probably be turned off
 if you edit the boxes after running it, and then copy, it won't copy what you type in. 
 It's weird how it kind of shows guesses and unchanged mixed together. (mabuye have a button for "show all unchanged" or "show all guesses")
@@ -113,7 +114,6 @@ Basic procedure:
 	let Cite = require('citation-js');
 	var reference_section_dois = []
 	var reference_sections_found_year_array = []; // the year of each reference that has a reference section
-	
 	
     function extract_url(input) {
         // return an array consisting of each valid url in the string. 
@@ -1096,43 +1096,33 @@ Basic procedure:
             }
 		}
 
+
 		console.log('-A- getting [' + row_queue.length + '] rows ('+doi_or_url_type_to_handle+')')
         if (row_queue.length > 0) {
 		    current_mode = "searching for dois"
+		    var pause = 0;
+// 		    myPromise = []
             for (i = 0; i < row_queue.length; i++) {
-                getOneURL(row_queue[i]);
+				// getOneURL(row_queue[i]); // this works, but it requests all of them at the same time and that makes crossref return error 429
+				
+				// this calls getOneURL every 50 milliseconds. what it does is, the first call is after 50, the next is after 100, etc.
+				// but it doesn't add to the 50 milliseconds if the reference is already in local storage because that's not a server call. 
+				if (localStorage.getItem(text_obj[row_queue[i]].doi) == null && localStorage.getItem(row_queue[i]) == null) { 
+					// if the reference isn't local storage, pause another 50 ms before requesting it
+					pause += 50;
+				}
+				setTimeout(getOneURL, pause, row_queue[i]);
+// 				myPromise[i] = new Promise((resolve, reject) => {
+// 					setTimeout(getOneURL, pause, row_queue[i]);
+// 				})
             }
+            
+// 			Promise.allSettled(myPromise).then(result => console.log(result) )
+
+
 		}
 	}	
 	
-// 	async function get_data_from_doi(input_doi) {
-//		// This gets data from crossref based on a doi. I was going to use it with the suggested
-// 		references thing. But making a new refernce object messes things up and it just didn't seem worth it. 
-// 		instead, maybe I could have a "use next time" button or something? And that could add it to the 
-// 		local storage thingy that contains all of the stuff to load at the start of the session?
-//		maybe that's not so smart, though. 
-
-// 		var myJSONobj; 
-// 		
-// // 		var local_JSON = localStorage.getItem(input_doi); // if there is a good doi, look for the doi
-// // 		if (local_JSON != null && local_JSON != '') {
-// // 			// if the JSON is in local storage, retrieve it without having to talk to the server
-// // 			myJSONobj = JSON.parse(local_JSON);
-// // 		} else {
-// 			stringToSend = 'https://api.crossref.org/works/'+input_doi+'?mailto=nkornell@gmail.com';
-// 			myJSON = await $.getJSON(encodeURI(stringToSend)); // if there's no doi in the user input, encode in local storage using the search string as the key
-// 			myJSONobj = myJSON.message;
-// // 			localStorage.setItem(input_doi, JSON.stringify(myJSONobj)); // if there's a doi, encode in local storage using the doi as the key
-// // 		}
-// 		
-//             if (myJSONobj.type == "journal-article" || myJSONobj.type == "chapter" || myJSONobj.type == "book-chapter" || myJSONobj.type == "web-page") {
-//                 // if it has a bibliography (because it just got one from cite or one was stored locally) or is a type that my code will deal with (including web-page, which is for when it found a url)
-//                 if (typeof reference_obj[input_doi] === 'undefined') { 
-//                     reference_obj[input_doi] = new Reference_object(null, myJSONobj, ''); 
-//                 }
-//             }
-// 	}
-
 
 	async function getOneURL(input_string) {	
     // If this input string is stored locally, this doesn't have to go to make an api call/go to a server
@@ -2134,13 +2124,16 @@ Basic procedure:
 			if (i >= 100) {
 				break;
 			}
-        	if (reference_obj[reference_section_dois[i].doi] == undefined) { // if it's not in their list...
-				get_apa_from_doi(reference_section_dois[i].doi, false) // dfdd this makes it ask crossref for lots of stuff, which causes a 429 error of too many requests. 
-// dfdd the code below writes over the reference that was found. make the one above and below work together
-				link_to_load_reference = "<a onclick='get_apa_from_doi(reference_section_dois["+i+"].doi, true)' href='javascript:null'>"
-				document.getElementById('most_cited_'+reference_section_dois[i].doi).innerHTML = "<a href='https://doi.org/" + reference_section_dois[i].doi + "' target='_blank'>https://doi.org/"+reference_section_dois[i].doi+"</a> "+link_to_load_reference+"[load]</a>" 
-
+        	if (reference_obj[reference_section_dois[i].doi] == undefined) { 
+				// if it's not in their list, figure out what to put in the table...
+				get_apa_from_doi(reference_section_dois[i].doi, false) // this fills in the reference in the table, rather than just showing the doi. But because the parameter is false, it doesn't query crossref
+				if (document.getElementById('most_cited_'+reference_section_dois[i].doi).innerHTML == "") {
+					// if it didn't find the reference in the line above, then fill in the doi plus a link to check crossref. 
+					link_to_load_reference = "<a onclick='get_apa_from_doi(reference_section_dois["+i+"].doi, true)' href='javascript:null'>"
+					document.getElementById('most_cited_'+reference_section_dois[i].doi).innerHTML = "<a href='https://doi.org/" + reference_section_dois[i].doi + "' target='_blank'>https://doi.org/"+reference_section_dois[i].doi+"</a> ["+link_to_load_reference+"load</a>]" 
+				}
 			} else {
+				// if it is in their list, then the reference is already in the table. add possible num citations to the table...
 				document.getElementById('possible_citations_'+reference_section_dois[i].doi).innerHTML = possible_citations(reference_obj[reference_section_dois[i].doi].year)
 			}
 		}
@@ -2148,19 +2141,17 @@ Basic procedure:
 
 	async function get_apa_from_doi(input_doi, check_crossref) {	
 		// if you have a doi, this will figure out the apa reference. 
+		// the second parameter is true or false. if false it only does something if the reference is stored already. if true, it also checks crossref.
 		let myJSONobj
 		
 		try {
-
 			local_JSON = localStorage.getItem(input_doi);
 			if (local_JSON != null && local_JSON != '') {
 				// if there's local json, get it
 				myJSONobj = JSON.parse(local_JSON);
-				console.log( 'found')
 			} else {
 				if (check_crossref == false) {
-					console.log( 'not found')
-					return;
+					return; 
 				}
 				// if there's no local json, get it from the server
 				console.log( 'used crossref in get_apa_from_doi for ' + input_doi)
