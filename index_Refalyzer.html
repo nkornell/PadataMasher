@@ -1096,12 +1096,11 @@ Basic procedure:
             }
 		}
 
-
 		console.log('-A- getting [' + row_queue.length + '] rows ('+doi_or_url_type_to_handle+')')
         if (row_queue.length > 0) {
 		    current_mode = "searching for dois"
 		    var pause = 0;
-// 		    myPromise = []
+
             for (i = 0; i < row_queue.length; i++) {
 				// getOneURL(row_queue[i]); // this works, but it requests all of them at the same time and that makes crossref return error 429
 				
@@ -1111,14 +1110,8 @@ Basic procedure:
 					// if the reference isn't local storage, pause another 50 ms before requesting it
 					pause += 50;
 				}
-				setTimeout(getOneURL, pause, row_queue[i]);
-// 				myPromise[i] = new Promise((resolve, reject) => {
-// 					setTimeout(getOneURL, pause, row_queue[i]);
-// 				})
+				setTimeout(getOneURL, pause, row_queue[i]); // you put the parameter at the end when calling the function
             }
-            
-// 			Promise.allSettled(myPromise).then(result => console.log(result) )
-
 
 		}
 	}	
@@ -2062,8 +2055,9 @@ Basic procedure:
 	}
 
 	function rank_based_on_up_or_down_votes(up, down) {
-		// for this program, i'm using this to rank articles in terms of how often they're cited. I'm treating being cited as an upvote and not being cited as a downvote. 
-		// dfdd but I haven't implemented it yet. 
+		// for this program, i'm not using this. 
+		// I was going to use it to rank articles in terms of how often they're cited. I'm treating being cited as an upvote and not being cited as a downvote. 
+		// but then I realized that having more "ratings" isn't good im this program because it just means being older.  
 		
 		// This tells you how "good" something is based on the number of upvotes and downvotes. 
 		// It takes into account both percentages and total number of votes. 
@@ -2080,10 +2074,6 @@ Basic procedure:
 // 		Part of the idea is to identify articles that you aren't citing, but maybe should.
 // 		Note: this is only based on references (so, it looks backward but not forward).	
 		
-		console.log( 'rank score = ' + rank_based_on_up_or_down_votes(5,0) )
-		console.log( 'rank score = ' + rank_based_on_up_or_down_votes(250,100) )
-		console.log( 'rank score = ' + rank_based_on_up_or_down_votes(250,250) )
-
         var mostCitedTableText = "";
         var i = 0;
         var link_to_load_reference = ""
@@ -2099,7 +2089,6 @@ Basic procedure:
         mostCitedTableText += "<th>In your list?</th>";
         mostCitedTableText += "<th>References above that cite this</th>"
         mostCitedTableText += "<th>Max num citations possible</th>";
-        mostCitedTableText += "<th>Score</th>";
         mostCitedTableText += "</tr>";
         
         for (i = 0; i < reference_section_dois.length; i++) {
@@ -2135,6 +2124,7 @@ Basic procedure:
         // After the table is built, go find the references. 
         // (I didn't call this above because if you do, it can't find the div to put the information in.)
         // To understand what it's doing, see the same code in the loop above. 
+        var pause = 0
         for (i = 0; i < reference_section_dois.length; i++) {
         	if (reference_section_dois[i].count < 2) {
         		break
@@ -2142,11 +2132,19 @@ Basic procedure:
 			if (i >= 100) {
 				break;
 			}
+			
+			
         	if (reference_obj[reference_section_dois[i].doi] == undefined) { 
 				// if it's not in their list, figure out what to put in the table...
-				get_apa_from_doi(reference_section_dois[i].doi, false) // this fills in the reference in the table, rather than just showing the doi. But because the parameter is false, it doesn't query crossref
+				if (i < 20) {
+					// if it's one of the first 20, load it. but pause another 100 ms for each one. 
+					pause += 100
+					setTimeout(get_apa_from_doi, pause, reference_section_dois[i].doi, true); // because the paramteer is true, this does check crossref. 
+				} else {
+					get_apa_from_doi(reference_section_dois[i].doi, false) // this tries to fill in the reference in the table but it only works if the reference is already in memory. But because the parameter is false, it doesn't query crossref
+				}
 				if (document.getElementById('most_cited_'+reference_section_dois[i].doi).innerHTML == "") {
-					// if it didn't find the reference in the line above, then fill in the doi plus a link to check crossref. 
+					// if it didn't find the reference in the line above, then fill in the table cell with the doi plus a link to check crossref. 
 					link_to_load_reference = "<a onclick='get_apa_from_doi(reference_section_dois["+i+"].doi, true)' href='javascript:null'>"
 					document.getElementById('most_cited_'+reference_section_dois[i].doi).innerHTML = "<a href='https://doi.org/" + reference_section_dois[i].doi + "' target='_blank'>https://doi.org/"+reference_section_dois[i].doi+"</a> ["+link_to_load_reference+"load</a>]" 
 				}
@@ -2159,7 +2157,7 @@ Basic procedure:
 
 	async function get_apa_from_doi(input_doi, check_crossref) {	
 		// if you have a doi, this will figure out the apa reference. 
-		// the second parameter is true or false. if false it only does something if the reference is stored already. if true, it also checks crossref.
+		// the second parameter is true or false. if true, it will check crossref. if false it only does something if the reference is already stored in memory. 
 		let myJSONobj
 		
 		try {
@@ -2181,7 +2179,6 @@ Basic procedure:
 			}
 
 			const temp_ref = new Reference_object("", myJSONobj, ""); // create a temporary reference object just to get apa out of it
-
 
 			if (temp_ref.apa.length > 0) {
 				document.getElementById('most_cited_'+input_doi).innerHTML = temp_ref.apa // add the apa to the table
