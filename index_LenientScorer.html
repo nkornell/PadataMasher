@@ -112,6 +112,7 @@
 				<option value='Zero'>Zero</option>
 				<option value='na'>na</option>
 			</select>
+			<p><input type="checkbox" id="output_all_columns" checked ><label for="ignore_case">Output all columns</label> </p>
 		</div>
 	</div>
 </div>
@@ -658,7 +659,7 @@ function buildOutputStringLenientScorer() {
 		for (i = 0; i < answer_group.length; i++) {
 			// have each answer_group object compute it's binary_array, which is the 0 or 1 scoring of each response
 			// then add the resulting array to the variable out_array. 
-			if (answer_group[i].array_of_selected_items.length > 0) { // if at least one thing is selected in the column, score it
+			if (answer_group[i].array_of_selected_items.length > 0 || document.getElementById('output_all_columns').checked) { // if at least one thing is selected in the column, score it
 				out_array.push(answer_group[i].binary_array())
 			}
 		}
