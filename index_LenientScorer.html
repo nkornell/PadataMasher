@@ -278,13 +278,9 @@ function answer_group_object(input_name, column_number, input_values, input_veri
 		if (document.getElementById('lenient_checkbox').checked == false) {
 			temp_good_match_threshold = 1;
 		}
-		console.log( 'use first row='+use_first_row)
-		console.log( this.verified_answer)
 
 		if (document.getElementById('two_columns').checked == false && use_first_row == false){
-			console.log( 'option 1')
-			// I think this only happens in Qualtrics format
-			// if there isn't a verified answer
+			// if there isn't a verified answer and it's in Qualtrics format
 			var top_response = this.sorted_array[0][0]
 			var highest_proportion = this.sorted_array[0][1]/this.total_responses
 			if (highest_proportion > .2 && highest_proportion < 1 && this.column_name.indexOf("Timing") !== 0) {
@@ -313,31 +309,22 @@ function answer_group_object(input_name, column_number, input_values, input_veri
 					// I think this error occurs in columns where the most common response is a blank, but 
 					// other responses are also given (i.e., it's not all blanks). 
 					// It's not actually a problem because the blank isn't correct anyway. Just ignore it.
-	// 				console.log( 'error in ' + this.column_name+', '+column_number+'-0'+': '+err)
+	// 				// console.log( 'error in ' + this.column_name+', '+column_number+'-0'+': '+err)
 				}
 			}
 		} else if (use_first_row) {
-			console.log( 'use first row')
-// 			console.log( this.sorted_array)
-// 			if (document.getElementById('lenient_checkbox').checked) { dfd put back below
-				// this loop goes through and if any are correct it marks them as correct
-				for (i = 0; i < this.sorted_array.length; i++) {
-					temp_sim = similarity(this.verified_answer, this.sorted_array[i][0]);
-					if (temp_sim >= temp_good_match_threshold) {
-						// their answer is correct, click on it
-// 						console.log( column_number+'-'+i)
-						if (document.getElementById(column_number+'-'+i).checked != true) {
-							document.getElementById(column_number+'-'+i).click();
-						}
-// 					} else if (temp_sim > .4 ) {
-// 						// if it's not insanely wrong, show the match score (in orange)
-// 						document.getElementById(column_number+'-'+i+'-score').innerHTML = Math.floor(temp_sim*100)+'% match'
+ 			// If it's in qualtrics format and there's a first row containing correct answers
+			// this loop goes through and if any are correct it marks them as correct
+			for (i = 0; i < this.sorted_array.length; i++) {
+				temp_sim = similarity(this.verified_answer, this.sorted_array[i][0]);
+				if (temp_sim >= temp_good_match_threshold) {
+					// their answer is correct, click on it
+					if (document.getElementById(column_number+'-'+i).checked != true) {
+						document.getElementById(column_number+'-'+i).click();
 					}
 				}
-
+			}
 		} else { // if there are verified answers in two column format
-			console.log( 'option 3')
-
 			for (i = 0; i < this.sorted_array.length; i++) {
 				if (this.sorted_array[i][0].length == 0) {
 					continue;
@@ -524,7 +511,7 @@ function buildVariableSelectorTable_lenientScorer() {
 				temp_response_array.push(inputCell[j][i])
 			}
 
-			answer_group[i] = new answer_group_object(inputCell[0][i], i, computeLevels(temp_response_array), inputCell[0][i]) // dfd add last parameter
+			answer_group[i] = new answer_group_object(inputCell[0][i], i, computeLevels(temp_response_array), inputCell[0][i])
 			answer_group[i].compute_levels()
 		}
 	}
@@ -602,7 +589,6 @@ function buildVariableSelectorTable_lenientScorer() {
 
 function autoScore(type) {
 	var i;
-	console.log( type)
 
 	for (i = 0; i < answer_group.length; i++) {
 		if (type == "1stRow") {
