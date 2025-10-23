@@ -57,8 +57,8 @@
 		<input type="radio" id="in_columns" name="file_format" value="in_columns" onchange='formatButtonClicked(this.id)'>
 		<label for="in_columns">Like Qualtrics <div style="display: inline-block; color: grey">(each column of user responses has a single correct answer)</div></label>
 		<br>&emsp;
-		<input type="radio" id="verified_answers" name="file_format" value="verified_answers" onchange='formatButtonClicked(this.id)'> <!-- checked="checked" -->
-		<label for="verified_answers">Compare two columns <div style="display: inline-block; color: grey"> (there is a column of correct answers and a column of user responses)</div></label>
+		<input type="radio" id="two_columns" name="file_format" value="two_columns" onchange='formatButtonClicked(this.id)'> <!-- checked="checked" -->
+		<label for="two_columns">Compare two columns <div style="display: inline-block; color: grey"> (there is a column of correct answers and a column of user responses)</div></label>
 	</div>
 
 <!-- 	~~- choose a file ~~- -->
@@ -91,15 +91,20 @@
 	<div class='bigBox' style="width:100%;"> 
 <!-- 		<div class='boxAroundTable' id='scrollable_box' style="height: 20rem; overflow-x: scroll; overflow-y: scroll; margin-bottom: 10px"> -->
 		<div class='boxAroundTable'>
-			<p style="margin-left: 10px">Select correct responses below. <span id="auto_score_span">Or try <button onclick="autoScore()">Auto Score</button></span></p>
-			<div id="variable_selector_table" class='dataTable' style="height: 20rem;  margin-bottom: 10px"></div>
+			<p style="margin-left: 10px">Select correct responses below. 
+			<div id="variable_selector_table" class='dataTable' style="height: 20rem;  margin-bottom: 10px">
+			</div>
 		
 			<div id='status_text' style='display: inline-block; margin-left: 10px'></div> <!--  0 columns selected -->
 			<div id='jump_arrows' style="display: inline-block; float: right; text-align:right; margin-right: 10px"> jump to next selected column <button onclick="autoScroll('left')">←</button><button onclick="autoScroll('right')">→</button></div></p>
 		</div>
 
-<!-- 	 I made the checkbox below invisible and I'm jsut assuming they'll always want lenient scoring, but if not it could become visible again.  -->
-		<input type="checkbox" id="lenient_checkbox" style="display: none" checked><label for="lenient_checkbox" style="display: none" >Count misspelled answers as correct</label> 
+
+			<div class='boxAroundTable' id='boxAroundTableAutoscore'>
+				<p>You can also <span id="auto_score_span"><button onclick="autoScore('Guess')">Guess correct answers for me</button></span> 
+				<span id="auto_score_span"><button onclick="autoScore('1stRow')">Use the 1st row as correct answers</button></span>
+				<p><input type="checkbox" id="lenient_checkbox" checked><label for="lenient_checkbox" >Count misspelled answers as correct</label> </p>
+			</div>
 
 		<div class='boxAroundTable'>
 			<p><a id="exportButton" href="#" class='coolButton'>Export Results to Desktop</a> 	
@@ -134,12 +139,11 @@
 
 <script>
 var answer_group = []
-var maximum_num_checkboxes = 9;
+// var maximum_num_checkboxes = 9;
 var good_match_threshold = .80 // score when comparing two strings
 var correct_answer = [];
 var correct_answer_column = 0
 var user_response_column = 1
-
 
 if (localStorage.getItem("lenient_scorer_file_format") != null) {
 	// if the user's preference for which file format is locally stored in the browser, click on that radio button
@@ -162,7 +166,7 @@ function start_lenientScorer() {
 	hideFileSelectorStuff();
 	hideFileFormatSelector();
 
-	if (document.getElementById('verified_answers').checked) {
+	if (document.getElementById('two_columns').checked) {
 		buildColumnPairSelector()
 	} else {
 		buildVariableSelectorTable_lenientScorer()
@@ -192,7 +196,8 @@ function show_or_hide_preview() {
 }
 
 function answer_group_object(input_name, column_number, input_values, input_verified_answer) { 
-	// this is an object that represents a correct answer. it might be a column of data (in qualtrics format) or responses that all have the same target
+	// This is an object that represents a correct answer. 
+	// It might be a column of data (in qualtrics format) or responses that all have the same target
 	this.column_name = input_name;
 	this.verified_answer = input_verified_answer;
 	this.level_text = []
@@ -200,6 +205,7 @@ function answer_group_object(input_name, column_number, input_values, input_veri
 	this.sorted_array = []
 	this.array_of_selected_items = []
 	this.total_responses = 0
+	var temp_good_match_threshold = good_match_threshold;
 	for (i = 0; i < input_values.length; i++) {
 		if (input_values[i].length > 0) {
 			this.total_responses++
@@ -262,13 +268,22 @@ function answer_group_object(input_name, column_number, input_values, input_veri
 	}
 	
 	
-	this.guess_what_is_correct = function() {
+	this.guess_what_is_correct = function(use_first_row) {
 		// this will check boxes for columns where it thinks there is a correct answer.
 		// It chooses columns where the top item's proportion correct is in a certain range, 
 		// and it ignores any column that starts with "Timing" (because of qualtrics conventions)
+		// It does it for a single answer_group each time it is called. 
 		var i = 0;
 		var temp_sim = 0;
-		if (this.verified_answer == undefined || this.verified_answer.length == 0){
+		if (document.getElementById('lenient_checkbox').checked == false) {
+			temp_good_match_threshold = 1;
+		}
+		console.log( 'use first row='+use_first_row)
+		console.log( this.verified_answer)
+
+		if (document.getElementById('two_columns').checked == false && use_first_row == false){
+			console.log( 'option 1')
+			// I think this only happens in Qualtrics format
 			// if there isn't a verified answer
 			var top_response = this.sorted_array[0][0]
 			var highest_proportion = this.sorted_array[0][1]/this.total_responses
@@ -283,7 +298,7 @@ function answer_group_object(input_name, column_number, input_values, input_veri
 						// (i.e., are similar) it marks them as correct as well
 						for (i = 1; i < this.sorted_array.length; i++) {
 							temp_sim = similarity(top_response, this.sorted_array[i][0]);
-							if (temp_sim >= good_match_threshold) {
+							if (temp_sim >= temp_good_match_threshold) {
 								// their answer is correct, click on it
 								if (document.getElementById(column_number+'-'+i).checked != true) {
 									document.getElementById(column_number+'-'+i).click();
@@ -301,13 +316,34 @@ function answer_group_object(input_name, column_number, input_values, input_veri
 	// 				console.log( 'error in ' + this.column_name+', '+column_number+'-0'+': '+err)
 				}
 			}
-		} else { // if there are verified answers
+		} else if (use_first_row) {
+			console.log( 'use first row')
+// 			console.log( this.sorted_array)
+// 			if (document.getElementById('lenient_checkbox').checked) { dfd put back below
+				// this loop goes through and if any are correct it marks them as correct
+				for (i = 0; i < this.sorted_array.length; i++) {
+					temp_sim = similarity(this.verified_answer, this.sorted_array[i][0]);
+					if (temp_sim >= temp_good_match_threshold) {
+						// their answer is correct, click on it
+// 						console.log( column_number+'-'+i)
+						if (document.getElementById(column_number+'-'+i).checked != true) {
+							document.getElementById(column_number+'-'+i).click();
+						}
+// 					} else if (temp_sim > .4 ) {
+// 						// if it's not insanely wrong, show the match score (in orange)
+// 						document.getElementById(column_number+'-'+i+'-score').innerHTML = Math.floor(temp_sim*100)+'% match'
+					}
+				}
+
+		} else { // if there are verified answers in two column format
+			console.log( 'option 3')
+
 			for (i = 0; i < this.sorted_array.length; i++) {
 				if (this.sorted_array[i][0].length == 0) {
 					continue;
 				}
 				temp_sim = similarity(this.verified_answer, this.sorted_array[i][0]);
-				if (temp_sim >= good_match_threshold) {
+				if (temp_sim >= temp_good_match_threshold) {
 					// if the answer is correct, click on it
 					if (document.getElementById(column_number+'-'+i).checked != true) {
 						document.getElementById(column_number+'-'+i).click();
@@ -319,7 +355,7 @@ function answer_group_object(input_name, column_number, input_values, input_veri
 // 					document.getElementById(column_number+'-'+i).disabled = true
 // 					document.getElementById(column_number+'-'+i+'-score').style.color = 'grey'; 
 // 					document.getElementById(column_number+'-'+i+'-row').style.display = 'none' // hide the row
-				} else if (temp_sim >= good_match_threshold) { 
+				} else if (temp_sim >= temp_good_match_threshold) { 
 					document.getElementById(column_number+'-'+i+'-score').style.color = 'green';
 				} else if (temp_sim > .4) { 
 					// if it's not insanely wrong, show the match score (in orange)
@@ -348,8 +384,8 @@ function show_variable_selector_table() {
 		document.getElementById("status_text").style.display = "none";		
 	}
 	
-	if (document.getElementById('verified_answers').checked) {
-		document.getElementById("auto_score_span").style.display = "none";
+	if (document.getElementById('two_columns').checked) {
+		document.getElementById("boxAroundTableAutoscore").style.display = "none";
 		autoScore();
 	}
 }
@@ -464,7 +500,7 @@ function buildVariableSelectorTable_lenientScorer() {
 	}
 
 
-	if (document.getElementById('verified_answers').checked) {
+	if (document.getElementById('two_columns').checked) {
 		computeLevels_verified_correct(correct_answer_column)
 		
 // 		For each correct answer...
@@ -488,7 +524,7 @@ function buildVariableSelectorTable_lenientScorer() {
 				temp_response_array.push(inputCell[j][i])
 			}
 
-			answer_group[i] = new answer_group_object(inputCell[0][i], i, computeLevels(temp_response_array))
+			answer_group[i] = new answer_group_object(inputCell[0][i], i, computeLevels(temp_response_array), inputCell[0][i]) // dfd add last parameter
 			answer_group[i].compute_levels()
 		}
 	}
@@ -499,7 +535,7 @@ function buildVariableSelectorTable_lenientScorer() {
 	out = "<table>";
 	
 	// build column names (if using verfieid answers)
-	if (document.getElementById('verified_answers').checked) {
+	if (document.getElementById('two_columns').checked) {
 		out+= '<tr id="table_column_names">'
 // 		articleTableText += "<th onclick='sortTable(0, "+'"articleTable","letters"'+")' title='Click to Sort'>Input text</th>";
 		out += "<th onclick='sortTable(0, "+'"variable_selector_table","checkboxes"'+")' title='Click to Sort'>Status</th>";
@@ -508,14 +544,14 @@ function buildVariableSelectorTable_lenientScorer() {
 		out += "<th onclick='sortTable(3, "+'"variable_selector_table","numbers","desc"'+")' title='Click to Sort'>Number of observations</th>"
 		out += "</tr>"
 	}
-		if (document.getElementById('verified_answers').checked == false) {
+		if (document.getElementById('two_columns').checked == false) {
 			out += "<tr>"
 		}	
 	// Build column names and checkboxes.
 	for (i = 0; i < answer_group.length; i++) {
 		tempColName = answer_group[i].column_name; // with verified answers this is the correct response 
 
-		if (document.getElementById('verified_answers').checked == false) {
+		if (document.getElementById('two_columns').checked == false) {
 			out += "<td id='"+i+"-header' style='vertical-align: top; min-width: 10em; padding-bottom: 1em'>" // note I called this 'header' but that's a misnomer, it's actually the whole td, which includes all the answers too
 			out += "<b>" + tempColName + "</b><br>";
 		}
@@ -524,25 +560,25 @@ function buildVariableSelectorTable_lenientScorer() {
 			if (tempValueToShow !== undefined && tempValueToShow !== null) {
 				if (tempValueToShow.length > 0) {
 					tempID = i+'-'+j; // col-row
-					if (document.getElementById('verified_answers').checked) {
+					if (document.getElementById('two_columns').checked) {
 						out += '<tr id='+tempID+'-row><td>'
 					}
 					out += '<input type="checkbox" name="'+i+'" id="'+tempID+'" onchange="boxClicked(this.id)" >'
-					if (document.getElementById('verified_answers').checked ) {
+					if (document.getElementById('two_columns').checked ) {
 						out += '</td><td>'
 						out += tempColName + ' - '
 					}
 					out += '<label for="'+tempID+'" id="'+tempID+'-label">'+tempValueToShow+'</label> ';
-					if (document.getElementById('verified_answers').checked) {
+					if (document.getElementById('two_columns').checked) {
 						out += '</td><td>'
 					}
 					out += '<div id="'+tempID+'-score" style="display: inline-block"></div>' // this has text added to it only for certain items
-					if (document.getElementById('verified_answers').checked) {
+					if (document.getElementById('two_columns').checked) {
 						out += '</td><td>'
 					}
 					out += '<div id="'+tempID+'-n" style="display: inline-block; color: grey">'+answer_group[i].sorted_array[j][1]+'</div> ' // number correct
 					out += '<br>'
-					if (document.getElementById('verified_answers').checked) {
+					if (document.getElementById('two_columns').checked) {
 						out += '</td></tr>'
 					}
      			}
@@ -550,9 +586,9 @@ function buildVariableSelectorTable_lenientScorer() {
 				console.log( 'null: tempid = '+tempID+' tempcolnam='+tempColName+' tempValueToShow='+tempValueToShow)
 			}
 
-			if (j >= maximum_num_checkboxes-1) {break;} // this means it never gives you more than x options
+// 			if (j >= maximum_num_checkboxes-1) {break;} // this means it never gives you more than x options
 		}
-		if (document.getElementById('verified_answers').checked == false) {
+		if (document.getElementById('two_columns').checked == false) {
 			out += "</td>"
 		}
 	}
@@ -564,11 +600,16 @@ function buildVariableSelectorTable_lenientScorer() {
 	show_variable_selector_table();
 }
 
-function autoScore() {
+function autoScore(type) {
 	var i;
+	console.log( type)
 
 	for (i = 0; i < answer_group.length; i++) {
-		answer_group[i].guess_what_is_correct()
+		if (type == "1stRow") {
+			answer_group[i].guess_what_is_correct(true)
+		} else {
+			answer_group[i].guess_what_is_correct(false)
+		}
 	}
 }
 
@@ -650,7 +691,7 @@ function buildOutputStringLenientScorer() {
 	var out_array = [];
 	var temp_index = 0;
 			
-	if (document.getElementById('verified_answers').checked) {
+	if (document.getElementById('two_columns').checked) {
 		for (i = 1; i < inputCell.length; i++) { // go through the rows
 			temp_index = answer_group.findIndex(x => x.column_name === inputCell[i][correct_answer_column].toLowerCase()) // find the object for this row's correct answer
 			out_array.push(inputCell[i][correct_answer_column]+'\t'+inputCell[i][user_response_column]+'\t'+answer_group[temp_index].binary_item(inputCell[i][user_response_column]))
